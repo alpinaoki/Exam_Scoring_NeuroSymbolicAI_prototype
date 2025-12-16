@@ -1,125 +1,137 @@
-"use client";
+'use client'
 
-import { useState } from "react";
+import { useState } from 'react'
 
 const problems = [
-  {
-    id: 1,
-    text: "ベクトルの内積を用いて角度を求めよ。",
-  },
-  {
-    id: 2,
-    text: "三角形ABCが二等辺三角形であることを示せ。",
-  },
-  {
-    id: 3,
-    text: "x²-5x+6=0 を解け。",
-  },
-];
+  { id: 1, image: '/sample1.png' },
+  { id: 2, image: '/sample2.png' },
+  { id: 3, image: '/sample3.png' },
+]
 
 export default function Home() {
-  const [index, setIndex] = useState(0);
-  const problem = problems[index];
+  const [index, setIndex] = useState(0)
+
+  const prev = () => {
+    if (index > 0) setIndex(index - 1)
+  }
+
+  const next = () => {
+    if (index < problems.length - 1) setIndex(index + 1)
+  }
 
   return (
-    <main
-      style={{
-        backgroundColor: "#0e0e0e",
-        color: "#f5f5f5",
-        minHeight: "100vh",
-        fontFamily: "sans-serif",
-        position: "relative",
-      }}
-    >
+    <div style={styles.page}>
       {/* Header */}
-      <div
-        style={{
-          position: "absolute",
-          top: "16px",
-          left: "24px",
-          fontWeight: "bold",
-          fontSize: "18px",
-        }}
-      >
-        Magmaweb
-      </div>
+      <header style={styles.header}>
+        <h1 style={styles.logo}>Magmaweb</h1>
+      </header>
 
-      {/* Center */}
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          minHeight: "100vh",
-        }}
-      >
+      {/* Main */}
+      <main style={styles.main}>
         {/* Left Arrow */}
-        <button
-          onClick={() => setIndex((i) => Math.max(i - 1, 0))}
-          disabled={index === 0}
-          style={arrowStyle}
-        >
-          ◀
+        <button onClick={prev} style={styles.arrow}>
+          ‹
         </button>
 
         {/* Problem Card */}
-        <div
-          style={{
-            width: "420px",
-            backgroundColor: "#1a1a1a",
-            borderRadius: "16px",
-            padding: "16px",
-            margin: "0 24px",
-          }}
-        >
-          {/* Image placeholder */}
-          <div
-            style={{
-              backgroundColor: "#bbb",
-              height: "280px",
-              borderRadius: "12px",
-              marginBottom: "12px",
-            }}
+        <div style={styles.card}>
+          <img
+            src={problems[index].image}
+            alt="problem"
+            style={styles.image}
           />
 
-          {/* Text */}
-          <p style={{ fontSize: "14px", marginBottom: "16px" }}>
-            {problem.text}
-          </p>
-
-          {/* Submit */}
-          <div
-            style={{
-              borderTop: "1px solid #333",
-              paddingTop: "12px",
-              color: "#aaa",
-              cursor: "pointer",
-            }}
-          >
-            💬 画像を提出する
-          </div>
+          <button style={styles.submitButton}>
+            画像を提出する
+          </button>
         </div>
 
         {/* Right Arrow */}
-        <button
-          onClick={() =>
-            setIndex((i) => Math.min(i + 1, problems.length - 1))
-          }
-          disabled={index === problems.length - 1}
-          style={arrowStyle}
-        >
-          ▶
+        <button onClick={next} style={styles.arrow}>
+          ›
         </button>
-      </div>
-    </main>
-  );
+      </main>
+
+      {/* Footer Progress */}
+      <footer style={styles.footer}>
+        {problems.map((_, i) => (
+          <div
+            key={i}
+            style={{
+              ...styles.dot,
+              backgroundColor: i === index ? '#c0392b' : '#555',
+            }}
+          />
+        ))}
+      </footer>
+    </div>
+  )
 }
 
-const arrowStyle = {
-  background: "none",
-  border: "none",
-  color: "#aaa",
-  fontSize: "24px",
-  cursor: "pointer",
-  padding: "12px",
-};
+const styles: { [key: string]: React.CSSProperties } = {
+  page: {
+    backgroundColor: '#111',
+    color: '#eee',
+    minHeight: '100vh',
+    display: 'flex',
+    flexDirection: 'column',
+  },
+  header: {
+    padding: '16px 24px',
+    borderBottom: '1px solid #333',
+  },
+  logo: {
+    margin: 0,
+    fontSize: '20px',
+    letterSpacing: '1px',
+  },
+  main: {
+    flex: 1,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: '24px',
+  },
+  arrow: {
+    background: 'none',
+    border: 'none',
+    color: '#aaa',
+    fontSize: '48px',
+    cursor: 'pointer',
+  },
+  card: {
+    backgroundColor: '#f5f1e8',
+    borderRadius: '12px',
+    padding: '16px',
+    width: '480px',
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: '12px',
+  },
+  image: {
+    width: '100%',
+    borderRadius: '8px',
+    objectFit: 'contain',
+  },
+  submitButton: {
+    backgroundColor: '#c0392b',
+    color: '#fff',
+    border: 'none',
+    borderRadius: '6px',
+    padding: '10px 16px',
+    cursor: 'pointer',
+    fontSize: '14px',
+  },
+  footer: {
+    display: 'flex',
+    justifyContent: 'center',
+    gap: '6px',
+    padding: '12px',
+  },
+  dot: {
+    width: '8px',
+    height: '8px',
+    borderRadius: '50%',
+  },
+}
