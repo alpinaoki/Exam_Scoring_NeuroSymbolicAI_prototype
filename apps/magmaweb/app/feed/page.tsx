@@ -1,4 +1,4 @@
-import ProblemCarousel from '../components/ProblemCarousel'
+import ProblemCarousel from '../../components/ProblemCarousel'
 
 export default function FeedPage() {
   return (
