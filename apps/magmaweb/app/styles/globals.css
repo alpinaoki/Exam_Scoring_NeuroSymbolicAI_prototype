@@ -1,0 +1,84 @@
+/* =========================
+   1. リセット & 基本設定
+========================= */
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  height: 100%;
+}
+
+body {
+  font-family: system-ui, -apple-system, BlinkMacSystemFont,
+               "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  background: var(--bg-gradient);
+  color: var(--text-main);
+  line-height: 1.6;
+}
+
+/* =========================
+   2. カラーテーマ定義（超重要）
+========================= */
+
+:root {
+  /* 背景 */
+  --bg-dark: #0f0f0f;
+  --bg-beige: #f5f1e8;
+  --bg-red: #c0392b;
+
+  /* グラデーション */
+  --bg-gradient: linear-gradient(
+    135deg,
+    #0f0f0f 0%,
+    #2a1515 60%,
+    #3b1f1f 100%
+  );
+
+  /* テキスト */
+  --text-main: #eeeeee;
+  --text-sub: #aaaaaa;
+  --text-dark: #222222;
+
+  /* UI */
+  --border-soft: #333333;
+  --shadow-soft: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+
+/* =========================
+   3. ボタンの共通挙動
+========================= */
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* =========================
+   4. 画像の基本ルール
+========================= */
+
+img {
+  max-width: 100%;
+  display: block;
+}
+
+/* =========================
+   5. アニメーションの基本
+========================= */
+
+* {
+  transition:
+    background-color 0.25s ease,
+    color 0.25s ease,
+    transform 0.25s ease,
+    opacity 0.25s ease;
+}

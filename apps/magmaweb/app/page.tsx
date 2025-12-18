@@ -1,3 +1,14 @@
+import { redirect } from 'next/navigation'
+
+export default function Home() {
+  redirect('/login')
+}
+
+
+
+
+
+/* 
 'use client'
 
 import { useState } from 'react'
@@ -7,7 +18,9 @@ const problems = [
   { id: 2, image: '/sample2.png' },
   { id: 3, image: '/sample3.png' },
 ]
+*/
 
+/*
 export default function Home() {
   const [index, setIndex] = useState(0)
 
@@ -68,6 +81,8 @@ export default function Home() {
   )
 }
 
+
+/*
 const styles: { [key: string]: React.CSSProperties } = {
   page: {
     backgroundColor: '#111',
@@ -134,4 +149,4 @@ const styles: { [key: string]: React.CSSProperties } = {
     height: '8px',
     borderRadius: '50%',
   },
-}
+} 
