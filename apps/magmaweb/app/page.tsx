@@ -1,10 +1,9 @@
-import ProblemFeed from '../../components/ProblemFeed'
+import { redirect } from 'next/navigation'
 
-export default function FeedPage() {
-  return (
-    <>
-      <h1 style={{ marginLeft: 20 }}>Magmathe</h1>
-      <ProblemFeed />
-    </>
-  )
+export default function Home() {
+  redirect('/login')
 }
+
+
+
+

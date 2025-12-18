@@ -1,10 +1,11 @@
-import ProblemCarousel from '../../components/ProblemCarousel'
+import ProblemFeed from '../../components/ProblemFeed'
 
 export default function FeedPage() {
   return (
     <>
       <h1 style={{ marginLeft: 20 }}>Magmathe</h1>
-      <ProblemCarousel />
+      <ProblemFeed />
     </>
   )
 }
+
