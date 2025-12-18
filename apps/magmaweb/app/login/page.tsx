@@ -1,6 +1,7 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
+import type { CSSProperties } from 'react'
 
 export default function LoginPage() {
   const router = useRouter()
@@ -15,14 +16,14 @@ export default function LoginPage() {
   )
 }
 
-const styles = {
+const styles: { [key: string]: CSSProperties } = {
   page: {
     height: '100vh',
     display: 'flex',
     flexDirection: 'column',
     justifyContent: 'center',
     alignItems: 'center',
-    background: 'linear-gradient(135deg, #111, #3b1f1f)',
+    background: 'linear-gradient(135deg, #111, #3B1F1F)',
     color: '#eee',
   },
 }
