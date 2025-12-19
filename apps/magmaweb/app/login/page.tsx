@@ -8,7 +8,7 @@ export default function LoginPage() {
 
   return (
     <div style={styles.page}>
-      <h1>Magmaweb</h1>
+      <h1>Magmathe</h1>
       <button onClick={() => router.push('/feed')}>
         ログイン（仮）
       </button>
