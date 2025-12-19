@@ -1,6 +1,7 @@
 'use client'
 
 import type { CSSProperties } from 'react'
+import ProblemActionBar from './ProblemActionBar'
 
 type Props = {
   image: string
@@ -11,14 +12,10 @@ export default function ProblemCard({ image }: Props) {
     <div style={styles.card}>
       <img src={image} alt="problem" style={styles.image} />
 
-      <label style={styles.submit}>
-        画像を提出する
-        <input
-          type="file"
-          accept="image/*"
-          style={{ display: 'none' }}
-        />
-      </label>
+      <ProblemActionBar
+        bookmarkCount={12}
+        answerCount={3}
+      />
     </div>
   )
 }
@@ -27,7 +24,7 @@ const styles: { [key: string]: CSSProperties } = {
   card: {
     display: 'flex',
     flexDirection: 'column',
-    gap: '16px',
+    gap: '12px',
   },
   image: {
     width: '100%',
@@ -35,13 +32,11 @@ const styles: { [key: string]: CSSProperties } = {
     objectFit: 'contain',
     border: '1px solid #eee',
   },
-  submit: {
-    padding: '12px',
-    backgroundColor: '#e53935',
-    color: '#fff',
-    borderRadius: '8px',
-    fontSize: '16px',
-    textAlign: 'center',
-    cursor: 'pointer',
-  },
 }
+
+
+
+
+
+
+
