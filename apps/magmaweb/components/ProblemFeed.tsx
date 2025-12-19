@@ -1,16 +1,43 @@
 'use client'
 
+import { useEffect, useRef, useState } from 'react'
 import type { CSSProperties } from 'react'
-import { problems } from '../data/problems'
+import { problems as allProblems } from '../data/problems'
 import ProblemCard from './ProblemCard'
 
+const PAGE_SIZE = 5
+
 export default function ProblemFeed() {
+  const [visible, setVisible] = useState(PAGE_SIZE)
+  const loaderRef = useRef<HTMLDivElement | null>(null)
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setVisible((v) =>
+            Math.min(v + PAGE_SIZE, allProblems.length)
+          )
+        }
+      },
+      { threshold: 1 }
+    )
+
+    if (loaderRef.current) observer.observe(loaderRef.current)
+    return () => observer.disconnect()
+  }, [])
+
   return (
     <div style={styles.page}>
       <div style={styles.container}>
-        {problems.map((p) => (
+        {allProblems.slice(0, visible).map((p) => (
           <ProblemCard key={p.id} image={p.image} />
         ))}
+
+        {/* ローダー */}
+        <div ref={loaderRef} style={styles.loader}>
+          読み込み中…
+        </div>
       </div>
     </div>
   )
@@ -30,5 +57,11 @@ const styles: { [key: string]: CSSProperties } = {
     display: 'flex',
     flexDirection: 'column',
     gap: '24px',
+  },
+  loader: {
+    textAlign: 'center',
+    color: '#999',
+    padding: '16px',
+    fontSize: '14px',
   },
 }

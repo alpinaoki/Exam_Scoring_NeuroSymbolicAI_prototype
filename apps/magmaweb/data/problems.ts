@@ -1,5 +1,5 @@
-export const problems = [
-  { id: 1, image: '/sample1.png' },
-  { id: 2, image: '/sample2.png' },
-  { id: 3, image: '/sample3.png' },
-]
+export const problems = Array.from({ length: 30 }, (_, i) => ({
+  id: i + 1,
+  image: `/problems/sample${(i % 5) + 1}.jpg`,
+}))
+
