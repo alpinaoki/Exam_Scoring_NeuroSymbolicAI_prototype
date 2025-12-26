@@ -14,11 +14,11 @@ export default function ProblemActionBar({
   return (
     <div style={styles.bar}>
       <div style={styles.item}>
-        :しおり: <span>{bookmarkCount}</span>
+        🔖 <span>{bookmarkCount}</span>
       </div>
 
       <label style={styles.item}>
-        :入力中アイコン: <span>{answerCount}</span>
+        ✏ <span>{answerCount}</span>
         <input
           type="file"
           accept="image/*"
