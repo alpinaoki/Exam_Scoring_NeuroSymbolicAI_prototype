@@ -31,7 +31,7 @@ export default function ProblemFeed() {
     <div style={styles.page}>
       <div style={styles.container}>
         {allProblems.slice(0, visible).map((p) => (
-          <ProblemCard key={p.id} image={p.image} />
+          <ProblemCard key={p.id} image={p.image} problemID={String(p.id)}/>
         ))}
 
         {/* ローダー */}
