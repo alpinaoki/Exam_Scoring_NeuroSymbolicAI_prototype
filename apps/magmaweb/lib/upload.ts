@@ -11,7 +11,7 @@ export async function uploadAnswerImage(
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   )
 
-  const filePath = ${problemId}/${Date.now()}.png
+  const filePath = '${problemId}/${Date.now()}.png'
 
   const { error } = await supabase.storage
     .from('answers')
