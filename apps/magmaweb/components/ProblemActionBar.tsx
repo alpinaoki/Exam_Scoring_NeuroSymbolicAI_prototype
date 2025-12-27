@@ -1,46 +1,36 @@
 'use client'
 
-import type { CSSProperties } from 'react'
+import { uploadAnswerImage } from '../lib/upload'
 
 type Props = {
+  problemId: string
   bookmarkCount: number
   answerCount: number
-  onSelectImage: (file: File) => void
 }
 
 export default function ProblemActionBar({
+  problemId,
   bookmarkCount,
   answerCount,
-  onSelectImage,
 }: Props) {
   return (
-    <div style={styles.bar}>
+    <div style={{ display: 'flex', gap: 16 }}>
       <span>:しおり: {bookmarkCount}</span>
 
-      <label style={styles.comment}>
+      <label style={{ cursor: 'pointer' }}>
         :入力中アイコン: {answerCount}
         <input
           type="file"
           accept="image/*"
-          style={{ display: 'none' }}
-          onChange={(e) => {
+          hidden
+          onChange={async (e) => {
             const file = e.target.files?.[0]
-            if (file) onSelectImage(file)
+            if (!file) return
+            await uploadAnswerImage(file, problemId)
+            alert('提出完了')
           }}
         />
       </label>
     </div>
   )
-}
-
-const styles: { [key: string]: CSSProperties } = {
-  bar: {
-    display: 'flex',
-    gap: '16px',
-    fontSize: '14px',
-    color: '#555',
-  },
-  comment: {
-    cursor: 'pointer',
-  },
 }

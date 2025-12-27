@@ -18,12 +18,10 @@ export default function ProblemCard({ image }: Props) {
         />
       )}
       <ProblemActionBar
+        problemID={image} //仮
         bookmarkCount={12}
         answerCount={3}
-        onSelectImage={(file) => {
-          const url = URL.createObjectURL(file)
-          setPreview(url)
-        }}
+        }
       />
     </div>
   )
