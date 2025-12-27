@@ -1,15 +1,17 @@
-import { createClient } from '@supabase/supabase-js'
+'use client'
 
-export const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-)
+import { createClient } from '@supabase/supabase-js'
 
 export async function uploadAnswerImage(
   file: File,
   problemId: string
 ) {
-  const filePath = '${problemId}/${Date.now()}.png'
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  )
+
+  const filePath = ${problemId}/${Date.now()}.png
 
   const { error } = await supabase.storage
     .from('answers')
