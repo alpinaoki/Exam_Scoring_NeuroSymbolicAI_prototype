@@ -9,7 +9,7 @@ export async function uploadAnswerImage(
   file: File,
   problemId: string
 ) {
-  const filePath = ${problemId}/${Date.now()}.png
+  const filePath = '${problemId}/${Date.now()}.png'
 
   const { error } = await supabase.storage
     .from('answers')
