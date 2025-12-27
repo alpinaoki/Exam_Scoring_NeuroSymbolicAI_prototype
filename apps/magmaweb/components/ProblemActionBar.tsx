@@ -15,10 +15,10 @@ export default function ProblemActionBar({
 }: Props) {
   return (
     <div style={{ display: 'flex', gap: 16 }}>
-      <span>:しおり: {bookmarkCount}</span>
+      <span>❤ {bookmarkCount}</span>
 
       <label style={{ cursor: 'pointer' }}>
-        :入力中アイコン: {answerCount}
+        :💬: {answerCount}
         <input
           type="file"
           accept="image/*"
