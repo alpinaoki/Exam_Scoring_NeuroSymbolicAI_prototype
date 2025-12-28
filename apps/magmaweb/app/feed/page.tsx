@@ -1,18 +1,25 @@
-import { redirect } from 'next/navigation'
+'use client'
+
+import { useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { createClient } from '@supabase/supabase-js'
 import ProblemFeed from '../../components/ProblemFeed'
 
-export default async function FeedPage() {
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  )
+export default function FeedPage() {
+  const router = useRouter()
 
-  const { data } = await supabase.auth.getUser()
+  useEffect(() => {
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    )
 
-  if (!data.user) {
-    redirect('/login')
-  }
+    supabase.auth.getUser().then(({ data }) => {
+      if (!data.user) {
+        router.replace('/login')
+      }
+    })
+  }, [router])
 
   return (
     <>
