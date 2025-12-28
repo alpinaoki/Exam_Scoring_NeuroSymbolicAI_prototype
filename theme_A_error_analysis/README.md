@@ -11,4 +11,35 @@
 12/18 メモ
 - magmathとしてログイン画面を追加。インスタ風UIを調整。
 
-あ
+12/27 supabaseと連携、画像がクラウドに保存できるように。
+12/28 ファイル構造整理
+magmaweb/
+ーapp/
+｜ーfeed/page.tsx
+｜ーlogin/page.tsx
+｜ーstyles/
+｜｜ーlayout.tsx
+｜｜ーpage.tsx
+ーcomponents/
+｜ーHeader.tsx（たぶんいらない空ファイル）
+｜ーProblemActionBar.tsx
+｜ーProblemCard.tsx
+｜ーProblemFeed.tsx
+｜ーSubmitButton.tsx（たぶんいらない空ファイル）
+ーdata/
+｜ーproblems.ts
+ーlib/
+｜ーauth.ts
+｜ーupload.ts
+ーpublic
+｜ーproblems/
+｜｜ーsample1.jpg
+｜｜ーsample2.jpg
+｜｜ーsample3.jpg
+｜｜ーsample4.jpg
+｜｜ーsample5.jpg
+ーdeploy.md
+ーnext.config.js
+ーpackage.json
+ーtsconfig.json
+
