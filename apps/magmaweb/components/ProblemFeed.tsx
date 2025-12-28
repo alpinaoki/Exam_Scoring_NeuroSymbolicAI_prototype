@@ -20,7 +20,7 @@ export default function ProblemFeed() {
           )
         }
       },
-      { threshold: 1 }
+      { threshold: 0.1 }
     )
 
     if (loaderRef.current) observer.observe(loaderRef.current)

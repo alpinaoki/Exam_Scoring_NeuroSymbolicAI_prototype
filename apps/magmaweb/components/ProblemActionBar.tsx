@@ -18,7 +18,7 @@ export default function ProblemActionBar({
       <span>❤ {bookmarkCount}</span>
 
       <label style={{ cursor: 'pointer' }}>
-        :💬: {answerCount}
+        💬 {answerCount}
         <input
           type="file"
           accept="image/*"

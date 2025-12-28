@@ -1,4 +1,5 @@
 import './styles/globals.css'
+import LayoutShell from '../components/LayoutShell'
 
 export default function RootLayout({
   children,
@@ -7,8 +8,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="ja">
-      <body>{children}</body>
+      <body>
+        <LayoutShell>{children}</LayoutShell>
+      </body>
     </html>
   )
 }
-
