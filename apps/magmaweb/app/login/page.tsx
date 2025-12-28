@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import type { CSSProperties } from 'react'
-import { signIn, signUp } from '@/lib/auth'
+import { signIn, signUp } from '../../lib/auth'
 
 export default function LoginPage() {
   const router = useRouter()
