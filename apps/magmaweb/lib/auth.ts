@@ -2,7 +2,7 @@
 import { supabase } from './supabase'
 
 function usernameToEmail(username: string) {
-  return `${username}@magmathe.local`
+  return `${username}@magmathe.com`
 }
 
 export async function signUp(username: string, password: string) {
