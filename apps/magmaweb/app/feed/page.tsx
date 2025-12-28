@@ -1,6 +1,6 @@
-import ProblemFeed from '../../components/ProblemFeed'
 import { redirect } from 'next/navigation'
 import { createClient } from '@supabase/supabase-js'
+import ProblemFeed from '../../components/ProblemFeed'
 
 export default async function FeedPage() {
   const supabase = createClient(
@@ -15,10 +15,9 @@ export default async function FeedPage() {
   }
 
   return (
-    <div>
-      <h1>Problem Feed</h1>
-      <p>ログイン済みです</p>
-    </div>
+    <>
+      <h1 style={{ marginLeft: 20 }}>Magmathe</h1>
+      <ProblemFeed />
+    </>
   )
 }
-
