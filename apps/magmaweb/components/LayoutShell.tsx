@@ -98,13 +98,13 @@ const styles: { [key: string]: CSSProperties } = {
     color: '#eee',
   },
   plus: {
-    width: 56,
-    height: 56,
+    width: 42,
+    height: 42,
     borderRadius: '30%',
     fontSize: 32,
     background: '#fff',
     color: '#111',
     border: 'none',
-    marginTop: -50,
+    marginTop: 0,
   },
 }
