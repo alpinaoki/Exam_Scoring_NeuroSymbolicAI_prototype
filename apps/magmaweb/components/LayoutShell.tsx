@@ -70,6 +70,7 @@ const styles: { [key: string]: CSSProperties } = {
     background: '#111',
     zIndex: 1000,
     cursor: 'pointer',
+    paddingLeft:16
   },
   logo: {
     fontWeight: 'bold',
