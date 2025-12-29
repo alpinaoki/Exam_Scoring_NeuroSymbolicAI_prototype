@@ -63,7 +63,7 @@ const styles: { [key: string]: CSSProperties } = {
     top: 0,
     left: 0,
     right: 0,
-    height: 56,
+    height: 32,
     display: 'flex',
     alignItems: 'left',
     justifyContent: 'left',
