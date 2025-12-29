@@ -1,18 +1,19 @@
 'use client'
 
 import { usePathname, useRouter } from 'next/navigation'
+import { useState } from 'react'
 import type { ReactNode, CSSProperties } from 'react'
+import { createPost } from '../lib/posts'
 
 type Props = {
   children: ReactNode
-  onOpenPost?: () => void
 }
 
-export default function LayoutShell({ children, onOpenPost }: Props) {
+export default function LayoutShell({ children }: Props) {
   const pathname = usePathname()
   const router = useRouter()
+  const [openPost, setOpenPost] = useState(false)
 
-  // login 画面では何も包まない
   if (pathname === '/login') {
     return <>{children}</>
   }
@@ -35,9 +36,7 @@ export default function LayoutShell({ children, onOpenPost }: Props) {
 
         <button
           style={styles.plus}
-          onClick={() => {
-            if (onOpenPost) onOpenPost()
-          }}
+          onClick={() => setOpenPost(true)}
         >
           ＋
         </button>
@@ -46,9 +45,35 @@ export default function LayoutShell({ children, onOpenPost }: Props) {
           👤
         </button>
       </footer>
+
+      {/* Post Modal */}
+      {openPost && (
+        <div
+          style={styles.overlay}
+          onClick={() => setOpenPost(false)}
+        >
+          <div
+            style={styles.modal}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              onClick={async () => {
+                await createPost({
+                  type: 'problem',
+                  imageUrl: 'test',
+                })
+                setOpenPost(false)
+              }}
+            >
+              投稿（仮）
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
+
 
 const styles: { [key: string]: CSSProperties } = {
   wrapper: {
@@ -108,4 +133,22 @@ const styles: { [key: string]: CSSProperties } = {
     border: 'none',
     marginTop: 10,
   },
+  overlay: {
+  position: 'fixed',
+  inset: 0,
+  background: 'rgba(0,0,0,0.6)',
+  zIndex: 2000,
+},
+modal: {
+  position: 'absolute',
+  bottom: 0,
+  left: 0,
+  right: 0,
+  height: '40%',
+  background: '#111',
+  borderTopLeftRadius: 16,
+  borderTopRightRadius: 16,
+  padding: 16,
+  color: '#fff',
+},
 }
