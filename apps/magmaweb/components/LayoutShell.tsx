@@ -56,6 +56,17 @@ export default function LayoutShell({ children }: Props) {
             style={styles.modal}
             onClick={(e) => e.stopPropagation()}
           >
+            <input
+  type="file"
+  accept="image/*"
+  onChange={(e) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      // 次で使う
+    }
+  }}
+/>
+
             <button
               onClick={async () => {
                 await createPost({
