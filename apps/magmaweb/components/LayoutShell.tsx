@@ -53,7 +53,7 @@ export default function LayoutShell({ children, onOpenPost }: Props) {
 const styles: { [key: string]: CSSProperties } = {
   wrapper: {
     minHeight: '100vh',
-    paddingTop: 0,
+    paddingTop: 32,
     paddingBottom: 54,
     background: '#000',
     color: '#eee',
