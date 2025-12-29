@@ -106,6 +106,6 @@ const styles: { [key: string]: CSSProperties } = {
     background: '#fff',
     color: '#111',
     border: 'none',
-    marginTop: 0,
+    marginTop: 10,
   },
 }
