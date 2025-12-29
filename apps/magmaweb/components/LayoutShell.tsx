@@ -85,7 +85,7 @@ const styles: { [key: string]: CSSProperties } = {
     bottom: 0,
     left: 0,
     right: 0,
-    height: 72,
+    height: 54,
     display: 'flex',
     justifyContent: 'space-around',
     alignItems: 'center',
