@@ -9,6 +9,28 @@ type Props = {
   children: ReactNode
 }
 
+const [file, setFile] = useState<File | null>(null)
+const [uploading, setUploading] = useState(false)
+
+async function uploadToCloudinary(file: File): Promise<string> {
+  const formData = new FormData()
+  formData.append('file', file)
+  formData.append('upload_preset', 'posts_image')
+
+  const res = await fetch(
+    'https://api.cloudinary.com/v1_1/dk8pvfpzx/image/upload',
+    {
+      method: 'POST',
+      body: formData,
+    }
+  )
+
+  const data = await res.json()
+  return data.secure_url
+}
+
+
+
 export default function LayoutShell({ children }: Props) {
   const pathname = usePathname()
   const router = useRouter()
@@ -60,21 +82,26 @@ export default function LayoutShell({ children }: Props) {
   type="file"
   accept="image/*"
   onChange={(e) => {
-    const file = e.target.files?.[0]
-    if (file) {
-      // 次で使う
-    }
+    const f = e.target.files?.[0]
+    if (f) setFile(f)
   }}
 />
-
             <button
               onClick={async () => {
-                await createPost({
-                  type: 'problem',
-                  imageUrl: 'test',
-                })
-                setOpenPost(false)
-              }}
+  if (!file) return
+
+  setUploading(true)
+
+  const imageUrl = await uploadToCloudinary(file)
+
+  await createPost({
+    type: 'problem',
+    imageUrl,
+  })
+
+  setUploading(false)
+  setOpenPost(false)
+}}
             >
               投稿（仮）
             </button>
