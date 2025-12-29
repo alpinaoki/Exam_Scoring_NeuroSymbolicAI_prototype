@@ -53,8 +53,8 @@ export default function LayoutShell({ children, onOpenPost }: Props) {
 const styles: { [key: string]: CSSProperties } = {
   wrapper: {
     minHeight: '100vh',
-    paddingTop: 56,
-    paddingBottom: 72,
+    paddingTop: 0,
+    paddingBottom: 54,
     background: '#000',
     color: '#eee',
   },
@@ -65,8 +65,8 @@ const styles: { [key: string]: CSSProperties } = {
     right: 0,
     height: 32,
     display: 'flex',
-    alignItems: 'left',
-    justifyContent: 'left',
+    alignItems: 'center',
+    justifyContent: 'flex-start',
     background: '#111',
     zIndex: 1000,
     cursor: 'pointer',
