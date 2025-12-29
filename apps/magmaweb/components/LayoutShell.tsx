@@ -9,8 +9,6 @@ type Props = {
   children: ReactNode
 }
 
-const [file, setFile] = useState<File | null>(null)
-const [uploading, setUploading] = useState(false)
 
 async function uploadToCloudinary(file: File): Promise<string> {
   const formData = new FormData()
@@ -35,6 +33,9 @@ export default function LayoutShell({ children }: Props) {
   const pathname = usePathname()
   const router = useRouter()
   const [openPost, setOpenPost] = useState(false)
+
+  const [file, setFile] = useState<File | null>(null)
+  const [uploading, setUploading] = useState(false)
 
   if (pathname === '/login') {
     return <>{children}</>
