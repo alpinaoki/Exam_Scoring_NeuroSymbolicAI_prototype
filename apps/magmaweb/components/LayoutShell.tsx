@@ -100,11 +100,11 @@ const styles: { [key: string]: CSSProperties } = {
   plus: {
     width: 56,
     height: 56,
-    borderRadius: '50%',
+    borderRadius: '30%',
     fontSize: 32,
     background: '#fff',
     color: '#111',
     border: 'none',
-    marginTop: -28,
+    marginTop: -50,
   },
 }
