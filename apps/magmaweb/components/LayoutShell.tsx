@@ -55,7 +55,7 @@ const styles: { [key: string]: CSSProperties } = {
     minHeight: '100vh',
     paddingTop: 32,
     paddingBottom: 54,
-    background: '#000',
+    background: '#eee',
     color: '#eee',
   },
   header: {
