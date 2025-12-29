@@ -88,24 +88,25 @@ export default function LayoutShell({ children }: Props) {
   }}
 />
             <button
-              onClick={async () => {
-  if (!file) return
+  disabled={uploading || !file}
+  onClick={async () => {
+    if (!file) return
+    setUploading(true)
 
-  setUploading(true)
+    const imageUrl = await uploadToCloudinary(file)
 
-  const imageUrl = await uploadToCloudinary(file)
+    await createPost({
+      type: 'problem',
+      imageUrl,
+    })
 
-  await createPost({
-    type: 'problem',
-    imageUrl,
-  })
-
-  setUploading(false)
-  setOpenPost(false)
-}}
-            >
-              投稿（仮）
-            </button>
+    setUploading(false)
+    setOpenPost(false)
+    setFile(null) // 投稿後にファイルをリセット
+  }}
+>
+  {uploading ? '投稿中…' : '投稿（仮）'}
+</button>
           </div>
         </div>
       )}
