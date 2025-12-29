@@ -88,10 +88,11 @@ export default function LayoutShell({ children }: Props) {
   }}
 />
             <button
-  disabled={uploading || !file}
+  disabled={!file || uploading}
   onClick={async () => {
-    if (!file) return
-    setUploading(true)
+    if (!file || uploading) return  // 念のため二重チェック
+
+    setUploading(true)  // すぐに無効化
 
     const imageUrl = await uploadToCloudinary(file)
 
@@ -102,11 +103,12 @@ export default function LayoutShell({ children }: Props) {
 
     setUploading(false)
     setOpenPost(false)
-    setFile(null) // 投稿後にファイルをリセット
+    setFile(null)
   }}
 >
   {uploading ? '投稿中…' : '投稿（仮）'}
 </button>
+
           </div>
         </div>
       )}
