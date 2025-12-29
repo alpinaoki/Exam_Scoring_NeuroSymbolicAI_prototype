@@ -66,7 +66,7 @@ const styles: { [key: string]: CSSProperties } = {
     height: 56,
     display: 'flex',
     alignItems: 'left',
-    justifyContent: 'center',
+    justifyContent: 'left',
     background: '#111',
     zIndex: 1000,
     cursor: 'pointer',
