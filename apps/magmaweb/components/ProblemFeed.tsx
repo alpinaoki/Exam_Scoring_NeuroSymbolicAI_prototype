@@ -2,21 +2,51 @@
 
 import { useEffect, useRef, useState } from 'react'
 import type { CSSProperties } from 'react'
-import { problems as allProblems } from '../data/problems'
+import { createClient } from '@supabase/supabase-js'
+//import { problems as allProblems } from '../data/problems'
 import ProblemCard from './ProblemCard'
 
 const PAGE_SIZE = 5
 
 export default function ProblemFeed() {
-  const [visible, setVisible] = useState(PAGE_SIZE)
+  //const [visible, setVisible] = useState(PAGE_SIZE)
+  type Post = {
+  id: string
+  imageUrl: string
+  created_at: string
+}
+
+const [posts, setPosts] = useState<Post[]>([])
+const [visible, setVisible] = useState(PAGE_SIZE)
+
   const loaderRef = useRef<HTMLDivElement | null>(null)
+
+
+  useEffect(() => {
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  )
+
+  supabase
+    .from('posts')
+    .select('id, imageUrl, created_at')
+    .order('created_at', { ascending: false })
+    .then(({ data, error }) => {
+      if (error) {
+        console.error(error)
+        return
+      }
+      setPosts(data ?? [])
+    })
+}, [])
 
   useEffect(() => {
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
           setVisible((v) =>
-            Math.min(v + PAGE_SIZE, allProblems.length)
+            Math.min(v + PAGE_SIZE, posts.length)
           )
         }
       },
@@ -30,9 +60,14 @@ export default function ProblemFeed() {
   return (
     <div style={styles.page}>
       <div style={styles.container}>
-        {allProblems.slice(0, visible).map((p) => (
-          <ProblemCard key={p.id} image={p.image} problemId={String(p.id)}/>
-        ))}
+        {posts.slice(0, visible).map((p) => (
+  <ProblemCard
+    key={p.id}
+    image={p.imageUrl}
+    problemId={p.id}
+  />
+))}
+
 
         {/* ローダー */}
         <div ref={loaderRef} style={styles.loader}>
