@@ -1,24 +1,41 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@supabase/supabase-js'
+
+type Profile = {
+  handle: string
+}
+
+const [profile, setProfile] = useState<Profile | null>(null)
+
 
 export default function MePage() {
   const router = useRouter()
 
   useEffect(() => {
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-    )
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  )
 
-    supabase.auth.getUser().then(({ data }) => {
-      if (!data.user) {
-        router.replace('/login')
-      }
-    })
-  }, [router])
+  supabase.auth.getUser().then(async ({ data }) => {
+    if (!data.user) {
+      router.replace('/login')
+      return
+    }
+
+    const { data: profileData } = await supabase
+      .from('profiles')
+      .select('handle')
+      .eq('user_id', data.user.id)
+      .single()
+
+    setProfile(profileData)
+  })
+}, [router])
+
 
   const handleLogout = async () => {
     const supabase = createClient(
@@ -35,8 +52,11 @@ export default function MePage() {
       <section style={styles.profile}>
         <div style={styles.avatar} />
         <div>
-          <div style={styles.name}>Your Name</div>
-          <div style={styles.id}>@your_id</div>
+          <div style={styles.name}>You</div>
+            <div style={styles.id}>
+            @{profile?.handle ?? 'unknown'}
+          </div>
+
         </div>
       </section>
 
