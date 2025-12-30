@@ -18,7 +18,7 @@ export default function ProblemFeed() {
   created_at: string
   profiles: {
     username: string
-  }[] | null
+  } | null
 }
 
 const [posts, setPosts] = useState<Post[]>([])
@@ -85,11 +85,12 @@ const [visible, setVisible] = useState(PAGE_SIZE)
       
       {posts.slice(0, visible).map((p) => (
       <ProblemCard
-        key={p.id}
-        image={p.image_url}
-        problemId={p.id}
-        username={p.profiles?.[0]?.username ?? 'unknown'}
-  />
+  key={p.id}
+  image={p.image_url}
+  problemId={p.id}
+  username={p.profiles?.username ?? 'unknown'}
+/>
+
 ))}
 
 
