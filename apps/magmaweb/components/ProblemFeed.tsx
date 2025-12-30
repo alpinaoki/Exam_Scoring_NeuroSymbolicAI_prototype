@@ -40,9 +40,10 @@ const [visible, setVisible] = useState(PAGE_SIZE)
     id,
     image_url,
     created_at,
-    profiles:profiles!posts_user_id_fkey (
-      username
-    )
+    profiles: {
+    username: string
+    } | null
+
   `)
   .order('created_at', { ascending: false })
 
@@ -89,7 +90,7 @@ const [visible, setVisible] = useState(PAGE_SIZE)
         key={p.id}
         image={p.image_url}
         problemId={p.id}
-        username={p.profiles?.[0]?.username ?? 'unknown'}
+        username={p.profiles?.username ?? 'unknown'}
   />
 ))}
 
