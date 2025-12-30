@@ -30,7 +30,7 @@ const [visible, setVisible] = useState(PAGE_SIZE)
 
   supabase
     .from('posts')
-    .select('id, imageUrl, created_at')
+    .select('id, image_url, created_at')
     .order('created_at', { ascending: false })
     .then(({ data, error }) => {
       if (error) {
