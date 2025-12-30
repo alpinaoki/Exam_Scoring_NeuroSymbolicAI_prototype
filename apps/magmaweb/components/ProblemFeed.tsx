@@ -11,13 +11,14 @@ const PAGE_SIZE = 5
 export default function ProblemFeed() {
   //const [visible, setVisible] = useState(PAGE_SIZE)
   type Post = {
-  id: string
-  image_url: string | null
-  created_at: string
-  profiles: {
-    username: string
-  } | null
-}
+    id: string
+    image_url: string | null
+    created_at: string
+    profiles: {
+      username: string
+    }[] | null
+  }
+
 
 const [posts, setPosts] = useState<Post[]>([])
 const [visible, setVisible] = useState(PAGE_SIZE)
@@ -84,7 +85,7 @@ const [visible, setVisible] = useState(PAGE_SIZE)
         key={p.id}
         image={p.image_url}
         problemId={p.id}
-        username={p.profiles?.username ?? 'unknown'}
+        username={p.profiles?.[0]?.username ?? 'unknown'}
   />
 ))}
 
