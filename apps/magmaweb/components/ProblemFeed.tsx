@@ -11,14 +11,13 @@ const PAGE_SIZE = 5
 export default function ProblemFeed() {
   //const [visible, setVisible] = useState(PAGE_SIZE)
   type Post = {
-    id: string
-    image_url: string | null
-    created_at: string
-    profiles: {
-      username: string
-    }[] | null
-  }
-
+  id: string
+  image_url: string | null
+  created_at: string
+  profiles: {
+    username: string
+  } | null
+}
 
 const [posts, setPosts] = useState<Post[]>([])
 const [visible, setVisible] = useState(PAGE_SIZE)
@@ -85,7 +84,7 @@ const [visible, setVisible] = useState(PAGE_SIZE)
         key={p.id}
         image={p.image_url}
         problemId={p.id}
-        username={p.profiles?.[0]?.username ?? 'unknown'}
+        username={p.profiles?.username ?? 'unknown'}
   />
 ))}
 
@@ -99,25 +98,7 @@ const [visible, setVisible] = useState(PAGE_SIZE)
   </div>
 )
 
-  return (
-    <div style={styles.page}>
-      <div style={styles.container}>
-        {posts.slice(0, visible).map((p) => (
-  <ProblemCard
-    key={p.id}
-    image={p.image_url}
-    problemId={p.id}
-  />
-))}
 
-
-        {/* ローダー */}
-        <div ref={loaderRef} style={styles.loader}>
-          読み込み中…
-        </div>
-      </div>
-    </div>
-  )
 }
 
 const styles: { [key: string]: CSSProperties } = {
