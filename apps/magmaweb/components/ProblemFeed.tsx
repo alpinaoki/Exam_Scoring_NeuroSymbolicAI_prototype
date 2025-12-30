@@ -33,16 +33,18 @@ const [visible, setVisible] = useState(PAGE_SIZE)
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   )
 
-  supabase
+ supabase
   .from('posts')
   .select(`
     id,
     image_url,
     created_at,
-    profiles!inner (
+    profiles:profiles!posts_user_id_fkey (
       username
     )
   `)
+  .order('created_at', { ascending: false })
+
   .order('created_at', { ascending: false })
 
     .then(({ data, error }) => {
