@@ -19,7 +19,9 @@ export default function ProblemFeed() {
   created_at: string
   profiles: {
     username: string
-  }[] | null
+  } | null
+}
+
 }
 
 const [posts, setPosts] = useState<Post[]>([])
@@ -34,21 +36,18 @@ const [visible, setVisible] = useState(PAGE_SIZE)
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   )
 
- supabase
-  .from('posts')
-  .select(`
-    id,
-    image_url,
-    created_at,
-    profiles: {
-    username: string
-    } | null
-
-  `)
-  .order('created_at', { ascending: false })
-
-  .order('created_at', { ascending: false })
-
+  supabase
+    .from('posts')
+    .select(`
+      id,
+      image_url,
+      created_at,
+      profiles:profiles!posts_user_id_fkey (
+        username
+      )
+    `)
+    .order('created_at', { ascending: false })
+    .returns<Post[]>()
     .then(({ data, error }) => {
       if (error) {
         console.error(error)
@@ -57,6 +56,7 @@ const [visible, setVisible] = useState(PAGE_SIZE)
       setPosts(data ?? [])
     })
 }, [])
+
 
   useEffect(() => {
     const observer = new IntersectionObserver(
