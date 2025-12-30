@@ -12,7 +12,7 @@ export default function ProblemFeed() {
   //const [visible, setVisible] = useState(PAGE_SIZE)
   type Post = {
   id: string
-  imageUrl: string
+  image_url: string
   created_at: string
 }
 
@@ -63,7 +63,7 @@ const [visible, setVisible] = useState(PAGE_SIZE)
         {posts.slice(0, visible).map((p) => (
   <ProblemCard
     key={p.id}
-    image={p.imageUrl}
+    image={p.image_url}
     problemId={p.id}
   />
 ))}
