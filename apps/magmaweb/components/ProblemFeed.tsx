@@ -56,6 +56,33 @@ const [visible, setVisible] = useState(PAGE_SIZE)
     if (loaderRef.current) observer.observe(loaderRef.current)
     return () => observer.disconnect()
   }, [])
+  
+  return (
+  <div style={styles.page}>
+    <div style={styles.container}>
+
+      {posts.length === 0 && (
+        <div style={{ color: '#999', textAlign: 'center' }}>
+          投稿がありません
+        </div>
+      )}
+
+      {posts.slice(0, visible).map((p) => (
+        <ProblemCard
+          key={p.id}
+          image={p.image_url}
+          problemId={p.id}
+        />
+      ))}
+
+      {posts.length > visible && (
+        <div ref={loaderRef} style={styles.loader}>
+          読み込み中…
+        </div>
+      )}
+    </div>
+  </div>
+)
 
   return (
     <div style={styles.page}>

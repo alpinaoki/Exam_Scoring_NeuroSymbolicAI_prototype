@@ -194,3 +194,4 @@ modal: {
   color: '#fff',
 },
 }
+
