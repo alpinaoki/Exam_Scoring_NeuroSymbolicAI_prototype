@@ -120,10 +120,10 @@ export default function LayoutShell({ children }: Props) {
 const styles: { [key: string]: CSSProperties } = {
   wrapper: {
     minHeight: '100vh',
-    paddingTop: 16,
-    paddingBottom: 27,
-    background: '#eee',
-    color: '#eee',
+    paddingTop: 32,
+    paddingBottom: 54,
+    background: '#ffffffff',
+    color: '#ffffffff',
   },
   header: {
     position: 'fixed',
