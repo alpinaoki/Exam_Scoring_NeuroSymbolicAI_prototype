@@ -8,34 +8,31 @@ type Profile = {
   handle: string
 }
 
-const [profile, setProfile] = useState<Profile | null>(null)
-
-
 export default function MePage() {
   const router = useRouter()
+  const [profile, setProfile] = useState<Profile | null>(null)  // ←ここに移動
 
   useEffect(() => {
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  )
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    )
 
-  supabase.auth.getUser().then(async ({ data }) => {
-    if (!data.user) {
-      router.replace('/login')
-      return
-    }
+    supabase.auth.getUser().then(async ({ data }) => {
+      if (!data.user) {
+        router.replace('/login')
+        return
+      }
 
-    const { data: profileData } = await supabase
-      .from('profiles')
-      .select('handle')
-      .eq('user_id', data.user.id)
-      .single()
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('handle')
+        .eq('user_id', data.user.id)
+        .single()
 
-    setProfile(profileData)
-  })
-}, [router])
-
+      setProfile(profileData)
+    })
+  }, [router])
 
   const handleLogout = async () => {
     const supabase = createClient(
@@ -53,10 +50,7 @@ export default function MePage() {
         <div style={styles.avatar} />
         <div>
           <div style={styles.name}>You</div>
-            <div style={styles.id}>
-            @{profile?.handle ?? 'unknown'}
-          </div>
-
+          <div style={styles.id}>@{profile?.handle ?? 'unknown'}</div>
         </div>
       </section>
 
@@ -68,9 +62,7 @@ export default function MePage() {
 
       {/* Content */}
       <section style={styles.content}>
-        <div style={styles.empty}>
-          まだ投稿がありません
-        </div>
+        <div style={styles.empty}>まだ投稿がありません</div>
       </section>
 
       {/* Logout */}
@@ -82,60 +74,15 @@ export default function MePage() {
 }
 
 const styles: { [key: string]: React.CSSProperties } = {
-  wrapper: {
-    padding: '16px',
-    color: '#111',
-  },
-  profile: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: 12,
-    marginBottom: 16,
-  },
-  avatar: {
-    width: 48,
-    height: 48,
-    borderRadius: '50%',
-    background: '#999',
-  },
-  name: {
-    fontWeight: 'bold',
-    fontSize: 16,
-  },
-  id: {
-    fontSize: 12,
-    color: '#555',
-  },
-  tabs: {
-    display: 'flex',
-    gap: 16,
-    borderBottom: '1px solid #ccc',
-    paddingBottom: 8,
-    marginBottom: 16,
-  },
-  tab: {
-    fontSize: 14,
-    color: '#777',
-  },
-  tabActive: {
-    fontSize: 14,
-    fontWeight: 'bold',
-  },
-  content: {
-    minHeight: 200,
-  },
-  empty: {
-    fontSize: 14,
-    color: '#666',
-  },
-  logout: {
-    marginTop: 32,
-    width: '100%',
-    padding: '12px 0',
-    background: '#111',
-    color: '#eee',
-    border: 'none',
-    borderRadius: 6,
-    fontSize: 14,
-  },
+  wrapper: { padding: '16px', color: '#111' },
+  profile: { display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 },
+  avatar: { width: 48, height: 48, borderRadius: '50%', background: '#999' },
+  name: { fontWeight: 'bold', fontSize: 16 },
+  id: { fontSize: 12, color: '#555' },
+  tabs: { display: 'flex', gap: 16, borderBottom: '1px solid #ccc', paddingBottom: 8, marginBottom: 16 },
+  tab: { fontSize: 14, color: '#777' },
+  tabActive: { fontSize: 14, fontWeight: 'bold' },
+  content: { minHeight: 200 },
+  empty: { fontSize: 14, color: '#666' },
+  logout: { marginTop: 32, width: '100%', padding: '12px 0', background: '#111', color: '#eee', border: 'none', borderRadius: 6, fontSize: 14 },
 }
