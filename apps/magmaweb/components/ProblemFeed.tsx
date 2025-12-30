@@ -12,7 +12,7 @@ type Post = {
   image_url: string | null
   created_at: string
   profiles: {
-    username: string
+    handle: string
   } | null
 }
 
@@ -34,7 +34,7 @@ export default function ProblemFeed() {
         image_url,
         created_at,
         profiles:profiles!posts_user_id_fkey (
-          username
+          handle
         )
       `)
       .order('created_at', { ascending: false })
@@ -78,7 +78,7 @@ export default function ProblemFeed() {
             key={p.id}
             image={p.image_url}
             problemId={p.id}
-            username={p.profiles?.username ?? 'unknown'}
+            username={p.profiles?.handle ?? 'unknown'}
           />
         ))}
 
