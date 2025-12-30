@@ -40,7 +40,7 @@ const [visible, setVisible] = useState(PAGE_SIZE)
     id,
     image_url,
     created_at,
-    profiles:profiles!profiles_user_id_fkey (
+    profiles:profiles!posts_user_id_fkey (
       username
     )
   `)
