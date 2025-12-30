@@ -5,12 +5,31 @@ import type { CSSProperties } from 'react'
 import ProblemActionBar from './ProblemActionBar'
 
 type Props = {
-  image: string
+  image: string | null
   problemId: string
+  username: string
 }
 
-export default function ProblemCard({ image, problemId }: Props) {
+export default function ProblemCard({ image, problemId, username }: Props) {
   const [preview, setPreview] = useState<string | null>(null)
+
+  return (
+  <div style={styles.card}>
+    <div style={styles.username}>
+      @{username}
+    </div>
+
+    {image && (
+      <img src={image} alt="problem" style={styles.image} />
+    )}
+
+    <ProblemActionBar
+      problemId={problemId}
+      bookmarkCount={12}
+      answerCount={3}
+    />
+  </div>
+)
 
   return (
     <div style={styles.card}>
@@ -44,5 +63,9 @@ const styles: { [key: string]: CSSProperties } = {
     borderRadius: '8px',
     objectFit: 'contain',
     border: '1px solid #eee',
+  },
+  username: {
+    fontSize: '13px',
+    color: '#555',
   },
 }

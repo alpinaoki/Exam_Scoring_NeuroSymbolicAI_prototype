@@ -12,8 +12,11 @@ export default function ProblemFeed() {
   //const [visible, setVisible] = useState(PAGE_SIZE)
   type Post = {
   id: string
-  image_url: string
+  image_url: string | null
   created_at: string
+  profiles: {
+    username: string
+  } | null
 }
 
 const [posts, setPosts] = useState<Post[]>([])
@@ -28,10 +31,18 @@ const [visible, setVisible] = useState(PAGE_SIZE)
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   )
 
-  supabase
+  supabase  
     .from('posts')
-    .select('id, image_url, created_at')
+    .select(`
+      id,
+      image_url,
+      created_at,
+      profiles (
+        username
+      )
+  `  )
     .order('created_at', { ascending: false })
+
     .then(({ data, error }) => {
       if (error) {
         console.error(error)
@@ -67,13 +78,16 @@ const [visible, setVisible] = useState(PAGE_SIZE)
         </div>
       )}
 
+      
       {posts.slice(0, visible).map((p) => (
-        <ProblemCard
-          key={p.id}
-          image={p.image_url}
-          problemId={p.id}
-        />
-      ))}
+      <ProblemCard
+        key={p.id}
+        image={p.image_url}
+        problemId={p.id}
+        username={p.profiles?.username ?? 'unknown'}
+  />
+))}
+
 
       {posts.length > visible && (
         <div ref={loaderRef} style={styles.loader}>
