@@ -121,7 +121,7 @@ const styles: { [key: string]: CSSProperties } = {
   wrapper: {
     minHeight: '100vh',
     paddingTop: 16,
-    paddingBottom: 54,
+    paddingBottom: 27,
     background: '#eee',
     color: '#eee',
   },
