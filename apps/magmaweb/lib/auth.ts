@@ -5,11 +5,6 @@ function usernameToEmail(username: string) {
   return `${username}@magmathe.com`
 }
 
-/**
- * サインアップ
- * - auth.users を作成
- * - 同時に profiles に必ず1行作る
- */
 export async function signUp(username: string, password: string) {
   const email = usernameToEmail(username)
 
@@ -20,16 +15,19 @@ export async function signUp(username: string, password: string) {
 
   if (error) throw error
 
-  const user = data.user
-  if (!user) {
-    throw new Error('ユーザー作成に失敗しました')
+  // ⚠️ signUp 直後は user が null の場合がある
+  if (!data.user) {
+    // この場合は「仮成功」扱い（メール認証待ち）
+    return
   }
 
-  // 🔽 profiles を作成
+  const user = data.user
+
   const { error: profileError } = await supabase
     .from('profiles')
     .insert({
       user_id: user.id,
+      username: username,
       handle: username,
     })
 
@@ -38,9 +36,6 @@ export async function signUp(username: string, password: string) {
   }
 }
 
-/**
- * ログイン
- */
 export async function signIn(username: string, password: string) {
   const email = usernameToEmail(username)
 
@@ -52,17 +47,11 @@ export async function signIn(username: string, password: string) {
   if (error) throw error
 }
 
-/**
- * ログアウト
- */
 export async function signOut() {
   const { error } = await supabase.auth.signOut()
   if (error) throw error
 }
 
-/**
- * 現在のユーザー取得
- */
 export async function getCurrentUser() {
   const { data, error } = await supabase.auth.getUser()
   if (error) throw error
