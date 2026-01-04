@@ -21,7 +21,7 @@ magmaweb/
 ｜｜ーlayout.tsx
 ｜｜ーpage.tsx
 ーcomponents/
-｜ーHeader.tsx（たぶんいらない空ファイル）
+｜ーLayoutShell.tsx
 ｜ーProblemActionBar.tsx
 ｜ーProblemCard.tsx
 ｜ーProblemFeed.tsx
@@ -30,6 +30,8 @@ magmaweb/
 ｜ーproblems.ts
 ーlib/
 ｜ーauth.ts
+｜ーpost.ts
+｜ーsupabase.ts
 ｜ーupload.ts
 ーpublic
 ｜ーproblems/
