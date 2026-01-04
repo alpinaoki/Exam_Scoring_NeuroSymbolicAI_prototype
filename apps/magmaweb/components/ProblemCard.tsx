@@ -33,25 +33,6 @@ export default function ProblemCard({ image, problemId, username }: Props) {
   </div>
 )
 
-  return (
-    <div style={styles.card}>
-      <img src={image} alt="problem" style={styles.image} />
-
-      {preview && (
-        <img
-          src={preview}
-          alt="preview"
-          style={styles.image}
-        />
-      )}
-
-      <ProblemActionBar
-        problemId={problemId}
-        bookmarkCount={12}
-        answerCount={3}
-      />
-    </div>
-  )
 }
 
 const styles: { [key: string]: CSSProperties } = {
