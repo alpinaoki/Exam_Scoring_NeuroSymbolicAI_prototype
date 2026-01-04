@@ -24,10 +24,12 @@ export default function ProblemCard({ image, problemId, username }: Props) {
     )}
 
     <ProblemActionBar
-      problemId={problemId}
-      bookmarkCount={12}
-      answerCount={3}
-    />
+  problemId={problemId}
+  rootId={problemId}   // ← ここが重要
+  bookmarkCount={12}
+  answerCount={3}
+/>
+
   </div>
 )
 
