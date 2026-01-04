@@ -1,23 +1,26 @@
+// lib/upload.ts
 'use client'
 
-import { createClient } from '@supabase/supabase-js'
+/**
+ * 画像を Cloudinary にアップロードして URL を返す
+ */
+export async function uploadImageToCloudinary(file: File): Promise<string> {
+  const formData = new FormData()
+  formData.append('file', file)
+  formData.append('upload_preset', 'posts_image')
 
-export async function uploadAnswerImage(
-  file: File,
-  problemId: string
-) {
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  const res = await fetch(
+    'https://api.cloudinary.com/v1_1/dk8pvfpzx/image/upload',
+    {
+      method: 'POST',
+      body: formData,
+    }
   )
 
-  const filePath = `${problemId}/${Date.now()}.png`
+  if (!res.ok) {
+    throw new Error('Image upload failed')
+  }
 
-  const { error } = await supabase.storage
-    .from('answers')
-    .upload(filePath, file)
-
-  if (error) throw error
-
-  return filePath
+  const data = await res.json()
+  return data.secure_url as string
 }

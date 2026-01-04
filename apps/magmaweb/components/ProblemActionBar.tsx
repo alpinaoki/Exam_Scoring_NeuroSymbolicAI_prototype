@@ -1,15 +1,19 @@
+// components/ProblemActionBar.tsx
 'use client'
 
-import { uploadAnswerImage } from '../lib/upload'
+import { uploadImageToCloudinary } from '../lib/upload'
+import { createAnswer } from '../lib/posts'
 
 type Props = {
   problemId: string
+  rootId: string
   bookmarkCount: number
   answerCount: number
 }
 
 export default function ProblemActionBar({
   problemId,
+  rootId,
   bookmarkCount,
   answerCount,
 }: Props) {
@@ -26,8 +30,16 @@ export default function ProblemActionBar({
           onChange={async (e) => {
             const file = e.target.files?.[0]
             if (!file) return
-            await uploadAnswerImage(file, problemId)
-            alert('提出完了')
+
+            const imageUrl = await uploadImageToCloudinary(file)
+
+            await createAnswer({
+              imageUrl,
+              problemId,
+              rootId,
+            })
+
+            alert('解答を投稿しました')
           }}
         />
       </label>

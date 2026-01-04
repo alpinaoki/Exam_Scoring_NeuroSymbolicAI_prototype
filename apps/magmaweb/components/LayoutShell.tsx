@@ -102,7 +102,6 @@ export default function LayoutShell({ children }: Props) {
     const imageUrl = await uploadToCloudinary(file)
 
     await createPost({
-      type: 'problem',
       imageUrl,
     })
 
