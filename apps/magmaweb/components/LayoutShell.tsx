@@ -58,11 +58,16 @@ export default function LayoutShell({ children }: Props) {
         </button>
 
         <button
-          style={styles.plus}
-          onClick={() => setOpenPost(true)}
-        >
-          ＋
-        </button>
+  style={styles.plus}
+  onClick={() => {
+    setFile(null)
+    setUploading(false)
+    setOpenPost(true)
+  }}
+>
+  ＋
+</button>
+
 
         <button style={styles.icon} onClick={() => router.push('/me')}>
           👤
