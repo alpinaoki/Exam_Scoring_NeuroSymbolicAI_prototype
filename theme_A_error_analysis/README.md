@@ -13,6 +13,7 @@
 
 12/27 supabaseと連携、画像がクラウドに保存できるように。
 12/28 ファイル構造整理
+1/4　更新
 magmaweb/
 ーapp/
 ｜ーfeed/page.tsx
