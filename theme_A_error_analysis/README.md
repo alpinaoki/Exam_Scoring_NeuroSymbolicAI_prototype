@@ -17,6 +17,7 @@ magmaweb/
 ーapp/
 ｜ーfeed/page.tsx
 ｜ーlogin/page.tsx
+｜ーme/page.ts
 ｜ーstyles/
 ｜｜ーlayout.tsx
 ｜｜ーpage.tsx
