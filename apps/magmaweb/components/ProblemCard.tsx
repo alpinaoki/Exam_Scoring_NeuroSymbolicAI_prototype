@@ -1,7 +1,7 @@
 'use client'
 
-import { useState } from 'react'   // ← これを追加
 import type { CSSProperties } from 'react'
+import { useRouter } from 'next/navigation'
 import ProblemActionBar from './ProblemActionBar'
 
 type Props = {
@@ -11,28 +11,31 @@ type Props = {
 }
 
 export default function ProblemCard({ image, problemId, username }: Props) {
-  const [preview, setPreview] = useState<string | null>(null)
+  const router = useRouter()
 
   return (
-  <div style={styles.card}>
-    <div style={styles.username}>
-      @{username}
+    <div style={styles.card}>
+      <div style={styles.username}>
+        @{username}
+      </div>
+
+      {image && (
+        <img
+          src={image}
+          alt="problem"
+          style={{ ...styles.image, cursor: 'pointer' }}
+          onClick={() => router.push(`/threads/${problemId}`)}
+        />
+      )}
+
+      <ProblemActionBar
+        problemId={problemId}
+        rootId={problemId}
+        bookmarkCount={12}
+        answerCount={3}
+      />
     </div>
-
-    {image && (
-      <img src={image} alt="problem" style={styles.image} />
-    )}
-
-    <ProblemActionBar
-  problemId={problemId}
-  rootId={problemId}   // ← ここが重要
-  bookmarkCount={12}
-  answerCount={3}
-/>
-
-  </div>
-)
-
+  )
 }
 
 const styles: { [key: string]: CSSProperties } = {

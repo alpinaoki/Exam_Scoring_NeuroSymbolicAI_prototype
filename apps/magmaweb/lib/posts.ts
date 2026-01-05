@@ -69,3 +69,33 @@ export async function createAnswer({
 
   if (error) throw error
 }
+
+// lib/posts.ts に追加
+
+/**
+ * 問題（thread root）を1件取得
+ */
+export async function getProblemById(id: string) {
+  const { data, error } = await supabase
+    .from('posts')
+    .select('*')
+    .eq('id', id)
+    .single()
+
+  if (error) throw error
+  return data
+}
+
+/**
+ * その問題に紐づく解答一覧を取得
+ */
+export async function getAnswersByProblemId(problemId: string) {
+  const { data, error } = await supabase
+    .from('posts')
+    .select('*')
+    .eq('parent_id', problemId)
+    .order('created_at', { ascending: true })
+
+  if (error) throw error
+  return data
+}
