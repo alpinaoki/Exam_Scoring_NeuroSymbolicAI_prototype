@@ -30,7 +30,7 @@ export default function ThreadPage({
       <ProblemCard
         image={problem.image_url}
         problemId={problem.id}
-        username={problem.profiles?.handle ?? 'unknown'}
+        username={problem.user_id}
       />
 
       {/* 解答一覧 */}
