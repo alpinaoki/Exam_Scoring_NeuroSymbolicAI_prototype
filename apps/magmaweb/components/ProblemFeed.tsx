@@ -37,6 +37,7 @@ export default function ProblemFeed() {
           handle
         )
       `)
+      .eq('type', 'problem')
       .order('created_at', { ascending: false })
       .returns<Post[]>()
       .then(({ data, error }) => {
