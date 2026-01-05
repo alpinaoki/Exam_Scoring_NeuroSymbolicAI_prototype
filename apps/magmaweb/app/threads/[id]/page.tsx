@@ -1,8 +1,8 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { getProblemById, getAnswersByProblemId } from '@/lib/posts'
-import ProblemCard from '@/components/ProblemCard'
+import { getProblemById, getAnswersByProblemId } from '../../../lib/posts'
+import ProblemCard from '../../../components/ProblemCard'
 
 export default function ThreadPage({
   params,
