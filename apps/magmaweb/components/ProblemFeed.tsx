@@ -14,6 +14,9 @@ type Post = {
   profiles: {
     handle: string
   } | null
+  answers: {
+    count: number
+  }[] | null
 }
 
 export default function ProblemFeed() {
@@ -35,6 +38,9 @@ export default function ProblemFeed() {
         created_at,
         profiles:profiles!posts_user_id_fkey (
           handle
+        ),
+        answers:posts!posts_parent_id_fkey (
+          count
         )
       `)
       .eq('type', 'problem')
@@ -80,6 +86,7 @@ export default function ProblemFeed() {
             image={p.image_url}
             problemId={p.id}
             username={p.profiles?.handle ?? 'unknown'}
+            answerCount={p.answers?.[0]?.count ?? 0}
           />
         ))}
 
