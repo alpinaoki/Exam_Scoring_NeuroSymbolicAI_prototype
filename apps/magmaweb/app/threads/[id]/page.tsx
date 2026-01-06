@@ -39,11 +39,11 @@ export default function ThreadPage({
           border: 'none',
           color: '#0070f3',
           cursor: 'pointer',
-          fontSize: '14px',
-          marginBottom: '4px',
+          fontSize: '24px',
+          marginBottom: '10px',
         }}
       >
-        ← フィードに戻る
+        ← back
       </button>
 
       {/* 問題 */}
