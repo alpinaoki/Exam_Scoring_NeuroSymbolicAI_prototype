@@ -35,8 +35,7 @@ export default function ProblemFeed() {
         created_at,
         profiles:profiles!posts_user_id_fkey (
           handle
-        ),
-        answers:posts!posts_parent_id_fkey (id)
+        )
       `)
       .eq('type', 'problem')
       .order('created_at', { ascending: false })
