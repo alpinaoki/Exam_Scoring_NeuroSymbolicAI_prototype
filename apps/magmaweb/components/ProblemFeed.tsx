@@ -14,7 +14,6 @@ type Post = {
   profiles: {
     handle: string
   } | null
-  answers: { id: string }[]   // ← 解答数用
 }
 
 export default function ProblemFeed() {
@@ -37,9 +36,7 @@ export default function ProblemFeed() {
         profiles:profiles!posts_user_id_fkey (
           handle
         ),
-        answers:posts!posts_parent_id_fkey (
-          id
-        )
+        answers:posts!posts_parent_id_fkey (id)
       `)
       .eq('type', 'problem')
       .order('created_at', { ascending: false })
@@ -84,7 +81,6 @@ export default function ProblemFeed() {
             image={p.image_url}
             problemId={p.id}
             username={p.profiles?.handle ?? 'unknown'}
-            answerCount={p.answers.length}   // ← ここで渡す
           />
         ))}
 
