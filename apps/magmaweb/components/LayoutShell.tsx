@@ -54,7 +54,7 @@ export default function LayoutShell({ children }: Props) {
       {/* Footer */}
       <footer style={styles.footer}>
         <button style={styles.icon} onClick={() => router.push('/feed')}>
-          📰
+          ？
         </button>
 
         <button
