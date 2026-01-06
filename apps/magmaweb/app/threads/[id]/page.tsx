@@ -28,10 +28,11 @@ export default function ThreadPage({
     <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
       {/* 問題 */}
       <ProblemCard
-        image={problem.image_url}
-        problemId={problem.id}
-        username={problem.user_id}
-      />
+  image={problem.image_url}
+  problemId={problem.id}
+  username={problem.profiles.handle}
+/>
+
 
       {/* 解答一覧 */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>

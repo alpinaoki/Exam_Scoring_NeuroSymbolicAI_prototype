@@ -35,7 +35,6 @@ export async function createPost({
 
   if (error) throw error
 
-  // root_id を自分自身にする
   await supabase
     .from('posts')
     .update({ root_id: inserted.id })
@@ -70,15 +69,21 @@ export async function createAnswer({
   if (error) throw error
 }
 
-// lib/posts.ts に追加
-
 /**
- * 問題（thread root）を1件取得
+ * 問題（thread root）を1件取得（投稿者handle付き）
  */
 export async function getProblemById(id: string) {
   const { data, error } = await supabase
     .from('posts')
-    .select('*')
+    .select(`
+      id,
+      image_url,
+      user_id,
+      created_at,
+      profiles (
+        handle
+      )
+    `)
     .eq('id', id)
     .single()
 
@@ -87,12 +92,20 @@ export async function getProblemById(id: string) {
 }
 
 /**
- * その問題に紐づく解答一覧を取得
+ * 解答一覧を取得（投稿者handle付き）
  */
 export async function getAnswersByProblemId(problemId: string) {
   const { data, error } = await supabase
     .from('posts')
-    .select('*')
+    .select(`
+      id,
+      image_url,
+      user_id,
+      created_at,
+      profiles (
+        handle
+      )
+    `)
     .eq('parent_id', problemId)
     .order('created_at', { ascending: true })
 
