@@ -43,7 +43,7 @@ export default function ThreadPage({
           margin: '10px',
         }}
       >
-        ← back
+        ←
       </button>
 
       {/* 問題 */}

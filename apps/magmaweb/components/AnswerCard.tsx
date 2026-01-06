@@ -43,6 +43,7 @@ const styles: { [key: string]: CSSProperties } = {
     display: 'flex',
     flexDirection: 'column',
     gap: 8,
+    padding: '0 16px',
   },
   image: {
     width: '100%',
