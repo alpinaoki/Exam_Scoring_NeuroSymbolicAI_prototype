@@ -8,15 +8,9 @@ type Props = {
   image: string | null
   problemId: string
   username: string
-  answerCount: number
 }
 
-export default function ProblemCard({
-  image,
-  problemId,
-  username,
-  answerCount,
-}: Props) {
+export default function ProblemCard({ image, problemId, username }: Props) {
   const router = useRouter()
 
   return (
@@ -37,8 +31,8 @@ export default function ProblemCard({
       <ProblemActionBar
         problemId={problemId}
         rootId={problemId}
-        bookmarkCount={0} // ← 次ここ
-        answerCount={answerCount}
+        bookmarkCount={12}
+        answerCount={3}
       />
     </div>
   )

@@ -51,7 +51,6 @@ export default function ThreadPage({
         image={problem.image_url}
         problemId={problem.id}
         username={problem.profiles.handle}
-        answerCount={2}
       />
 
       {/* 解答一覧 */}
