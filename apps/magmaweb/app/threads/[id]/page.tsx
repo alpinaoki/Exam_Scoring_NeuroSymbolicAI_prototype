@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { getProblemById, getAnswersByProblemId } from '../../../lib/posts'
-import ProblemView from '../../../components/ProblemView'
+import ProblemCard from '../../../components/ProblemCard'
 import AnswerCard from '../../../components/AnswerCard'
 
 export default function ThreadPage({
@@ -30,9 +30,9 @@ export default function ThreadPage({
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 24, padding: '0 8px' }}>
       
-      {/* 戻る */}
+      {/* 戻るリンク */}
       <button
-        onClick={() => router.replace('/feed')}
+        onClick={() => router.replace(`/feed`)}
         style={{
           alignSelf: 'flex-start',
           background: 'none',
@@ -46,13 +46,14 @@ export default function ThreadPage({
         ←
       </button>
 
-      {/* 問題（表示専用） */}
-      <ProblemView
+      {/* 問題 */}
+      <ProblemCard
         image={problem.image_url}
+        problemId={problem.id}
         username={problem.profiles.handle}
       />
 
-      {/* 解答 */}
+      {/* 解答一覧 */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
         {answers.map((a) => (
           <AnswerCard
