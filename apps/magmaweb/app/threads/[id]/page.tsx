@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { getProblemById, getAnswersByProblemId } from '../../../lib/posts'
 import ProblemCard from '../../../components/ProblemCard'
+import AnswerCard from '../../../components/AnswerCard'
 
 export default function ThreadPage({
   params,
@@ -36,18 +37,16 @@ export default function ThreadPage({
 
       {/* 解答一覧 */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+        
         {answers.map((a) => (
-          <img
-            key={a.id}
-            src={a.image_url}
-            alt="answer"
-            style={{
-              width: '100%',
-              border: '1px solid #eee',
-              borderRadius: 8,
-            }}
-          />
-        ))}
+  <AnswerCard
+    key={a.id}
+    image={a.image_url}
+    answerId={a.id}
+    rootId={problem.id}
+    username={a.profiles.handle}
+  />
+))}
       </div>
     </div>
   )
