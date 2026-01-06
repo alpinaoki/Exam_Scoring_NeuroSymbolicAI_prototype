@@ -32,7 +32,7 @@ export default function ThreadPage({
       
       {/* 戻るリンク */}
       <button
-        onClick={() => router.push(`/feed}`)}
+        onClick={() => router.push(`magmathe.vercel.app/feed}`)}
         style={{
           alignSelf: 'flex-start',
           background: 'none',
