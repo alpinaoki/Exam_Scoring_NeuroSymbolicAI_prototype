@@ -40,7 +40,7 @@ export default function ThreadPage({
           color: '#0070f3',
           cursor: 'pointer',
           fontSize: '24px',
-          margin: '10px',
+          margin: '5px',
         }}
       >
         ←
