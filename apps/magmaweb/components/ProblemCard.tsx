@@ -2,7 +2,9 @@
 
 import type { CSSProperties } from 'react'
 import { useRouter } from 'next/navigation'
+import { useEffect, useState } from 'react'
 import ProblemActionBar from './ProblemActionBar'
+import { getAnswerCount } from '../lib/posts'
 
 type Props = {
   image: string | null
@@ -12,6 +14,11 @@ type Props = {
 
 export default function ProblemCard({ image, problemId, username }: Props) {
   const router = useRouter()
+  const [answerCount, setAnswerCount] = useState(0)
+
+  useEffect(() => {
+    getAnswerCount(problemId).then(setAnswerCount)
+  }, [problemId])
 
   return (
     <div style={styles.card}>
@@ -31,12 +38,13 @@ export default function ProblemCard({ image, problemId, username }: Props) {
       <ProblemActionBar
         problemId={problemId}
         rootId={problemId}
-        bookmarkCount={12}
-        answerCount={3}
+        bookmarkCount={12}   // ← 今は仮
+        answerCount={answerCount}
       />
     </div>
   )
 }
+
 
 const styles: { [key: string]: CSSProperties } = {
   card: {

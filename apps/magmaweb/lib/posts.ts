@@ -112,3 +112,16 @@ export async function getAnswersByProblemId(problemId: string) {
   if (error) throw error
   return data
 }
+
+/**
+ * 問題に紐づく解答数を取得
+ */
+export async function getAnswerCount(problemId: string) {
+  const { count, error } = await supabase
+    .from('posts')
+    .select('*', { count: 'exact', head: true })
+    .eq('parent_id', problemId)
+
+  if (error) throw error
+  return count ?? 0
+}
