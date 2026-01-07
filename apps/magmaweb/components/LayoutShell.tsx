@@ -55,7 +55,7 @@ export default function LayoutShell({ children }: Props) {
       {/* Footer */}
       <footer style={styles.footer}>
         <button style={styles.icon} onClick={() => router.push('/feed')}>
-          <Sparkles size={36} />
+          <Sparkles size={30} />
         </button>
 
         <button
@@ -71,7 +71,7 @@ export default function LayoutShell({ children }: Props) {
 
 
         <button style={styles.icon} onClick={() => router.push('/me')}>
-          <UserRound size={36} />
+          <UserRound size={30} />
         </button>
       </footer>
 
@@ -169,6 +169,7 @@ const styles: { [key: string]: CSSProperties } = {
     background: 'none',
     border: 'none',
     color: '#eee',
+    marginTop: 10
   },
   plus: {
     width: 42,
