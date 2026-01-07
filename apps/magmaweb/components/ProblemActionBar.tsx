@@ -20,10 +20,10 @@ export default function ProblemActionBar({
 }: Props) {
   return (
     <div style={{ display: 'flex', gap: 16 , color: 'black'}}>
-      <span><Heart size = {18}/> {bookmarkCount}</span>
+      <span><Heart size = {15}/> {bookmarkCount}</span>
 
       <label style={{ cursor: 'pointer', color:'black' }}>
-        <Lightbulb size = {18}/> {answerCount}
+        <Lightbulb size = {15}/> {answerCount}
         <input
           type="file"
           accept="image/*"
