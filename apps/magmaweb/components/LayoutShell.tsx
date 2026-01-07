@@ -4,7 +4,7 @@ import { usePathname, useRouter } from 'next/navigation'
 import { useState } from 'react'
 import type { ReactNode, CSSProperties } from 'react'
 import { createPost } from '../lib/posts'
-import { UserRound } from 'lucide-react'
+import { UserRound, Sparkles } from 'lucide-react'
 
 type Props = {
   children: ReactNode
@@ -55,7 +55,7 @@ export default function LayoutShell({ children }: Props) {
       {/* Footer */}
       <footer style={styles.footer}>
         <button style={styles.icon} onClick={() => router.push('/feed')}>
-          ▷
+          <Sparkles size={36} />
         </button>
 
         <button
@@ -71,7 +71,7 @@ export default function LayoutShell({ children }: Props) {
 
 
         <button style={styles.icon} onClick={() => router.push('/me')}>
-          <UserRound size={18} />
+          <UserRound size={36} />
         </button>
       </footer>
 
