@@ -3,7 +3,6 @@
 
 import { uploadImageToCloudinary } from '../lib/upload'
 import { createAnswer } from '../lib/posts'
-import { user-round } from 'lucide-react'
 
 type Props = {
   problemId: string
