@@ -18,10 +18,10 @@ export default function ProblemActionBar({
   answerCount,
 }: Props) {
   return (
-    <div style={{ display: 'flex', gap: 16 }}>
+    <div style={{ display: 'flex', gap: 16 , color: 'black'}}>
       <span>❤ {bookmarkCount}</span>
 
-      <label style={{ cursor: 'pointer' }}>
+      <label style={{ cursor: 'pointer', color:'black' }}>
         💬 {answerCount}
         <input
           type="file"
