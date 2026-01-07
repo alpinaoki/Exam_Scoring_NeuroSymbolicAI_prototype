@@ -44,7 +44,7 @@ export default function ThreadPage({
           margin: '5px',
         }}
       >
-        <CircleArrowLeft size = {20}/>
+        <CircleArrowLeft size = {30}/>
       </button>
 
       {/* 問題 */}
