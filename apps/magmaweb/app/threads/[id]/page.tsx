@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { getProblemById, getAnswersByProblemId } from '../../../lib/posts'
 import ProblemCard from '../../../components/ProblemCard'
 import AnswerCard from '../../../components/AnswerCard'
+import {ArrowLeft} from 'lucide-react'
 
 export default function ThreadPage({
   params,
@@ -43,7 +44,7 @@ export default function ThreadPage({
           margin: '5px',
         }}
       >
-        ←
+        <ArrowLeft size = {20}/>
       </button>
 
       {/* 問題 */}
