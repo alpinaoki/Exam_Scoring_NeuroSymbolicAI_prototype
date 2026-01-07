@@ -3,6 +3,7 @@
 
 import { uploadImageToCloudinary } from '../lib/upload'
 import { createAnswer } from '../lib/posts'
+import { Lightbulb, Heart } from 'lucide-react'
 
 type Props = {
   problemId: string
@@ -19,10 +20,10 @@ export default function ProblemActionBar({
 }: Props) {
   return (
     <div style={{ display: 'flex', gap: 16 , color: 'black'}}>
-      <span>❤ {bookmarkCount}</span>
+      <span><Heart size = {10}/> {bookmarkCount}</span>
 
       <label style={{ cursor: 'pointer', color:'black' }}>
-        💬 {answerCount}
+        <Lightbulb size = {10}/> {answerCount}
         <input
           type="file"
           accept="image/*"
