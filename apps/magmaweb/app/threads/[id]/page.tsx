@@ -41,7 +41,9 @@ export default function ThreadPage({
           color: '#0070f3',
           cursor: 'pointer',
           fontSize: '24px',
-          margin: '5px',
+          marginTop: '10px',
+          marginBottom: '5px',
+          marginLeft: '3px'
         }}
       >
         <CircleArrowLeft size = {30}/>
