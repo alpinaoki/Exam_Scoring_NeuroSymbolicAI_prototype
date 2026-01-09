@@ -47,3 +47,13 @@ magmaweb/
 ーpackage.json
 ーtsconfig.json
 
+・magmatheを使える状態にする。
+　・使いながら改善する。
+　・
+　・
+　・
+　・
+・利用規約（データ収集の有無など）をつくる。
+・
+
+
