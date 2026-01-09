@@ -125,3 +125,54 @@ export async function getAnswerCount(problemId: string) {
   if (error) throw error
   return count ?? 0
 }
+
+/**
+ * 自分の問題投稿一覧
+ */
+export async function getMyProblems() {
+  const { data: auth } = await supabase.auth.getUser()
+  if (!auth.user) throw new Error('Not authenticated')
+
+  const { data, error } = await supabase
+    .from('posts')
+    .select(`
+      id,
+      image_url,
+      created_at,
+      profiles (
+        handle
+      )
+    `)
+    .eq('user_id', auth.user.id)
+    .eq('type', 'problem')
+    .order('created_at', { ascending: false })
+
+  if (error) throw error
+  return data
+}
+
+/**
+ * 自分の解答一覧
+ */
+export async function getMyAnswers() {
+  const { data: auth } = await supabase.auth.getUser()
+  if (!auth.user) throw new Error('Not authenticated')
+
+  const { data, error } = await supabase
+    .from('posts')
+    .select(`
+      id,
+      image_url,
+      parent_id,
+      created_at,
+      profiles (
+        handle
+      )
+    `)
+    .eq('user_id', auth.user.id)
+    .eq('type', 'answer')
+    .order('created_at', { ascending: false })
+
+  if (error) throw error
+  return data
+}
