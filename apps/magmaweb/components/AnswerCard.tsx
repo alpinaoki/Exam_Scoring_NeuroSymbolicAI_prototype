@@ -2,6 +2,7 @@
 
 import type { CSSProperties } from 'react'
 import ProblemActionBar from './ProblemActionBar'
+import { formatDateTime } from '../lib/time'
 
 type Props = {
   image: string | null
@@ -19,12 +20,13 @@ export default function AnswerCard({
   createdAt,
 }: Props) {
   const date = new Date(createdAt).toLocaleDateString('ja-JP')
+  const timeLabel = formatDateTime(createdAt)
 
   return (
     <div style={styles.card}>
       <div style={styles.header}>
         <span>@{username}</span>
-        <span style={styles.date}>· {date}</span>
+        <span style={styles.date}>· {timeLabel}</span>
       </div>
 
       {image && (
