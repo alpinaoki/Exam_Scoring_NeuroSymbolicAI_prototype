@@ -19,7 +19,7 @@ export default function ProblemActionBar({
   answerCount,
 }: Props) {
   return (
-    <div style={{ display: 'flex', alignItems: 'flex-end', gap: 16 , color: 'black'}}>
+    <div style={{ display: 'flex', alignItems: 'flex-start', gap: 16 , color: 'black'}}>
       <label style={{ cursor: 'pointer', color:'black' }}>
         <Lightbulb size = {20}/> 解答　{answerCount}
         <input
