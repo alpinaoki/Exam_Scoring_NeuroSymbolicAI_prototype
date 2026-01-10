@@ -8,6 +8,8 @@ type Profile = {
   handle: string
 }
 
+const [activeTab, setActiveTab] = useState<'post' | 'answer' | 'settings'>('post')
+
 export default function MePage() {
   const router = useRouter()
   const [profile, setProfile] = useState<Profile | null>(null)  // ←ここに移動
@@ -54,21 +56,39 @@ export default function MePage() {
         </div>
       </section>
 
-      {/* Tabs (ダミー) */}
       <section style={styles.tabs}>
-        <span style={styles.tabActive}>投稿</span>
-        <span style={styles.tab}>返信</span>
-      </section>
+  <span
+    style={activeTab === 'post' ? styles.tabActive : styles.tab}
+    onClick={() => setActiveTab('post')}
+  >
+    投稿
+  </span>
+
+  <span
+    style={activeTab === 'answer' ? styles.tabActive : styles.tab}
+    onClick={() => setActiveTab('answer')}
+  >
+    返信
+  </span>
+
+  <span
+    style={activeTab === 'settings' ? styles.tabActive : styles.tab}
+    onClick={() => setActiveTab('settings')}
+  >
+    設定
+  </span>
+</section>
 
       {/* Content */}
       <section style={styles.content}>
-        <div style={styles.empty}>まだ投稿がありません</div>
-      </section>
-
-      {/* Logout */}
-      <button style={styles.logout} onClick={handleLogout}>
-        ログアウト
-      </button>
+  {activeTab === 'settings' ? (
+    <button style={styles.logout} onClick={handleLogout}>
+      ログアウト
+    </button>
+  ) : (
+    <div style={styles.empty}>まだ投稿がありません</div>
+  )}
+</section>
     </div>
   )
 }
