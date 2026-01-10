@@ -21,7 +21,7 @@ export default function ProblemActionBar({
   return (
     <div style={{ display: 'flex', gap: 16 , color: 'black'}}>
       <label style={{ cursor: 'pointer', color:'black' }}>
-        <Lightbulb size = {16}/> 解答　{answerCount}
+        <Lightbulb size = {20}/> 解答　{answerCount}
         <input
           type="file"
           accept="image/*"
@@ -42,7 +42,7 @@ export default function ProblemActionBar({
           }}
         />
       </label>
-      <span><Heart size = {16}/> いいね {bookmarkCount}</span>
+      <span><Heart size = {20}/> いいね {bookmarkCount}</span>
 
     </div>
   )
