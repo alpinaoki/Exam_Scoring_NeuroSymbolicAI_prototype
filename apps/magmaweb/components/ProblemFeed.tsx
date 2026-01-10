@@ -80,6 +80,7 @@ export default function ProblemFeed() {
             image={p.image_url}
             problemId={p.id}
             username={p.profiles?.handle ?? 'unknown'}
+            createdAt={p.created_at}
           />
         ))}
 
