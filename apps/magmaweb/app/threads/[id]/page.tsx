@@ -33,7 +33,7 @@ export default function ThreadPage({
       
       {/* 戻るリンク */}
       <button
-        onClick={() => router.replace(`/feed`)}
+        onClick={() => router.back()}
         style={{
           alignSelf: 'flex-start',
           background: 'none',
