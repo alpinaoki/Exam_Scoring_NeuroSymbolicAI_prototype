@@ -19,9 +19,21 @@ export default function ProblemActionBar({
   answerCount,
 }: Props) {
   return (
-    <div style={{ display: 'flex', alignItems: 'flex-start', gap: 16 , color: 'black'}}>
-      <label style={{ cursor: 'pointer', color:'black' }}>
-        <Lightbulb size = {20}/> 解答　{answerCount}
+    <div style={{ 
+      display: 'flex', 
+      alignItems: 'center', // 親要素を center にして全体の高さを揃える
+      gap: 16, 
+      color: 'black' 
+    }}>
+      <label style={{ 
+        cursor: 'pointer', 
+        color: 'black',
+        display: 'inline-flex', // これを追加
+        alignItems: 'center',    // これを追加
+        gap: 4                  // アイコンと文字の間の微調整
+      }}>
+        <Lightbulb size={20} />
+        <span>解答 {answerCount}</span>
         <input
           type="file"
           accept="image/*"
@@ -29,21 +41,21 @@ export default function ProblemActionBar({
           onChange={async (e) => {
             const file = e.target.files?.[0]
             if (!file) return
-
             const imageUrl = await uploadImageToCloudinary(file)
-
-            await createAnswer({
-              imageUrl,
-              problemId,
-              rootId,
-            })
-
+            await createAnswer({ imageUrl, problemId, rootId })
             alert('解答を投稿しました')
           }}
         />
       </label>
-      <span><Heart size = {20}/> いいね {bookmarkCount}</span>
 
+      <span style={{ 
+        display: 'inline-flex', // これを追加
+        alignItems: 'center',    // これを追加
+        gap: 4                  // アイコンと文字の間の微調整
+      }}>
+        <Heart size={20} />
+        <span>いいね {bookmarkCount}</span>
+      </span>
     </div>
   )
 }
