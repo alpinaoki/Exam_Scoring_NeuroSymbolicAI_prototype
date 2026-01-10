@@ -10,9 +10,15 @@ type Props = {
   image: string | null
   problemId: string
   username: string
+  createdAt: string
 }
 
-export default function ProblemCard({ image, problemId, username }: Props) {
+export default function ProblemCard({
+  image,
+  problemId,
+  username,
+  createdAt,
+}: Props) {
   const router = useRouter()
   const [answerCount, setAnswerCount] = useState(0)
 
@@ -20,10 +26,13 @@ export default function ProblemCard({ image, problemId, username }: Props) {
     getAnswerCount(problemId).then(setAnswerCount)
   }, [problemId])
 
+  const date = new Date(createdAt).toLocaleDateString('ja-JP')
+
   return (
     <div style={styles.card}>
-      <div style={styles.username}>
-        @{username}
+      <div style={styles.header}>
+        <span>@{username}</span>
+        <span style={styles.date}>· {date}</span>
       </div>
 
       {image && (
@@ -38,13 +47,12 @@ export default function ProblemCard({ image, problemId, username }: Props) {
       <ProblemActionBar
         problemId={problemId}
         rootId={problemId}
-        bookmarkCount={12}   // ← 今は仮
+        bookmarkCount={12} // 仮
         answerCount={answerCount}
       />
     </div>
   )
 }
-
 
 const styles: { [key: string]: CSSProperties } = {
   card: {
@@ -52,14 +60,19 @@ const styles: { [key: string]: CSSProperties } = {
     flexDirection: 'column',
     gap: '12px',
   },
+  header: {
+    fontSize: '13px',
+    color: '#555',
+  },
+  date: {
+    marginLeft: 4,
+    color: '#999',
+    fontSize: '12px',
+  },
   image: {
     width: '100%',
     borderRadius: '8px',
     objectFit: 'contain',
     border: '1px solid #eee',
-  },
-  username: {
-    fontSize: '13px',
-    color: '#555',
   },
 }

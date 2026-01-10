@@ -8,6 +8,7 @@ type Props = {
   answerId: string
   rootId: string
   username: string
+  createdAt: string
 }
 
 export default function AnswerCard({
@@ -15,10 +16,16 @@ export default function AnswerCard({
   answerId,
   rootId,
   username,
+  createdAt,
 }: Props) {
+  const date = new Date(createdAt).toLocaleDateString('ja-JP')
+
   return (
     <div style={styles.card}>
-      <div style={styles.username}>@{username}</div>
+      <div style={styles.header}>
+        <span>@{username}</span>
+        <span style={styles.date}>· {date}</span>
+      </div>
 
       {image && (
         <img
@@ -45,13 +52,18 @@ const styles: { [key: string]: CSSProperties } = {
     gap: 8,
     padding: '0 16px',
   },
+  header: {
+    fontSize: 12,
+    color: '#666',
+  },
+  date: {
+    marginLeft: 4,
+    color: '#aaa',
+    fontSize: 11,
+  },
   image: {
     width: '100%',
     borderRadius: 8,
     border: '1px solid #eee',
-  },
-  username: {
-    fontSize: 12,
-    color: '#666',
   },
 }
