@@ -8,10 +8,13 @@ type Profile = {
   handle: string
 }
 
-const [activeTab, setActiveTab] = useState<'post' | 'answer' | 'settings'>('post')
 
 export default function MePage() {
   const router = useRouter()
+
+  const [activeTab, setActiveTab] =
+    useState<'post' | 'answer' | 'settings'>('post')
+
   const [profile, setProfile] = useState<Profile | null>(null)  // ←ここに移動
 
   useEffect(() => {
