@@ -1,6 +1,7 @@
 'use client'
 
 import type { CSSProperties } from 'react'
+import { SendHorizontal, Loader2 } from 'lucide-react'
 
 type Props = {
   file: File
@@ -22,9 +23,24 @@ export default function ImageEditorModal({
       <div style={styles.modal} onClick={(e) => e.stopPropagation()}>
         {/* Header */}
         <div style={styles.header}>
-          <button onClick={onCancel}>×</button>
-          <button onClick={onPost} disabled={uploading}>
-            {uploading ? '投稿中…' : '投稿'}
+          <button onClick={onCancel} style={styles.closeButton}>×</button>
+          
+          {/* 投稿ボタン */}
+          <button 
+            onClick={onPost} 
+            disabled={uploading} 
+            style={{
+              ...styles.postButton,
+              opacity: uploading ? 0.5 : 1 // 投稿中は少し薄くする
+            }}
+          >
+            {uploading ? (
+              // 投稿中はローディングアイコンをくるくる回す
+              <Loader2 className="animate-spin" size={24} />
+            ) : (
+              // 通常時は紙飛行機のアイコン
+              <SendHorizontal size={24} />
+            )}
           </button>
         </div>
 
@@ -58,6 +74,20 @@ const styles: { [key: string]: CSSProperties } = {
     alignItems: 'center',
     justifyContent: 'space-between',
     borderBottom: '1px solid #333',
+  },
+  postButton: {
+    border: 'none',
+    background: 'none',
+    cursor: 'pointer',
+    color: '#0095f6', // 青色など、投稿っぽい色にする
+    padding: 4,
+  },
+  closeButton: {
+    border: 'none',
+    background: 'none',
+    cursor: 'pointer',
+    fontSize: 24,
+    padding: 4,
   },
   body: {
     flex: 1,
