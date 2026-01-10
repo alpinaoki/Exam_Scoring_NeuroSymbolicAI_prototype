@@ -5,28 +5,14 @@ import { useState } from 'react'
 import type { ReactNode, CSSProperties } from 'react'
 import { createPost } from '../lib/posts'
 import { UserRound, Sparkles } from 'lucide-react'
+import { uploadImageToCloudinary } from '../lib/upload'
 
 type Props = {
   children: ReactNode
 }
 
 
-async function uploadToCloudinary(file: File): Promise<string> {
-  const formData = new FormData()
-  formData.append('file', file)
-  formData.append('upload_preset', 'posts_image')
 
-  const res = await fetch(
-    'https://api.cloudinary.com/v1_1/dk8pvfpzx/image/upload',
-    {
-      method: 'POST',
-      body: formData,
-    }
-  )
-
-  const data = await res.json()
-  return data.secure_url
-}
 
 
 
@@ -100,7 +86,7 @@ export default function LayoutShell({ children }: Props) {
 
     setUploading(true)  // すぐに無効化
 
-    const imageUrl = await uploadToCloudinary(file)
+    const imageUrl = await uploadImageToCloudinary(file)
 
     await createPost({
       imageUrl,
