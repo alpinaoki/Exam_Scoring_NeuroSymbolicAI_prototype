@@ -54,6 +54,7 @@ export default function ThreadPage({
         image={problem.image_url}
         problemId={problem.id}
         username={problem.profiles.handle}
+        createdAt={problem.created_at}
       />
 
       {/* 解答一覧 */}
@@ -65,6 +66,7 @@ export default function ThreadPage({
             answerId={a.id}
             rootId={problem.id}
             username={a.profiles.handle}
+            createdAt={a.created_at}
           />
         ))}
       </div>
