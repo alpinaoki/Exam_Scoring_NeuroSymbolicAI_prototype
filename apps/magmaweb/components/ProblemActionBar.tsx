@@ -20,7 +20,7 @@ export default function ProblemActionBar({
 }: Props) {
   return (
     <div style={{ display: 'flex', gap: 16 , color: 'black'}}>
-      <span><Heart size = {16}/> {bookmarkCount}</span>
+      <span><Heart size = {16}/> 解答 {bookmarkCount}</span>
 
       <label style={{ cursor: 'pointer', color:'black' }}>
         <Lightbulb size = {16}/> {answerCount}
