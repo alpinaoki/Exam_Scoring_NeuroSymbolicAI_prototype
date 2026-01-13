@@ -29,12 +29,13 @@ export default function ThreadPage({
   if (!problem) return <div>Loading...</div>
 
   return (
-    /* 背景用コンテナ: 白ベースのマグマ風グラデーション */
+    /* 背景用コンテナ: 熱量をしっかり感じるマグマ風グラデーション */
     <div style={{
       minHeight: '100vh',
       width: '100%',
-      // radial-gradientを使って、中心から熱が伝わっているような淡いグラデーション
-      background: 'radial-gradient(circle at 50% 20%, #ffffff 0%, #fff9f8 40%, #f7f7f7 70%, #f2f2f2 100%)',
+      // 中心を「白熱した白〜黄色」、中間に「オレンジ」、端に「濃い赤〜深いグレー」を配置
+      background: 'radial-gradient(circle at 50% 20%, #ffffff 0%, #fff3e0 20%, #ffab91 50%, #d84315 85%, #2c0d05 100%)',
+      backgroundAttachment: 'fixed', // スクロールしても背景が固定される
       paddingBottom: '40px'
     }}>
       <div style={{ 
@@ -42,44 +43,49 @@ export default function ThreadPage({
         flexDirection: 'column', 
         gap: 24, 
         padding: '0 8px',
-        maxWidth: '800px', // コンテンツが広がりすぎないように制限（任意）
+        maxWidth: '800px',
         margin: '0 auto' 
       }}>
         
-        {/* 戻るリンク */}
+        {/* 戻るリンク: 背景が濃くなったので色を白に変更して視認性を確保 */}
         <button
           onClick={() => router.back()}
           style={{
             alignSelf: 'flex-start',
             background: 'none',
             border: 'none',
-            color: '#333', // 青からモノトーンに変更
+            color: '#ffffff', // 背景が赤・オレンジ系になるので白が見やすいです
             cursor: 'pointer',
             padding: '10px 0',
             marginTop: '10px',
             marginBottom: '5px',
             marginLeft: '3px',
-            transition: 'opacity 0.2s',
+            transition: 'transform 0.2s',
+            filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))'
           }}
-          onMouseEnter={(e) => e.currentTarget.style.opacity = '0.6'}
-          onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
+          onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.1)'}
+          onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
         >
           <CircleArrowLeft size={30} />
         </button>
 
-        {/* 問題 */}
-        <ProblemCard
-          image={problem.image_url}
-          problemId={problem.id}
-          username={problem.profiles.handle}
-          createdAt={problem.created_at}
-        />
+        {/* 問題カード本体 */}
+        <div style={{
+           filter: 'drop-shadow(0 10px 20px rgba(0,0,0,0.2))' // カードを浮かせて高級感を
+        }}>
+          <ProblemCard
+            image={problem.image_url}
+            problemId={problem.id}
+            username={problem.profiles.handle}
+            createdAt={problem.created_at}
+          />
+        </div>
 
         {/* 解答一覧 */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           {answers.map((a) => (
             <div key={a.id} style={{
-              filter: 'drop-shadow(0 4px 6px rgba(0,0,0,0.02))' // 答案を少し浮かせると高級感が出ます
+              filter: 'drop-shadow(0 4px 10px rgba(0,0,0,0.15))'
             }}>
               <AnswerCard
                 image={a.image_url}
