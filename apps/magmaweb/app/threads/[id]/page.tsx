@@ -34,7 +34,7 @@ export default function ThreadPage({
       minHeight: '100vh',
       width: '100%',
       // 中心を「白熱した白〜黄色」、中間に「オレンジ」、端に「濃い赤〜深いグレー」を配置
-      background: 'radial-gradient(circle at 50% 20%, #ffffff 0%, #fff3e0 20%, #ffab91 50%, #d84315 85%, #2c0d05 100%)',
+      background: 'radial-gradient(circle at 50% 20%, #ffffff 0%, #fff3e0 20%, #fca78c 100%)',
       backgroundAttachment: 'fixed', // スクロールしても背景が固定される
       paddingBottom: '40px'
     }}>
