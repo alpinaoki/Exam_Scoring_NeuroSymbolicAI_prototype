@@ -28,7 +28,7 @@ export default function ProblemActionBar({
           style={styles.action}
           onClick={() => cameraInputRef.current?.click()}
         >
-          <Lightbulb size={20} />
+          <Lightbulb size={20} style={styles.filledLightbulb}/>
           <span>解答 {answerCount}</span>
         </button>
         {/* いいね（現状そのまま） */}
@@ -91,5 +91,11 @@ const styles: { [key: string]: CSSProperties } = {
     fontFamily: 'inherit', // 親のフォント種類を引き継ぐ
     lineHeight: 1,         // 行の高さを揃えて垂直中央を安定させる
     // -------------------
+  },
+  filledLightbulb: {
+    fill: '#FACC15', // 黄色で塗りつぶし (Tailwindのyellow-400相当)
+  },
+  filledHeart: {
+    fill: '#EF4444', // 赤色で塗りつぶし (Tailwindのred-500相当)
   },
 }
