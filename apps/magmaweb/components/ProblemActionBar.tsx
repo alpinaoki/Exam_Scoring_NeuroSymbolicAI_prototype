@@ -74,7 +74,7 @@ const styles: { [key: string]: CSSProperties } = {
   bar: {
     display: 'flex',
     alignItems: 'center',
-    gap: 16,
+    gap: 24, // 少し広げるとボタン同士が判別しやすくなります
     color: 'black',
   },
   action: {
@@ -86,5 +86,10 @@ const styles: { [key: string]: CSSProperties } = {
     cursor: 'pointer',
     color: 'black',
     padding: 0,
+    // --- ここから追加 ---
+    fontSize: 'inherit',   // 親の文字サイズを引き継ぐ
+    fontFamily: 'inherit', // 親のフォント種類を引き継ぐ
+    lineHeight: 1,         // 行の高さを揃えて垂直中央を安定させる
+    // -------------------
   },
 }
