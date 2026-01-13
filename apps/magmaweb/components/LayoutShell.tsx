@@ -142,6 +142,6 @@ const styles: { [key: string]: CSSProperties } = {
   fontSize: 24,
   background: 'none',
   color: '#eee',
-  border: '1px solid #444',
+  border: '3px solid #444',
 }
 }
