@@ -79,7 +79,7 @@ export default function ThreadPage({
       <div style={{
         flexGrow: 1, // 残りの高さを埋める
         // 白から始まり、徐々に熱い色へ変化する線形グラデーション
-        background: 'linear-gradient(to bottom, #f1ece1 0%, #efe1ca 5%, #e5c2b8 60%, #d5a99c 100%)',
+        background: 'linear-gradient(to bottom, #ffffff 0%, #f1ece1 1%, #e6dbca 5%, #e0cac3 60%, #d2b6ae 100%)',
         padding: '24px 8px 48px',
       }}>
         <div style={{ 
