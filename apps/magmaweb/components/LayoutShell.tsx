@@ -55,16 +55,15 @@ export default function LayoutShell({ children }: Props) {
 
       {/* Hidden camera input */}
       <input
-        ref={cameraInputRef}
-        type="file"
-        accept="image/*"
-        capture="environment"
-        hidden
-        onChange={(e) => {
-          const f = e.target.files?.[0]
-          if (f) setFile(f)
-        }}
-      />
+  ref={cameraInputRef}
+  type="file"
+  accept="image/*"
+  hidden
+  onChange={(e) => {
+    const f = e.target.files?.[0]
+    if (f) setFile(f)
+  }}
+/>
 
       {/* Image Editor (dummy) */}
       {file && (
@@ -137,12 +136,12 @@ const styles: { [key: string]: CSSProperties } = {
     color: '#eee',
   },
   plus: {
-    width: 42,
-    height: 42,
-    borderRadius: '30%',
-    fontSize: 32,
-    background: '#fff',
-    color: '#111',
-    border: 'none',
-  },
+  width: 32,
+  height: 32,
+  borderRadius: '50%',
+  fontSize: 24,
+  background: 'none',
+  color: '#eee',
+  border: '1px solid #444',
+}
 }
