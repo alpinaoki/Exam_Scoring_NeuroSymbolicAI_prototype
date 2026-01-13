@@ -1,61 +1,90 @@
-// components/ProblemActionBar.tsx
 'use client'
-
+import { useRef, useState } from 'react'
+import type { CSSProperties } from 'react'
 import { uploadImageToCloudinary } from '../lib/upload'
 import { createAnswer } from '../lib/posts'
+import ImageEditorModal from './ImageEditorModal'
 import { Lightbulb, Heart } from 'lucide-react'
-
 type Props = {
   problemId: string
   rootId: string
   bookmarkCount: number
   answerCount: number
 }
-
 export default function ProblemActionBar({
   problemId,
   rootId,
   bookmarkCount,
   answerCount,
 }: Props) {
+  const cameraInputRef = useRef<HTMLInputElement>(null)
+  const [file, setFile] = useState<File | null>(null)
+  const [uploading, setUploading] = useState(false)
   return (
-    <div style={{ 
-      display: 'flex', 
-      alignItems: 'center', // 親要素を center にして全体の高さを揃える
-      gap: 16, 
-      color: 'black' 
-    }}>
-      <label style={{ 
-        cursor: 'pointer', 
-        color: 'black',
-        display: 'inline-flex', // これを追加
-        alignItems: 'center',    // これを追加
-        gap: 4                  // アイコンと文字の間の微調整
-      }}>
-        <Lightbulb size={20} />
-        <span>解答 {answerCount}</span>
-        <input
-          type="file"
-          accept="image/*"
-          hidden
-          onChange={async (e) => {
-            const file = e.target.files?.[0]
-            if (!file) return
+    <>
+      <div style={styles.bar}>
+        {/* 解答（＋カメラ） */}
+        <button
+          style={styles.action}
+          onClick={() => cameraInputRef.current?.click()}
+        >
+          <Lightbulb size={20} />
+          <span>解答 {answerCount}</span>
+        </button>
+        {/* いいね（現状そのまま） */}
+        <span style={styles.action}>
+          <Heart size={20} />
+          <span>いいね {bookmarkCount}</span>
+        </span>
+      </div>
+      {/* hidden camera input */}
+      <input
+        ref={cameraInputRef}
+        type="file"
+        accept="image/*"
+        capture="environment"
+        hidden
+        onChange={(e) => {
+          const f = e.target.files?.[0]
+          if (f) setFile(f)
+        }}
+      />
+      {/* Image Editor */}
+      {file && (
+        <ImageEditorModal
+          file={file}
+          uploading={uploading}
+          onCancel={() => {
+            if (!uploading) setFile(null)
+          }}
+          onPost={async () => {
+            if (uploading) return
+            setUploading(true)
             const imageUrl = await uploadImageToCloudinary(file)
             await createAnswer({ imageUrl, problemId, rootId })
-            alert('解答を投稿しました')
+            setUploading(false)
+            setFile(null)
           }}
         />
-      </label>
-
-      <span style={{ 
-        display: 'inline-flex', // これを追加
-        alignItems: 'center',    // これを追加
-        gap: 4                  // アイコンと文字の間の微調整
-      }}>
-        <Heart size={20} />
-        <span>いいね {bookmarkCount}</span>
-      </span>
-    </div>
+      )}
+    </>
   )
+}
+const styles: { [key: string]: CSSProperties } = {
+  bar: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 16,
+    color: 'black',
+  },
+  action: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: 4,
+    background: 'none',
+    border: 'none',
+    cursor: 'pointer',
+    color: 'black',
+    padding: 0,
+  },
 }
