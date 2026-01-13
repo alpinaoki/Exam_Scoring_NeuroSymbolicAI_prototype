@@ -26,66 +26,72 @@ export default function ThreadPage({
     load()
   }, [params.id])
 
-  if (!problem) return <div>Loading...</div>
+  if (!problem) return <div style={{ padding: 20 }}>Loading...</div>
 
   return (
-    /* 背景用コンテナ: 熱量をしっかり感じるマグマ風グラデーション */
+    /* 全体コンテナ: 基本は白 */
     <div style={{
       minHeight: '100vh',
       width: '100%',
-      // 中心を「白熱した白〜黄色」、中間に「オレンジ」、端に「濃い赤〜深いグレー」を配置
-      background: 'radial-gradient(circle at 50% 20%, #ffffff 0%, #fff3e0 20%, #fca78c 100%)',
-      backgroundAttachment: 'fixed', // スクロールしても背景が固定される
-      paddingBottom: '40px'
+      backgroundColor: '#ffffff',
+      display: 'flex',
+      flexDirection: 'column',
     }}>
+      
+      {/* 1. 問題セクション (真っ白) */}
       <div style={{ 
-        display: 'flex', 
-        flexDirection: 'column', 
-        gap: 24, 
-        padding: '0 8px',
+        width: '100%',
+        padding: '0 8px 32px', // 下に少し余白を作ってグラデーションへの繋ぎに
         maxWidth: '800px',
         margin: '0 auto' 
       }}>
-        
-        {/* 戻るリンク: 背景が濃くなったので色を白に変更して視認性を確保 */}
+        {/* 戻るリンク: 背景が白なのでモノトーンに戻しました */}
         <button
           onClick={() => router.back()}
           style={{
             alignSelf: 'flex-start',
             background: 'none',
             border: 'none',
-            color: '#ffffff', // 背景が赤・オレンジ系になるので白が見やすいです
+            color: '#333',
             cursor: 'pointer',
             padding: '10px 0',
             marginTop: '10px',
             marginBottom: '5px',
             marginLeft: '3px',
-            transition: 'transform 0.2s',
-            filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))'
+            transition: 'opacity 0.2s',
           }}
-          onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.1)'}
-          onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+          onMouseEnter={(e) => e.currentTarget.style.opacity = '0.6'}
+          onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
         >
           <CircleArrowLeft size={30} />
         </button>
 
-        {/* 問題カード本体 */}
-        <div style={{
-           filter: 'drop-shadow(0 10px 20px rgba(0,0,0,0.2))' // カードを浮かせて高級感を
-        }}>
-          <ProblemCard
-            image={problem.image_url}
-            problemId={problem.id}
-            username={problem.profiles.handle}
-            createdAt={problem.created_at}
-          />
-        </div>
+        {/* 問題カード */}
+        <ProblemCard
+          image={problem.image_url}
+          problemId={problem.id}
+          username={problem.profiles.handle}
+          createdAt={problem.created_at}
+        />
+      </div>
 
-        {/* 解答一覧 */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+      {/* 2. 回答セクション (ここからマグマ風グラデーション) */}
+      <div style={{
+        flexGrow: 1, // 残りの高さを埋める
+        // 白から始まり、徐々に熱い色へ変化する線形グラデーション
+        background: 'linear-gradient(to bottom, #ffffff 0%, #fff3e0 15%, #ffccbc 40%, #ff8a65 100%)',
+        padding: '24px 8px 60px',
+      }}>
+        <div style={{ 
+          maxWidth: '800px',
+          margin: '0 auto',
+          display: 'flex', 
+          flexDirection: 'column', 
+          gap: 16 
+        }}>
           {answers.map((a) => (
             <div key={a.id} style={{
-              filter: 'drop-shadow(0 4px 10px rgba(0,0,0,0.15))'
+              filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.08))' // 背景色の上でカードを際立たせる
             }}>
               <AnswerCard
                 image={a.image_url}
