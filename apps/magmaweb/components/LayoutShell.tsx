@@ -136,12 +136,21 @@ const styles: { [key: string]: CSSProperties } = {
     color: '#eee',
   },
   plus: {
-  width: 32,
-  height: 32,
-  borderRadius: '50%',
-  fontSize: 24,
-  background: 'none',
-  color: '#eee',
-  border: '3px solid #444',
-}
+    width: 36, // 32だと枠が細くて窮屈に見える場合があるので少し調整
+    height: 36,
+    borderRadius: '50%',
+    fontSize: 24,
+    background: 'none',
+    color: '#eee',
+    border: '3px solid #444',
+    cursor: 'pointer',
+    
+    // --- ここで真ん中に寄せる ---
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 0,         // ボタンのデフォルトパディングを消去
+    lineHeight: 1,      // 行間の影響を排除
+    // -------------------------
+  }
 }
