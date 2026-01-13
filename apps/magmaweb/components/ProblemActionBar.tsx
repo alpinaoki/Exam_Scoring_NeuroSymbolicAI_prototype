@@ -93,7 +93,7 @@ const styles: { [key: string]: CSSProperties } = {
     // -------------------
   },
   filledLightbulb: {
-    fill: '#FACC15', // 黄色で塗りつぶし (Tailwindのyellow-400相当)
+    fill: '#fad646', // 黄色で塗りつぶし (Tailwindのyellow-400相当)
   },
   filledHeart: {
     fill: '#EF4444', // 赤色で塗りつぶし (Tailwindのred-500相当)
