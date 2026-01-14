@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, useMemo } from 'react'
 import type { CSSProperties } from 'react'
-import { SendHorizontal, Loader2, RotateCw } from 'lucide-react'
+import { SendHorizontal, Loader2, RotateCw, Sun } from 'lucide-react'
 
 type Props = {
   file: File
@@ -54,30 +54,25 @@ export default function ImageEditorModal({
     }
   }, [imageUrl])
 
-  /* -------- ドラッグ操作 -------- */
+  /* -------- ドラッグ操作 (はみ出し防止ロジック) -------- */
 
   const startDrag = (e: React.PointerEvent, h: Handle) => {
     e.preventDefault()
     e.stopPropagation()
-    // ポインターをキャプチャして、指が要素から外れてもイベントを追いかける
     ;(e.currentTarget as HTMLDivElement).setPointerCapture(e.pointerId)
     setActiveHandle(h)
   }
 
-  // startDrag と stopDrag は変更なし
-
   const onPointerMove = (e: React.PointerEvent) => {
-    // imgRef.current も必須条件に追加
     if (!crop || !activeHandle || !containerRef.current || !imgRef.current) return
 
     const containerRect = containerRef.current.getBoundingClientRect()
     const imgRect = imgRef.current.getBoundingClientRect()
 
-    // コンテナに対するポインターの相対座標
     const pointerX = e.clientX - containerRect.left
     const pointerY = e.clientY - containerRect.top
 
-    // コンテナに対する画像の相対的な境界線（ここが重要）
+    // 画像の表示領域の境界を取得
     const imgLeftBound = imgRect.left - containerRect.left
     const imgTopBound = imgRect.top - containerRect.top
     const imgRightBound = imgLeftBound + imgRect.width
@@ -87,54 +82,31 @@ export default function ImageEditorModal({
       if (!c) return c
       let { x: nx, y: ny, w: nw, h: nh } = c
 
-      // --- 上辺の操作 ---
       if (activeHandle.includes('top')) {
-        // ポインターYが画像の上端より上に行かないように制限
         const constrainedY = Math.max(pointerY, imgTopBound)
         ny = constrainedY
-        // 新しい高さは「元の底辺位置 - 新しい上辺位置」
         nh = (c.y + c.h) - constrainedY
       }
-
-      // --- 下辺の操作 ---
       if (activeHandle.includes('bottom')) {
-        // ポインターYが画像の下端より下に行かないように制限
         const constrainedY = Math.min(pointerY, imgBottomBound)
-        // 新しい高さは「新しい底辺位置 - 元の上辺位置」
         nh = constrainedY - c.y
       }
-
-      // --- 左辺の操作 ---
       if (activeHandle.includes('left')) {
-        // ポインターXが画像の左端より左に行かないように制限
         const constrainedX = Math.max(pointerX, imgLeftBound)
         nx = constrainedX
-        // 新しい幅は「元の右辺位置 - 新しい左辺位置」
         nw = (c.x + c.w) - constrainedX
       }
-
-      // --- 右辺の操作 ---
       if (activeHandle.includes('right')) {
-        // ポインターXが画像の右端より右に行かないように制限
         const constrainedX = Math.min(pointerX, imgRightBound)
-        // 新しい幅は「新しい右辺位置 - 元の左辺位置」
         nw = constrainedX - c.x
       }
 
-      // 最小サイズの制限 (20px) は維持
       const finalW = Math.max(20, nw)
       const finalH = Math.max(20, nh)
-
-      // 念のため、計算結果が境界を超えていないか最終チェックして補正（特に最小サイズ制限と競合した場合）
       const finalX = Math.max(imgLeftBound, Math.min(nx, imgRightBound - finalW))
       const finalY = Math.max(imgTopBound, Math.min(ny, imgBottomBound - finalH))
 
-      return {
-        x: finalX,
-        y: finalY,
-        w: finalW,
-        h: finalH,
-      }
+      return { x: finalX, y: finalY, w: finalW, h: finalH }
     })
   }
 
@@ -145,32 +117,23 @@ export default function ImageEditorModal({
     }
   }
 
-  /* -------- 投稿処理 (修正版) -------- */
+  /* -------- 投稿処理 (回転・明るさ反映) -------- */
 
   async function handlePost() {
     if (!crop || !imgRef.current || !containerRef.current) return
 
     const img = imgRef.current
-    
-    // 1. 重要：回転に左右されない「元のサイズ」との倍率を計算
-    // clientWidth/Height は CSS transform (rotate) の影響を受けない元の数値を返します
     const scale = img.naturalWidth / img.clientWidth
 
-    // 2. 出力用キャンバスの作成（トリミング枠のサイズ）
     const canvas = document.createElement('canvas')
     canvas.width = crop.w * scale
     canvas.height = crop.h * scale
     const ctx = canvas.getContext('2d')!
 
-    // 3. キャンバスの中心に座標系を移動して回転させる
-ctx.translate(canvas.width / 2, canvas.height / 2)
-ctx.rotate((rotation * Math.PI) / 180)
+    ctx.translate(canvas.width / 2, canvas.height / 2)
+    ctx.rotate((rotation * Math.PI) / 180)
+    ctx.filter = `brightness(${brightness})`
 
-// ★ 明るさ反映
-ctx.filter = `brightness(${brightness})`
-
-    // 4. UI上の「画像中心」と「トリミング枠中心」の距離を出す
-    // offsetTop/Left は親要素(body)内での元の位置（回転前）を指すので正確です
     const imgCenterX = img.offsetLeft + img.clientWidth / 2
     const imgCenterY = img.offsetTop + img.clientHeight / 2
     const cropCenterX = crop.x + crop.w / 2
@@ -179,8 +142,6 @@ ctx.filter = `brightness(${brightness})`
     const dx = (imgCenterX - cropCenterX) * scale
     const dy = (imgCenterY - cropCenterY) * scale
 
-    // 5. 画像を描画
-    // 画像自身の中心が (dx, dy) に来るように配置
     ctx.drawImage(
       img,
       dx - img.naturalWidth / 2,
@@ -198,14 +159,9 @@ ctx.filter = `brightness(${brightness})`
 
   return (
     <div style={styles.overlay} onClick={onCancel}>
-      {/* 1. アニメーション用のスタイルを追加 */}
       <style>{`
-        @keyframes spin {
-          to { transform: rotate(360deg); }
-        }
-        .animate-spin-custom {
-          animation: spin 1s linear infinite;
-        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .animate-spin-custom { animation: spin 1s linear infinite; }
       `}</style>
 
       <div style={styles.modal} onClick={(e) => e.stopPropagation()}>
@@ -216,7 +172,6 @@ ctx.filter = `brightness(${brightness})`
               <RotateCw size={24} />
             </button>
             <button onClick={handlePost} disabled={uploading} style={styles.actionBtn}>
-              {/* 2. classNameを独自のものに変え、sizeを明示 */}
               {uploading ? (
                 <Loader2 size={24} className="animate-spin-custom" />
               ) : (
@@ -226,35 +181,39 @@ ctx.filter = `brightness(${brightness})`
           </div>
         </div>
 
-<div style={styles.controls}>
-  <input
-    type="range"
-    min={0.5}
-    max={1.5}
-    step={0.01}
-    value={brightness}
-    onChange={(e) => setBrightness(Number(e.target.value))}
-    style={{ width: '100%' }}
-  />
-</div>
+        {/* 明るさコントロールUI */}
+        <div style={styles.controls}>
+          <div style={styles.controlLabel}>
+            <Sun size={18} />
+            <span style={{ fontSize: 14 }}>明るさ</span>
+          </div>
+          <input
+            type="range"
+            min={0.5}
+            max={1.5}
+            step={0.01}
+            value={brightness}
+            onChange={(e) => setBrightness(Number(e.target.value))}
+            style={styles.slider}
+          />
+          <div style={styles.valueDisplay}>
+            {Math.round(brightness * 100)}%
+          </div>
+        </div>
 
-        <div
-          ref={containerRef}
-          style={styles.body}
-        >
+        <div ref={containerRef} style={styles.body}>
           <img
             ref={imgRef}
             src={imageUrl}
             alt="editor"
             style={{
-  maxWidth: '90%',
-  maxHeight: '80%',
-  transform: `rotate(${rotation}deg)`,
-  filter: `brightness(${brightness})`,
-  userSelect: 'none',
-  pointerEvents: 'none', 
-}}
-
+              maxWidth: '90%',
+              maxHeight: '80%',
+              transform: `rotate(${rotation}deg)`,
+              filter: `brightness(${brightness})`,
+              userSelect: 'none',
+              pointerEvents: 'none', 
+            }}
           />
 
           {crop && (
@@ -267,7 +226,6 @@ ctx.filter = `brightness(${brightness})`
                 height: crop.h,
               }}
             >
-              {/* 3. マップする配列に四隅を追加 */}
               {(['top', 'right', 'bottom', 'left', 'top-left', 'top-right', 'bottom-left', 'bottom-right'] as Handle[]).map((h) => (
                 <div
                   key={h}
@@ -344,9 +302,29 @@ const styles: { [k: string]: CSSProperties } = {
     border: '2px solid #fff',
   },
   controls: {
-  padding: '8px 16px',
-  background: 'rgba(0,0,0,0.4)',
-},
+    padding: '12px 20px',
+    background: 'rgba(255,255,255,0.1)',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '15px',
+  },
+  controlLabel: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '6px',
+    minWidth: '70px',
+  },
+  slider: {
+    flex: 1,
+    cursor: 'pointer',
+    accentColor: '#00aaff',
+  },
+  valueDisplay: {
+    minWidth: '40px',
+    textAlign: 'right',
+    fontSize: '14px',
+    fontVariantNumeric: 'tabular-nums',
+  },
 }
 
 const handlePos: Record<Handle, CSSProperties> = {
