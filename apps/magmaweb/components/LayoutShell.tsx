@@ -65,26 +65,27 @@ export default function LayoutShell({ children }: Props) {
   }}
 />
 
-      {/* Image Editor (dummy) */}
+      {/* Image Editor */}
       {file && (
         <ImageEditorModal
-          file={file}
-          uploading={uploading}
-          onCancel={() => {
-            if (!uploading) setFile(null)
-          }}
-          onPost={async () => {
-            if (uploading) return
-            setUploading(true)
+  file={file}
+  uploading={uploading}
+  onCancel={() => {
+    if (!uploading) setFile(null)
+  }}
+  onPost={async (editedFile) => {
+    if (uploading) return
+    setUploading(true)
 
-            const imageUrl = await uploadImageToCloudinary(file)
-            await createPost({ imageUrl })
+    const imageUrl = await uploadImageToCloudinary(editedFile) // ← 修正点
+    await createPost({ imageUrl })
 
-            setUploading(false)
-            setFile(null)
-            router.push('/feed')
-          }}
-        />
+    setUploading(false)
+    setFile(null)
+    router.push('/feed')
+  }}
+/>
+
       )}
     </div>
   )
