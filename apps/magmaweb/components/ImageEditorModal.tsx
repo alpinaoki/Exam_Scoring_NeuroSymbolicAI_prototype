@@ -11,177 +11,165 @@ type Props = {
   onPost: (editedFile: File) => void
 }
 
+type Crop = { x: number; y: number; w: number; h: number }
+type Handle = 'top' | 'right' | 'bottom' | 'left' | null
+
 export default function ImageEditorModal({
   file,
   uploading,
   onCancel,
   onPost,
 }: Props) {
-  const canvasRef = useRef<HTMLCanvasElement>(null)
-  const imageRef = useRef<HTMLImageElement | null>(null)
+  const imgRef = useRef<HTMLImageElement>(null)
+  const containerRef = useRef<HTMLDivElement>(null)
 
   const [rotation, setRotation] = useState(0)
-  const [crop, setCrop] = useState<{
-    x: number
-    y: number
-    w: number
-    h: number
-  } | null>(null)
+  const [crop, setCrop] = useState<Crop | null>(null)
+  const [activeHandle, setActiveHandle] = useState<Handle>(null)
 
-  const [dragStart, setDragStart] = useState<{ x: number; y: number } | null>(
-    null
-  )
-
-  /* ------------------ 画像読み込み ------------------ */
-
+  /* 初期 crop（画像中央） */
   useEffect(() => {
-    const img = new Image()
-    img.src = URL.createObjectURL(file)
+    const img = imgRef.current
+    if (!img) return
+
     img.onload = () => {
-      imageRef.current = img
-      draw()
+      const w = img.clientWidth * 0.7
+      const h = img.clientHeight * 0.7
+      setCrop({
+        x: (img.clientWidth - w) / 2,
+        y: (img.clientHeight - h) / 2,
+        w,
+        h,
+      })
     }
-  }, [file, rotation])
+  }, [file])
 
-  /* ------------------ 描画 ------------------ */
+  /* -------- touch / pointer -------- */
 
-  function draw() {
-    const canvas = canvasRef.current
-    const img = imageRef.current
-    if (!canvas || !img) return
+  function onPointerMove(e: React.PointerEvent) {
+    if (!crop || !activeHandle) return
 
-    const ctx = canvas.getContext('2d')
-    if (!ctx) return
+    const rect = containerRef.current!.getBoundingClientRect()
+    const x = e.clientX - rect.left
+    const y = e.clientY - rect.top
 
-    const size = Math.max(img.width, img.height)
-    canvas.width = size
-    canvas.height = size
-
-    ctx.clearRect(0, 0, size, size)
-
-    ctx.save()
-    ctx.translate(size / 2, size / 2)
-    ctx.rotate((rotation * Math.PI) / 180)
-    ctx.drawImage(img, -img.width / 2, -img.height / 2)
-    ctx.restore()
-
-    // トリミング枠
-    if (crop) {
-      ctx.strokeStyle = '#00aaff'
-      ctx.lineWidth = 2
-      ctx.strokeRect(crop.x, crop.y, crop.w, crop.h)
-    }
-  }
-
-  /* ------------------ マウス操作 ------------------ */
-
-  function getPos(e: React.MouseEvent) {
-    const rect = canvasRef.current!.getBoundingClientRect()
-    return {
-      x: e.clientX - rect.left,
-      y: e.clientY - rect.top,
-    }
-  }
-
-  function onMouseDown(e: React.MouseEvent) {
-    const p = getPos(e)
-    setDragStart(p)
-    setCrop({ x: p.x, y: p.y, w: 0, h: 0 })
-  }
-
-  function onMouseMove(e: React.MouseEvent) {
-    if (!dragStart) return
-    const p = getPos(e)
-    setCrop({
-      x: Math.min(dragStart.x, p.x),
-      y: Math.min(dragStart.y, p.y),
-      w: Math.abs(p.x - dragStart.x),
-      h: Math.abs(p.y - dragStart.y),
+    setCrop((c) => {
+      if (!c) return c
+      switch (activeHandle) {
+        case 'top':
+          return { ...c, y: y, h: c.y + c.h - y }
+        case 'bottom':
+          return { ...c, h: y - c.y }
+        case 'left':
+          return { ...c, x: x, w: c.x + c.w - x }
+        case 'right':
+          return { ...c, w: x - c.x }
+        default:
+          return c
+      }
     })
   }
 
-  function onMouseUp() {
-    setDragStart(null)
+  function stopDrag() {
+    setActiveHandle(null)
   }
 
-  useEffect(() => {
-    draw()
-  }, [crop])
-
-  /* ------------------ 投稿処理 ------------------ */
+  /* -------- 投稿 -------- */
 
   async function handlePost() {
-    if (!crop || !imageRef.current) return
+    if (!crop || !imgRef.current) return
 
-    const out = document.createElement('canvas')
-    out.width = crop.w
-    out.height = crop.h
+    const img = imgRef.current
+    const scaleX = img.naturalWidth / img.clientWidth
+    const scaleY = img.naturalHeight / img.clientHeight
 
-    const ctx = out.getContext('2d')!
+    const canvas = document.createElement('canvas')
+    canvas.width = crop.w * scaleX
+    canvas.height = crop.h * scaleY
+
+    const ctx = canvas.getContext('2d')!
     ctx.drawImage(
-      canvasRef.current!,
-      crop.x,
-      crop.y,
-      crop.w,
-      crop.h,
+      img,
+      crop.x * scaleX,
+      crop.y * scaleY,
+      crop.w * scaleX,
+      crop.h * scaleY,
       0,
       0,
-      crop.w,
-      crop.h
+      canvas.width,
+      canvas.height
     )
 
-    const blob = await new Promise<Blob>((resolve) =>
-      out.toBlob((b) => resolve(b!), 'image/jpeg')
+    const blob = await new Promise<Blob>((r) =>
+      canvas.toBlob((b) => r(b!), 'image/jpeg')
     )
 
-    const editedFile = new File([blob], file.name, { type: 'image/jpeg' })
-    onPost(editedFile)
+    onPost(new File([blob], file.name, { type: 'image/jpeg' }))
   }
 
-  /* ------------------ UI ------------------ */
+  /* -------- UI -------- */
+
+  const imageUrl = URL.createObjectURL(file)
 
   return (
     <div style={styles.overlay} onClick={onCancel}>
       <div style={styles.modal} onClick={(e) => e.stopPropagation()}>
         <div style={styles.header}>
-          <button onClick={onCancel} style={styles.closeButton}>×</button>
-
+          <button onClick={onCancel}>×</button>
           <div style={{ display: 'flex', gap: 12 }}>
             <button onClick={() => setRotation((r) => (r + 90) % 360)}>
               <RotateCw size={20} />
             </button>
-
-            <button
-              onClick={handlePost}
-              disabled={uploading || !crop}
-              style={{ opacity: uploading ? 0.5 : 1 }}
-            >
-              {uploading ? (
-                <Loader2 className="animate-spin" size={22} />
-              ) : (
-                <SendHorizontal size={22} />
-              )}
+            <button onClick={handlePost} disabled={uploading}>
+              {uploading ? <Loader2 className="animate-spin" /> : <SendHorizontal />}
             </button>
           </div>
         </div>
 
-        <div style={styles.body}>
-          <canvas
-            ref={canvasRef}
-            style={styles.canvas}
-            onMouseDown={onMouseDown}
-            onMouseMove={onMouseMove}
-            onMouseUp={onMouseUp}
+        <div
+          ref={containerRef}
+          style={styles.body}
+          onPointerMove={onPointerMove}
+          onPointerUp={stopDrag}
+        >
+          <img
+            ref={imgRef}
+            src={imageUrl}
+            style={{
+              maxWidth: '100%',
+              maxHeight: '100%',
+              transform: `rotate(${rotation}deg)`,
+            }}
           />
+
+          {crop && (
+            <div
+              style={{
+                ...styles.crop,
+                left: crop.x,
+                top: crop.y,
+                width: crop.w,
+                height: crop.h,
+              }}
+            >
+              {(['top', 'right', 'bottom', 'left'] as Handle[]).map((h) => (
+                <div
+                  key={h}
+                  onPointerDown={() => setActiveHandle(h)}
+                  style={{ ...styles.handle, ...handlePos[h!] }}
+                />
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </div>
   )
 }
 
-/* ------------------ styles ------------------ */
+/* ---------------- styles ---------------- */
 
-const styles: { [key: string]: CSSProperties } = {
+const styles: { [k: string]: CSSProperties } = {
   overlay: {
     position: 'fixed',
     inset: 0,
@@ -199,26 +187,36 @@ const styles: { [key: string]: CSSProperties } = {
     height: 48,
     padding: '0 12px',
     display: 'flex',
-    alignItems: 'center',
     justifyContent: 'space-between',
-    borderBottom: '1px solid #333',
-  },
-  closeButton: {
-    background: 'none',
-    border: 'none',
-    fontSize: 24,
-    color: '#fff',
-    cursor: 'pointer',
+    alignItems: 'center',
   },
   body: {
     flex: 1,
+    position: 'relative',
     display: 'flex',
-    alignItems: 'center',
     justifyContent: 'center',
+    alignItems: 'center',
+    touchAction: 'none',
   },
-  canvas: {
-    maxWidth: '100%',
-    maxHeight: '100%',
-    cursor: 'crosshair',
+  crop: {
+    position: 'absolute',
+    border: '2px solid #00aaff',
+    boxSizing: 'border-box',
   },
+  handle: {
+    position: 'absolute',
+    width: 20,
+    height: 20,
+    background: '#00aaff',
+    borderRadius: '50%',
+    transform: 'translate(-50%, -50%)',
+    touchAction: 'none',
+  },
+}
+
+const handlePos: Record<'top' | 'right' | 'bottom' | 'left', CSSProperties> = {
+  top: { left: '50%', top: 0 },
+  right: { left: '100%', top: '50%' },
+  bottom: { left: '50%', top: '100%' },
+  left: { left: 0, top: '50%' },
 }
