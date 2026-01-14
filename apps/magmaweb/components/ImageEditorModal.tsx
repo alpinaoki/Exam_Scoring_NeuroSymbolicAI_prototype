@@ -12,7 +12,7 @@ type Props = {
 }
 
 type Crop = { x: number; y: number; w: number; h: number }
-type Handle = 'top' | 'right' | 'bottom' | 'left'
+type Handle = 'top' | 'right' | 'bottom' | 'left' | 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right'
 
 export default function ImageEditorModal({
   file,
@@ -72,17 +72,29 @@ export default function ImageEditorModal({
 
     setCrop((c) => {
       if (!c) return c
-      switch (activeHandle) {
-        case 'top':
-          return { ...c, y: y, h: Math.max(20, c.y + c.h - y) }
-        case 'bottom':
-          return { ...c, h: Math.max(20, y - c.y) }
-        case 'left':
-          return { ...c, x: x, w: Math.max(20, c.x + c.w - x) }
-        case 'right':
-          return { ...c, w: Math.max(20, x - c.x) }
-        default:
-          return c
+      // 2. 四隅のドラッグに対応するように計算を拡張
+      let { x: nx, y: ny, w: nw, h: nh } = c
+
+      if (activeHandle.includes('top')) {
+        ny = y
+        nh = c.y + c.h - y
+      }
+      if (activeHandle.includes('bottom')) {
+        nh = y - c.y
+      }
+      if (activeHandle.includes('left')) {
+        nx = x
+        nw = c.x + c.w - x
+      }
+      if (activeHandle.includes('right')) {
+        nw = x - c.x
+      }
+
+      return {
+        x: nx,
+        y: ny,
+        w: Math.max(20, nw),
+        h: Math.max(20, nh),
       }
     })
   }
@@ -199,7 +211,8 @@ export default function ImageEditorModal({
                 height: crop.h,
               }}
             >
-              {(['top', 'right', 'bottom', 'left'] as Handle[]).map((h) => (
+              {/* 3. マップする配列に四隅を追加 */}
+              {(['top', 'right', 'bottom', 'left', 'top-left', 'top-right', 'bottom-left', 'bottom-right'] as Handle[]).map((h) => (
                 <div
                   key={h}
                   onPointerDown={(e) => startDrag(e, h)}
@@ -281,4 +294,8 @@ const handlePos: Record<Handle, CSSProperties> = {
   right: { left: '100%', top: '50%', transform: 'translate(-50%, -50%)' },
   bottom: { left: '50%', top: '100%', transform: 'translate(-50%, -50%)' },
   left: { left: 0, top: '50%', transform: 'translate(-50%, -50%)' },
+  'top-left': { left: 0, top: 0, transform: 'translate(-50%, -50%)' },
+  'top-right': { left: '100%', top: 0, transform: 'translate(-50%, -50%)' },
+  'bottom-left': { left: 0, top: '100%', transform: 'translate(-50%, -50%)' },
+  'bottom-right': { left: '100%', top: '100%', transform: 'translate(-50%, -50%)' },
 }
