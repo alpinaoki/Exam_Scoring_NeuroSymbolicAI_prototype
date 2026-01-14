@@ -169,7 +169,7 @@ export default function ImageEditorModal({
 
   onPost(new File([blob], file.name, { type: 'image/jpeg' }))
 }
-え
+
   return (
     <div style={styles.overlay} onClick={onCancel}>
       <div style={styles.modal} onClick={(e) => e.stopPropagation()}>
