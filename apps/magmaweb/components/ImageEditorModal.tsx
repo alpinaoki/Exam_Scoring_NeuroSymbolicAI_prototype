@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, useMemo } from 'react'
 import type { CSSProperties } from 'react'
-import { SendHorizontal, Loader2, RotateCw, Sun } from 'lucide-react'
+import { SendHorizontal, Loader2, RotateCw, Sun, Contrast } from 'lucide-react'
 
 type Props = {
   file: File
@@ -25,10 +25,10 @@ export default function ImageEditorModal({
 
   const [rotation, setRotation] = useState(0)
   const [brightness, setBrightness] = useState(1)
+  const [contrast, setContrast] = useState(1) // コントラストの状態を追加
   const [crop, setCrop] = useState<Crop | null>(null)
   const [activeHandle, setActiveHandle] = useState<Handle | null>(null)
 
-  // メモリリーク防止のためURLをメモ化
   const imageUrl = useMemo(() => URL.createObjectURL(file), [file])
 
   useEffect(() => {
@@ -68,11 +68,9 @@ export default function ImageEditorModal({
 
     const containerRect = containerRef.current.getBoundingClientRect()
     const imgRect = imgRef.current.getBoundingClientRect()
-
     const pointerX = e.clientX - containerRect.left
     const pointerY = e.clientY - containerRect.top
 
-    // 画像の表示領域の境界を取得
     const imgLeftBound = imgRect.left - containerRect.left
     const imgTopBound = imgRect.top - containerRect.top
     const imgRightBound = imgLeftBound + imgRect.width
@@ -117,7 +115,7 @@ export default function ImageEditorModal({
     }
   }
 
-  /* -------- 投稿処理 (回転・明るさ反映) -------- */
+  /* -------- 投稿処理 (回転・明るさ・コントラスト反映) -------- */
 
   async function handlePost() {
     if (!crop || !imgRef.current || !containerRef.current) return
@@ -132,7 +130,9 @@ export default function ImageEditorModal({
 
     ctx.translate(canvas.width / 2, canvas.height / 2)
     ctx.rotate((rotation * Math.PI) / 180)
-    ctx.filter = `brightness(${brightness})`
+    
+    // 明るさとコントラストを同時に適用
+    ctx.filter = `brightness(${brightness}) contrast(${contrast})`
 
     const imgCenterX = img.offsetLeft + img.clientWidth / 2
     const imgCenterY = img.offsetTop + img.clientHeight / 2
@@ -181,23 +181,46 @@ export default function ImageEditorModal({
           </div>
         </div>
 
-        {/* 明るさコントロールUI */}
-        <div style={styles.controls}>
-          <div style={styles.controlLabel}>
-            <Sun size={18} />
-            <span style={{ fontSize: 14 }}>明るさ</span>
+        {/* コントロールパネルエリア */}
+        <div style={styles.controlPanel}>
+          {/* 明るさ */}
+          <div style={styles.controlRow}>
+            <div style={styles.controlLabel}>
+              <Sun size={18} />
+              <span style={{ fontSize: 13 }}>明るさ</span>
+            </div>
+            <input
+              type="range"
+              min={0.5}
+              max={1.5}
+              step={0.01}
+              value={brightness}
+              onChange={(e) => setBrightness(Number(e.target.value))}
+              style={styles.slider}
+            />
+            <div style={styles.valueDisplay}>
+              {Math.round(brightness * 100)}%
+            </div>
           </div>
-          <input
-            type="range"
-            min={0.5}
-            max={1.5}
-            step={0.01}
-            value={brightness}
-            onChange={(e) => setBrightness(Number(e.target.value))}
-            style={styles.slider}
-          />
-          <div style={styles.valueDisplay}>
-            {Math.round(brightness * 100)}%
+
+          {/* コントラスト */}
+          <div style={styles.controlRow}>
+            <div style={styles.controlLabel}>
+              <Contrast size={18} />
+              <span style={{ fontSize: 13 }}>コントラスト</span>
+            </div>
+            <input
+              type="range"
+              min={0.5}
+              max={1.5}
+              step={0.01}
+              value={contrast}
+              onChange={(e) => setContrast(Number(e.target.value))}
+              style={styles.slider}
+            />
+            <div style={styles.valueDisplay}>
+              {Math.round(contrast * 100)}%
+            </div>
           </div>
         </div>
 
@@ -210,7 +233,7 @@ export default function ImageEditorModal({
               maxWidth: '90%',
               maxHeight: '80%',
               transform: `rotate(${rotation}deg)`,
-              filter: `brightness(${brightness})`,
+              filter: `brightness(${brightness}) contrast(${contrast})`,
               userSelect: 'none',
               pointerEvents: 'none', 
             }}
@@ -301,9 +324,16 @@ const styles: { [k: string]: CSSProperties } = {
     borderRadius: '50%',
     border: '2px solid #fff',
   },
-  controls: {
+  // 既存の controls を controlPanel に変更（あるいは追加）
+  controlPanel: {
     padding: '12px 20px',
-    background: 'rgba(255,255,255,0.1)',
+    background: 'rgba(255,255,255,0.08)',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '8px',
+  },
+  // 1行ずつのレイアウト
+  controlRow: {
     display: 'flex',
     alignItems: 'center',
     gap: '15px',
@@ -311,8 +341,8 @@ const styles: { [k: string]: CSSProperties } = {
   controlLabel: {
     display: 'flex',
     alignItems: 'center',
-    gap: '6px',
-    minWidth: '70px',
+    gap: '8px',
+    minWidth: '100px', // 「コントラスト」の文字に合わせて少し広めに
   },
   slider: {
     flex: 1,
@@ -322,8 +352,9 @@ const styles: { [k: string]: CSSProperties } = {
   valueDisplay: {
     minWidth: '40px',
     textAlign: 'right',
-    fontSize: '14px',
+    fontSize: '13px',
     fontVariantNumeric: 'tabular-nums',
+    color: '#ccc'
   },
 }
 
