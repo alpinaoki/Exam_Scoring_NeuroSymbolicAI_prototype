@@ -144,6 +144,16 @@ export default function ImageEditorModal({
 
   return (
     <div style={styles.overlay} onClick={onCancel}>
+      {/* 1. アニメーション用のスタイルを追加 */}
+      <style>{`
+        @keyframes spin {
+          to { transform: rotate(360deg); }
+        }
+        .animate-spin-custom {
+          animation: spin 1s linear infinite;
+        }
+      `}</style>
+
       <div style={styles.modal} onClick={(e) => e.stopPropagation()}>
         <div style={styles.header}>
           <button onClick={onCancel} style={styles.closeBtn}>×</button>
@@ -152,7 +162,12 @@ export default function ImageEditorModal({
               <RotateCw size={24} />
             </button>
             <button onClick={handlePost} disabled={uploading} style={styles.actionBtn}>
-              {uploading ? <Loader2 className="animate-spin" /> : <SendHorizontal size={24} />}
+              {/* 2. classNameを独自のものに変え、sizeを明示 */}
+              {uploading ? (
+                <Loader2 size={24} className="animate-spin-custom" />
+              ) : (
+                <SendHorizontal size={24} />
+              )}
             </button>
           </div>
         </div>
@@ -170,7 +185,7 @@ export default function ImageEditorModal({
               maxHeight: '80%',
               transform: `rotate(${rotation}deg)`,
               userSelect: 'none',
-              pointerEvents: 'none', // 画像自体のドラッグを防止
+              pointerEvents: 'none', 
             }}
           />
 
