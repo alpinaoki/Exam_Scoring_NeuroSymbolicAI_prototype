@@ -1,80 +1,151 @@
 'use client'
 
-import type { CSSProperties } from 'react'
-import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
-import ProblemActionBar from './ProblemActionBar'
-import { getAnswerCount } from '../lib/posts'
-import { formatDateTime } from '../lib/time'
+import { useRouter } from 'next/navigation'
+import {
+  getProblemById,
+  getAnswersByProblemId,
+} from '../../../lib/posts'
+import { getCurrentUser } from '../../../lib/auth'
+import ProblemCard from '../../../components/ProblemCard'
+import AnswerCard from '../../../components/AnswerCard'
+import { CircleArrowLeft } from 'lucide-react'
 
-type Props = {
-  image: string | null
-  problemId: string
-  username: string
-  createdAt: string
-}
-
-export default function ProblemCard({
-  image,
-  problemId,
-  username,
-  createdAt,
-}: Props) {
+export default function ThreadPage({
+  params,
+}: {
+  params: { id: string }
+}) {
+  const [problem, setProblem] = useState<any>(null)
+  const [answers, setAnswers] = useState<any[]>([])
+  const [canViewAnswers, setCanViewAnswers] = useState(false)
   const router = useRouter()
-  const [answerCount, setAnswerCount] = useState(0)
 
   useEffect(() => {
-    getAnswerCount(problemId).then(setAnswerCount)
-  }, [problemId])
+    async function load() {
+      const [p, a, user] = await Promise.all([
+        getProblemById(params.id),
+        getAnswersByProblemId(params.id),
+        getCurrentUser(),
+      ])
 
-  const date = new Date(createdAt).toLocaleDateString('ja-JP')
-  const timeLabel = formatDateTime(createdAt)
-  
+      setProblem(p)
+      setAnswers(a)
+
+      if (!user) {
+        setCanViewAnswers(false)
+        return
+      }
+
+      const isProblemOwner = p.user_id === user.id
+      const hasPostedAnswer = a.some(
+        (ans) => ans.user_id === user.id
+      )
+
+      setCanViewAnswers(isProblemOwner || hasPostedAnswer)
+    }
+
+    load()
+  }, [params.id])
+
+  if (!problem) {
+    return <div style={{ padding: 20 }}>Loading...</div>
+  }
+
   return (
-    <div style={styles.card}>
-      <div style={styles.header}>
-        <span>@{username}</span>
-        <span style={styles.date}>· {timeLabel}</span>
+    <div
+      style={{
+        minHeight: '100vh',
+        width: '100%',
+        backgroundColor: '#ffffff',
+        display: 'flex',
+        flexDirection: 'column',
+      }}
+    >
+      {/* 問題セクション */}
+      <div
+        style={{
+          width: '100%',
+          padding: '0 8px 32px',
+          maxWidth: '800px',
+          margin: '0 auto',
+        }}
+      >
+        <button
+          onClick={() => router.back()}
+          style={{
+            background: 'none',
+            border: 'none',
+            color: '#333',
+            cursor: 'pointer',
+            padding: '10px 0',
+            marginTop: '10px',
+          }}
+        >
+          <CircleArrowLeft size={30} />
+        </button>
+
+        <ProblemCard
+          image={problem.image_url}
+          problemId={problem.id}
+          username={problem.profiles.handle}
+          createdAt={problem.created_at}
+        />
       </div>
 
-      {image && (
-        <img
-          src={image}
-          alt="problem"
-          style={{ ...styles.image, cursor: 'pointer' }}
-          onClick={() => router.push(`/threads/${problemId}`)}
-        />
-      )}
-
-      <ProblemActionBar
-        problemId={problemId}
-        rootId={problemId}
-        bookmarkCount={12} // 仮
-        answerCount={answerCount}
-      />
+      {/* 解答セクション */}
+      <div
+        style={{
+          flexGrow: 1,
+          background:
+            'linear-gradient(to bottom, #ffffff 0%, #f1ece1 1%, #e6dbca 5%, #e0cac3 60%, #d2b6ae 99%, #ffffff 100%)',
+          padding: '24px 8px 48px',
+        }}
+      >
+        <div
+          style={{
+            maxWidth: '800px',
+            margin: '0 auto',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 16,
+          }}
+        >
+          {canViewAnswers ? (
+            answers.map((a) => (
+              <div
+                key={a.id}
+                style={{
+                  filter:
+                    'drop-shadow(0 4px 12px rgba(0,0,0,0.08))',
+                }}
+              >
+                <AnswerCard
+                  image={a.image_url}
+                  answerId={a.id}
+                  rootId={problem.id}
+                  username={a.profiles.handle}
+                  createdAt={a.created_at}
+                />
+              </div>
+            ))
+          ) : (
+            <div
+              style={{
+                marginTop: 40,
+                padding: '32px 16px',
+                textAlign: 'center',
+                color: '#555',
+                background: 'rgba(255,255,255,0.6)',
+                borderRadius: 12,
+                fontSize: 15,
+              }}
+            >
+              あなたも「解答」をタップして投稿して、他の人の解答も見てみよう！
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   )
-}
-
-const styles: { [key: string]: CSSProperties } = {
-  card: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '12px',
-  },
-  header: {
-    fontSize: '13px',
-    color: '#555',
-  },
-  date: {
-    marginLeft: 4,
-    color: '#999',
-    fontSize: '12px',
-  },
-  image: {
-    width: '100%',
-    borderRadius: '8px',
-    objectFit: 'contain',
-    border: '1px solid #eee',
-  },
 }
