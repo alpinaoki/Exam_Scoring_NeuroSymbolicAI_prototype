@@ -64,38 +64,76 @@ export default function ImageEditorModal({
     setActiveHandle(h)
   }
 
-  const onPointerMove = (e: React.PointerEvent) => {
-    if (!crop || !activeHandle || !containerRef.current) return
+  // startDrag と stopDrag は変更なし
 
-    const rect = containerRef.current.getBoundingClientRect()
-    const x = e.clientX - rect.left
-    const y = e.clientY - rect.top
+  const onPointerMove = (e: React.PointerEvent) => {
+    // imgRef.current も必須条件に追加
+    if (!crop || !activeHandle || !containerRef.current || !imgRef.current) return
+
+    const containerRect = containerRef.current.getBoundingClientRect()
+    const imgRect = imgRef.current.getBoundingClientRect()
+
+    // コンテナに対するポインターの相対座標
+    const pointerX = e.clientX - containerRect.left
+    const pointerY = e.clientY - containerRect.top
+
+    // コンテナに対する画像の相対的な境界線（ここが重要）
+    const imgLeftBound = imgRect.left - containerRect.left
+    const imgTopBound = imgRect.top - containerRect.top
+    const imgRightBound = imgLeftBound + imgRect.width
+    const imgBottomBound = imgTopBound + imgRect.height
 
     setCrop((c) => {
       if (!c) return c
-      // 2. 四隅のドラッグに対応するように計算を拡張
       let { x: nx, y: ny, w: nw, h: nh } = c
 
+      // --- 上辺の操作 ---
       if (activeHandle.includes('top')) {
-        ny = y
-        nh = c.y + c.h - y
-      }
-      if (activeHandle.includes('bottom')) {
-        nh = y - c.y
-      }
-      if (activeHandle.includes('left')) {
-        nx = x
-        nw = c.x + c.w - x
-      }
-      if (activeHandle.includes('right')) {
-        nw = x - c.x
+        // ポインターYが画像の上端より上に行かないように制限
+        const constrainedY = Math.max(pointerY, imgTopBound)
+        ny = constrainedY
+        // 新しい高さは「元の底辺位置 - 新しい上辺位置」
+        nh = (c.y + c.h) - constrainedY
       }
 
+      // --- 下辺の操作 ---
+      if (activeHandle.includes('bottom')) {
+        // ポインターYが画像の下端より下に行かないように制限
+        const constrainedY = Math.min(pointerY, imgBottomBound)
+        // 新しい高さは「新しい底辺位置 - 元の上辺位置」
+        nh = constrainedY - c.y
+      }
+
+      // --- 左辺の操作 ---
+      if (activeHandle.includes('left')) {
+        // ポインターXが画像の左端より左に行かないように制限
+        const constrainedX = Math.max(pointerX, imgLeftBound)
+        nx = constrainedX
+        // 新しい幅は「元の右辺位置 - 新しい左辺位置」
+        nw = (c.x + c.w) - constrainedX
+      }
+
+      // --- 右辺の操作 ---
+      if (activeHandle.includes('right')) {
+        // ポインターXが画像の右端より右に行かないように制限
+        const constrainedX = Math.min(pointerX, imgRightBound)
+        // 新しい幅は「新しい右辺位置 - 元の左辺位置」
+        nw = constrainedX - c.x
+      }
+
+      // 最小サイズの制限 (20px) は維持
+      const finalW = Math.max(20, nw)
+      const finalH = Math.max(20, nh)
+
+      // 念のため、計算結果が境界を超えていないか最終チェックして補正（特に最小サイズ制限と競合した場合）
+      const finalX = Math.max(imgLeftBound, Math.min(nx, imgRightBound - finalW))
+      const finalY = Math.max(imgTopBound, Math.min(ny, imgBottomBound - finalH))
+
       return {
-        x: nx,
-        y: ny,
-        w: Math.max(20, nw),
-        h: Math.max(20, nh),
+        x: finalX,
+        y: finalY,
+        w: finalW,
+        h: finalH,
       }
     })
   }
