@@ -57,14 +57,17 @@ export default function ProblemActionBar({
           onCancel={() => {
             if (!uploading) setFile(null)
           }}
-          onPost={async () => {
-            if (uploading) return
-            setUploading(true)
-            const imageUrl = await uploadImageToCloudinary(file)
-            await createAnswer({ imageUrl, problemId, rootId })
-            setUploading(false)
-            setFile(null)
-          }}
+          onPost={async (editedFile) => {
+  if (uploading) return
+  setUploading(true)
+
+  const imageUrl = await uploadImageToCloudinary(editedFile) // ← ここ！
+  await createAnswer({ imageUrl, problemId, rootId })
+
+  setUploading(false)
+  setFile(null)
+}}
+
         />
       )}
     </>
