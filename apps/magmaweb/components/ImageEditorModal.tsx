@@ -94,8 +94,6 @@ export default function ImageEditorModal({
     }
   }
 
-  /* -------- 投稿処理 -------- */
-
   /* -------- 投稿処理 (修正版) -------- */
 
   async function handlePost() {
