@@ -96,79 +96,53 @@ export default function ImageEditorModal({
 
   /* -------- 投稿処理 -------- */
 
+  /* -------- 投稿処理 (修正版) -------- */
+
   async function handlePost() {
-  if (!crop || !imgRef.current || !containerRef.current) return
+    if (!crop || !imgRef.current || !containerRef.current) return
 
-  const img = imgRef.current
-  const containerRect = containerRef.current.getBoundingClientRect()
-  const imgRect = img.getBoundingClientRect()
+    const img = imgRef.current
+    
+    // 1. 重要：回転に左右されない「元のサイズ」との倍率を計算
+    // clientWidth/Height は CSS transform (rotate) の影響を受けない元の数値を返します
+    const scale = img.naturalWidth / img.clientWidth
 
-  // UI上の画像左上オフセット
-  const offsetX = imgRect.left - containerRect.left
-  const offsetY = imgRect.top - containerRect.top
+    // 2. 出力用キャンバスの作成（トリミング枠のサイズ）
+    const canvas = document.createElement('canvas')
+    canvas.width = crop.w * scale
+    canvas.height = crop.h * scale
+    const ctx = canvas.getContext('2d')!
 
-  // 表示倍率
-  const scale = img.naturalWidth / imgRect.width
+    // 3. キャンバスの中心に座標系を移動して回転させる
+    ctx.translate(canvas.width / 2, canvas.height / 2)
+    ctx.rotate((rotation * Math.PI) / 180)
 
-  /* ---------- 回転込みで描画するための下準備 ---------- */
+    // 4. UI上の「画像中心」と「トリミング枠中心」の距離を出す
+    // offsetTop/Left は親要素(body)内での元の位置（回転前）を指すので正確です
+    const imgCenterX = img.offsetLeft + img.clientWidth / 2
+    const imgCenterY = img.offsetTop + img.clientHeight / 2
+    const cropCenterX = crop.x + crop.w / 2
+    const cropCenterY = crop.y + crop.h / 2
 
-  const rad = (rotation * Math.PI) / 180
+    const dx = (imgCenterX - cropCenterX) * scale
+    const dy = (imgCenterY - cropCenterY) * scale
 
-  // 回転後の画像サイズを計算
-  const sin = Math.abs(Math.sin(rad))
-  const cos = Math.abs(Math.cos(rad))
+    // 5. 画像を描画
+    // 画像自身の中心が (dx, dy) に来るように配置
+    ctx.drawImage(
+      img,
+      dx - img.naturalWidth / 2,
+      dy - img.naturalHeight / 2,
+      img.naturalWidth,
+      img.naturalHeight
+    )
 
-  const rotatedW =
-    img.naturalWidth * cos + img.naturalHeight * sin
-  const rotatedH =
-    img.naturalWidth * sin + img.naturalHeight * cos
+    const blob = await new Promise<Blob>((resolve) =>
+      canvas.toBlob((b) => resolve(b!), 'image/jpeg', 0.9)
+    )
 
-  // 回転後画像用 canvas
-  const baseCanvas = document.createElement('canvas')
-  baseCanvas.width = rotatedW
-  baseCanvas.height = rotatedH
-
-  const bctx = baseCanvas.getContext('2d')!
-  bctx.translate(rotatedW / 2, rotatedH / 2)
-  bctx.rotate(rad)
-  bctx.drawImage(
-    img,
-    -img.naturalWidth / 2,
-    -img.naturalHeight / 2
-  )
-
-  /* ---------- UI crop → 回転後画像座標へ変換 ---------- */
-
-  const sx = (crop.x - offsetX) * scale + (rotatedW - img.naturalWidth) / 2
-  const sy = (crop.y - offsetY) * scale + (rotatedH - img.naturalHeight) / 2
-  const sw = crop.w * scale
-  const sh = crop.h * scale
-
-  /* ---------- 最終 crop ---------- */
-
-  const outCanvas = document.createElement('canvas')
-  outCanvas.width = sw
-  outCanvas.height = sh
-
-  const octx = outCanvas.getContext('2d')!
-  octx.drawImage(
-    baseCanvas,
-    sx,
-    sy,
-    sw,
-    sh,
-    0,
-    0,
-    sw,
-    sh
-  )
-
-  const blob = await new Promise<Blob>((resolve) =>
-    outCanvas.toBlob((b) => resolve(b!), 'image/jpeg', 0.9)
-  )
-
-  onPost(new File([blob], file.name, { type: 'image/jpeg' }))
-}
+    onPost(new File([blob], file.name, { type: 'image/jpeg' }))
+  }
 
   return (
     <div style={styles.overlay} onClick={onCancel}>
