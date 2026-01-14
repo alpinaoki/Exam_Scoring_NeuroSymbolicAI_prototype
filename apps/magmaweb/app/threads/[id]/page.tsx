@@ -2,7 +2,11 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { getProblemById, getAnswersByProblemId } from '../../../lib/posts'
+import {
+  getProblemById,
+  getAnswersByProblemId,
+} from '../../../lib/posts'
+import { getCurrentUser } from '../../../lib/auth'
 import ProblemCard from '../../../components/ProblemCard'
 import AnswerCard from '../../../components/AnswerCard'
 import { CircleArrowLeft } from 'lucide-react'
@@ -14,59 +18,73 @@ export default function ThreadPage({
 }) {
   const [problem, setProblem] = useState<any>(null)
   const [answers, setAnswers] = useState<any[]>([])
+  const [canViewAnswers, setCanViewAnswers] = useState(false)
   const router = useRouter()
 
   useEffect(() => {
     async function load() {
-      const p = await getProblemById(params.id)
-      const a = await getAnswersByProblemId(params.id)
+      const [p, a, user] = await Promise.all([
+        getProblemById(params.id),
+        getAnswersByProblemId(params.id),
+        getCurrentUser(),
+      ])
+
       setProblem(p)
       setAnswers(a)
+
+      if (!user) {
+        setCanViewAnswers(false)
+        return
+      }
+
+      const isProblemOwner = p.user_id === user.id
+      const hasPostedAnswer = a.some(
+        (ans) => ans.user_id === user.id
+      )
+
+      setCanViewAnswers(isProblemOwner || hasPostedAnswer)
     }
+
     load()
   }, [params.id])
 
-  if (!problem) return <div style={{ padding: 20 }}>Loading...</div>
+  if (!problem) {
+    return <div style={{ padding: 20 }}>Loading...</div>
+  }
 
   return (
-    /* 全体コンテナ: 基本は白 */
-    <div style={{
-      minHeight: '100vh',
-      width: '100%',
-      backgroundColor: '#ffffff',
-      display: 'flex',
-      flexDirection: 'column',
-    }}>
-      
-      {/* 1. 問題セクション (真っ白) */}
-      <div style={{ 
+    <div
+      style={{
+        minHeight: '100vh',
         width: '100%',
-        padding: '0 8px 32px', // 下に少し余白を作ってグラデーションへの繋ぎに
-        maxWidth: '800px',
-        margin: '0 auto' 
-      }}>
-        {/* 戻るリンク: 背景が白なのでモノトーンに戻しました */}
+        backgroundColor: '#ffffff',
+        display: 'flex',
+        flexDirection: 'column',
+      }}
+    >
+      {/* 問題セクション */}
+      <div
+        style={{
+          width: '100%',
+          padding: '0 8px 32px',
+          maxWidth: '800px',
+          margin: '0 auto',
+        }}
+      >
         <button
           onClick={() => router.back()}
           style={{
-            alignSelf: 'flex-start',
             background: 'none',
             border: 'none',
             color: '#333',
             cursor: 'pointer',
             padding: '10px 0',
             marginTop: '10px',
-            marginBottom: '5px',
-            marginLeft: '3px',
-            transition: 'opacity 0.2s',
           }}
-          onMouseEnter={(e) => e.currentTarget.style.opacity = '0.6'}
-          onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
         >
           <CircleArrowLeft size={30} />
         </button>
 
-        {/* 問題カード */}
         <ProblemCard
           image={problem.image_url}
           problemId={problem.id}
@@ -75,33 +93,57 @@ export default function ThreadPage({
         />
       </div>
 
-      {/* 2. 回答セクション (ここからマグマ風グラデーション) */}
-      <div style={{
-        flexGrow: 1, // 残りの高さを埋める
-        // 白から始まり、徐々に熱い色へ変化する線形グラデーション
-        background: 'linear-gradient(to bottom, #ffffff 0%, #f1ece1 1%, #e6dbca 5%, #e0cac3 60%, #d2b6ae 99%, #ffffff 100%)',
-        padding: '24px 8px 48px',
-      }}>
-        <div style={{ 
-          maxWidth: '800px',
-          margin: '0 auto',
-          display: 'flex', 
-          flexDirection: 'column', 
-          gap: 16 
-        }}>
-          {answers.map((a) => (
-            <div key={a.id} style={{
-              filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.08))' // 背景色の上でカードを際立たせる
-            }}>
-              <AnswerCard
-                image={a.image_url}
-                answerId={a.id}
-                rootId={problem.id}
-                username={a.profiles.handle}
-                createdAt={a.created_at}
-              />
+      {/* 解答セクション */}
+      <div
+        style={{
+          flexGrow: 1,
+          background:
+            'linear-gradient(to bottom, #ffffff 0%, #f1ece1 1%, #e6dbca 5%, #e0cac3 60%, #d2b6ae 99%, #ffffff 100%)',
+          padding: '24px 8px 48px',
+        }}
+      >
+        <div
+          style={{
+            maxWidth: '800px',
+            margin: '0 auto',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 16,
+          }}
+        >
+          {canViewAnswers ? (
+            answers.map((a) => (
+              <div
+                key={a.id}
+                style={{
+                  filter:
+                    'drop-shadow(0 4px 12px rgba(0,0,0,0.08))',
+                }}
+              >
+                <AnswerCard
+                  image={a.image_url}
+                  answerId={a.id}
+                  rootId={problem.id}
+                  username={a.profiles.handle}
+                  createdAt={a.created_at}
+                />
+              </div>
+            ))
+          ) : (
+            <div
+              style={{
+                marginTop: 40,
+                padding: '32px 16px',
+                textAlign: 'center',
+                color: '#555',
+                background: 'rgba(255,255,255,0.6)',
+                borderRadius: 12,
+                fontSize: 15,
+              }}
+            >
+              「解答」ボタンから投稿して、他の人の解き方も見てみよう！
             </div>
-          ))}
+          )}
         </div>
       </div>
     </div>
