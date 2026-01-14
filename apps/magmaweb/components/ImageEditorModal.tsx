@@ -97,43 +97,79 @@ export default function ImageEditorModal({
   /* -------- 投稿処理 -------- */
 
   async function handlePost() {
-    if (!crop || !imgRef.current) return
+  if (!crop || !imgRef.current || !containerRef.current) return
 
-    const img = imgRef.current
-    // 画像が中央に配置されているためのオフセットを計算
-    const rect = img.getBoundingClientRect()
-    const containerRect = containerRef.current!.getBoundingClientRect()
-    
-    const offsetX = rect.left - containerRect.left
-    const offsetY = rect.top - containerRect.top
+  const img = imgRef.current
+  const containerRect = containerRef.current.getBoundingClientRect()
+  const imgRect = img.getBoundingClientRect()
 
-    const scaleX = img.naturalWidth / img.clientWidth
-    const scaleY = img.naturalHeight / img.clientHeight
+  // UI上の画像左上オフセット
+  const offsetX = imgRect.left - containerRect.left
+  const offsetY = imgRect.top - containerRect.top
 
-    const canvas = document.createElement('canvas')
-    canvas.width = crop.w * scaleX
-    canvas.height = crop.h * scaleY
+  // 表示倍率
+  const scale = img.naturalWidth / imgRect.width
 
-    const ctx = canvas.getContext('2d')!
-    ctx.drawImage(
-      img,
-      (crop.x - offsetX) * scaleX,
-      (crop.y - offsetY) * scaleY,
-      crop.w * scaleX,
-      crop.h * scaleY,
-      0,
-      0,
-      canvas.width,
-      canvas.height
-    )
+  /* ---------- 回転込みで描画するための下準備 ---------- */
 
-    const blob = await new Promise<Blob>((r) =>
-      canvas.toBlob((b) => r(b!), 'image/jpeg', 0.9)
-    )
+  const rad = (rotation * Math.PI) / 180
 
-    onPost(new File([blob], file.name, { type: 'image/jpeg' }))
-  }
+  // 回転後の画像サイズを計算
+  const sin = Math.abs(Math.sin(rad))
+  const cos = Math.abs(Math.cos(rad))
 
+  const rotatedW =
+    img.naturalWidth * cos + img.naturalHeight * sin
+  const rotatedH =
+    img.naturalWidth * sin + img.naturalHeight * cos
+
+  // 回転後画像用 canvas
+  const baseCanvas = document.createElement('canvas')
+  baseCanvas.width = rotatedW
+  baseCanvas.height = rotatedH
+
+  const bctx = baseCanvas.getContext('2d')!
+  bctx.translate(rotatedW / 2, rotatedH / 2)
+  bctx.rotate(rad)
+  bctx.drawImage(
+    img,
+    -img.naturalWidth / 2,
+    -img.naturalHeight / 2
+  )
+
+  /* ---------- UI crop → 回転後画像座標へ変換 ---------- */
+
+  const sx = (crop.x - offsetX) * scale + (rotatedW - img.naturalWidth) / 2
+  const sy = (crop.y - offsetY) * scale + (rotatedH - img.naturalHeight) / 2
+  const sw = crop.w * scale
+  const sh = crop.h * scale
+
+  /* ---------- 最終 crop ---------- */
+
+  const outCanvas = document.createElement('canvas')
+  outCanvas.width = sw
+  outCanvas.height = sh
+
+  const octx = outCanvas.getContext('2d')!
+  octx.drawImage(
+    baseCanvas,
+    sx,
+    sy,
+    sw,
+    sh,
+    0,
+    0,
+    sw,
+    sh
+  )
+
+  const blob = await new Promise<Blob>((resolve) =>
+    outCanvas.toBlob((b) => resolve(b!), 'image/jpeg', 0.9)
+  )
+
+  onPost(new File([blob], file.name, { type: 'image/jpeg' }))
+}
+え
   return (
     <div style={styles.overlay} onClick={onCancel}>
       <div style={styles.modal} onClick={(e) => e.stopPropagation()}>
