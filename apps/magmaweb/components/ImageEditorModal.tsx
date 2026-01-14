@@ -24,6 +24,7 @@ export default function ImageEditorModal({
   const containerRef = useRef<HTMLDivElement>(null)
 
   const [rotation, setRotation] = useState(0)
+  const [brightness, setBrightness] = useState(1)
   const [crop, setCrop] = useState<Crop | null>(null)
   const [activeHandle, setActiveHandle] = useState<Handle | null>(null)
 
@@ -124,8 +125,11 @@ export default function ImageEditorModal({
     const ctx = canvas.getContext('2d')!
 
     // 3. キャンバスの中心に座標系を移動して回転させる
-    ctx.translate(canvas.width / 2, canvas.height / 2)
-    ctx.rotate((rotation * Math.PI) / 180)
+ctx.translate(canvas.width / 2, canvas.height / 2)
+ctx.rotate((rotation * Math.PI) / 180)
+
+// ★ 明るさ反映
+ctx.filter = `brightness(${brightness})`
 
     // 4. UI上の「画像中心」と「トリミング枠中心」の距離を出す
     // offsetTop/Left は親要素(body)内での元の位置（回転前）を指すので正確です
@@ -184,6 +188,18 @@ export default function ImageEditorModal({
           </div>
         </div>
 
+<div style={styles.controls}>
+  <input
+    type="range"
+    min={0.5}
+    max={1.5}
+    step={0.01}
+    value={brightness}
+    onChange={(e) => setBrightness(Number(e.target.value))}
+    style={{ width: '100%' }}
+  />
+</div>
+
         <div
           ref={containerRef}
           style={styles.body}
@@ -193,12 +209,14 @@ export default function ImageEditorModal({
             src={imageUrl}
             alt="editor"
             style={{
-              maxWidth: '90%',
-              maxHeight: '80%',
-              transform: `rotate(${rotation}deg)`,
-              userSelect: 'none',
-              pointerEvents: 'none', 
-            }}
+  maxWidth: '90%',
+  maxHeight: '80%',
+  transform: `rotate(${rotation}deg)`,
+  filter: `brightness(${brightness})`,
+  userSelect: 'none',
+  pointerEvents: 'none', 
+}}
+
           />
 
           {crop && (
@@ -287,6 +305,10 @@ const styles: { [k: string]: CSSProperties } = {
     borderRadius: '50%',
     border: '2px solid #fff',
   },
+  controls: {
+  padding: '8px 16px',
+  background: 'rgba(0,0,0,0.4)',
+},
 }
 
 const handlePos: Record<Handle, CSSProperties> = {
