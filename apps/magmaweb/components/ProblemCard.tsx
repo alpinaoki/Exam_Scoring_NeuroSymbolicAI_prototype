@@ -7,8 +7,8 @@ import {
   getAnswersByProblemId,
 } from '../../../lib/posts'
 import { getCurrentUser } from '../../../lib/auth'
-import ProblemCard from '../../../components/ProblemCard'
-import AnswerCard from '../../../components/AnswerCard'
+import ProblemCard from './components/ProblemCard'
+import AnswerCard from './components/AnswerCard'
 import { CircleArrowLeft } from 'lucide-react'
 
 export default function ThreadPage({
