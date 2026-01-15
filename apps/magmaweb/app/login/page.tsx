@@ -4,16 +4,24 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import type { CSSProperties } from 'react'
 import { signIn, signUp } from '../../lib/auth'
+import TermsOfUse from '../../components/TermsOfUse'
 
 export default function LoginPage() {
   const router = useRouter()
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [mode, setMode] = useState<'login' | 'signup'>('login')
+  const [agreed, setAgreed] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   async function handleSubmit() {
     setError(null)
+
+    if (mode === 'signup' && !agreed) {
+      setError('利用規約への同意が必要です')
+      return
+    }
+
     try {
       if (mode === 'login') {
         await signIn(username, password)
@@ -45,6 +53,23 @@ export default function LoginPage() {
         style={styles.input}
       />
 
+      {/* サインアップ時のみ表示 */}
+      {mode === 'signup' && (
+        <div style={styles.termsBox}>
+          <TermsOfUse />
+          <label style={styles.checkbox}>
+            <input
+              type="checkbox"
+              checked={agreed}
+              onChange={e => setAgreed(e.target.checked)}
+            />
+            <span>
+              上記内容を理解し、記述答案データを研究目的で利用することに同意します
+            </span>
+          </label>
+        </div>
+      )}
+
       {error && <p style={styles.error}>{error}</p>}
 
       <button onClick={handleSubmit}>
@@ -53,9 +78,11 @@ export default function LoginPage() {
 
       <button
         style={styles.switch}
-        onClick={() =>
+        onClick={() => {
           setMode(mode === 'login' ? 'signup' : 'login')
-        }
+          setAgreed(false)
+          setError(null)
+        }}
       >
         {mode === 'login'
           ? '初めての方はこちら'
@@ -90,5 +117,20 @@ const styles: { [key: string]: CSSProperties } = {
     marginTop: 8,
     background: 'none',
     color: '#aaa',
+  },
+  termsBox: {
+    maxWidth: 320,
+    maxHeight: 160,
+    overflowY: 'auto',
+    border: '1px solid #444',
+    padding: 8,
+    borderRadius: 4,
+    background: '#0d0d0d',
+  },
+  checkbox: {
+    display: 'flex',
+    gap: 6,
+    marginTop: 8,
+    fontSize: 12,
   },
 }
