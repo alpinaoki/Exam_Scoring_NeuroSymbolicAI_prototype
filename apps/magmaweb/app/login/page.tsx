@@ -105,51 +105,58 @@ export default function LoginPage() {
     </div>
   )
 }
-
 const styles: { [key: string]: CSSProperties } = {
   page: {
     height: '100vh',
     display: 'flex',
     justifyContent: 'center',
     alignItems: 'center',
-    background: '#0a0a0a',
+    // 真っ黒ではなく、深いワインレッド/ブラウンを混ぜたダークグラデーション
+    background: 'radial-gradient(circle at 50% 50%, #1a0f0f 0%, #050505 100%)',
     color: '#eee',
     position: 'relative',
     overflow: 'hidden',
   },
+  // 背景のボケ（マグマの鼓動のような光）
   blob: {
     position: 'absolute',
-    width: '400px',
-    height: '400px',
-    background: 'radial-gradient(circle, rgba(255, 69, 0, 0.15) 0%, transparent 70%)',
-    filter: 'blur(50px)',
+    width: '600px',
+    height: '600px',
+    // より熱を感じる色に変更し、少し位置をずらして深みを出す
+    background: 'radial-gradient(circle, rgba(255, 50, 0, 0.08) 0%, transparent 70%)',
+    filter: 'blur(80px)',
+    top: '40%',
+    left: '30%',
     zIndex: 0,
+    animation: 'pulse 8s ease-in-out infinite alternate', // 動きを想定
   },
   card: {
     width: '100%',
     maxWidth: '400px',
-    padding: '40px',
-    borderRadius: '24px',
-    background: 'rgba(20, 20, 20, 0.8)',
-    backdropFilter: 'blur(12px)',
-    border: '1px solid rgba(255, 255, 255, 0.1)',
-    boxShadow: '0 20px 40px rgba(0,0,0,0.4)',
+    padding: '48px 40px',
+    borderRadius: '28px',
+    // 背景を真っ黒から「少し明るいグレーの半透明」にすることで、背景との境界を作る
+    background: 'rgba(30, 30, 30, 0.4)',
+    backdropFilter: 'blur(20px)', // ガラスの曇り具合を強化
+    WebkitBackdropFilter: 'blur(20px)',
+    border: '1px solid rgba(255, 255, 255, 0.08)', // 繊細なエッジ
+    boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
     zIndex: 1,
     textAlign: 'center',
   },
   header: {
-    marginBottom: '32px',
+    marginBottom: '40px',
   },
-  /* タイトルのみ Inter フォントを適用し、洗練された細字に変更 */
+  /* タイトル: フォントの良さを活かしつつ少しサイズ調整 */
   title: {
     fontFamily: "'Inter', sans-serif",
-    fontSize: '36px',
-    fontWeight: 200,      // ここを細くするのがポイント
-    letterSpacing: '8px', // 字間を広げて高級感を出す
-    textTransform: 'uppercase', // タイトルは全大文字が映えます
+    fontSize: '38px',
+    fontWeight: 200,
+    letterSpacing: '10px', 
+    textTransform: 'uppercase',
     margin: '0 0 8px 0',
-    paddingLeft: '8px',   // 字間による中心のズレを補正
-    background: 'linear-gradient(to right, #ff4d00, #ff8c00)',
+    paddingLeft: '10px', 
+    background: 'linear-gradient(180deg, #fff 0%, #ff4d00 100%)', // 上から白が入るグラデーションで高級感
     WebkitBackgroundClip: 'text',
     WebkitTextFillColor: 'transparent',
   },
