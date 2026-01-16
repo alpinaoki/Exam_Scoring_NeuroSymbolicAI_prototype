@@ -174,7 +174,7 @@ const styles: { [key: string]: CSSProperties } = {
     padding: '14px',
     borderRadius: '12px',
     border: 'none',
-    background: 'linear-gradient(135deg, #ff4500, #d73600)', // マグマ・グラデーション
+    background: 'linear-gradient(135deg, #ce7d5f, #e3ccb9)', // マグマ・グラデーション
     color: '#fff',
     fontWeight: '600',
     fontSize: '16px',
