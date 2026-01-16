@@ -35,13 +35,13 @@ export default function LoginPage() {
     <div style={styles.page}>
       {/* ここにアニメーションの定義を追加 */}
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@200&display=swap');
-        
-        @keyframes pulse {
-          0% { transform: translate(-50%, -50%) scale(1); opacity: 0.5; }
-          100% { transform: translate(-50%, -50%) scale(1.3); opacity: 0.8; }
-        }
-      `}</style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@200&display=swap');
+  
+  @keyframes pulse {
+    0% { transform: translate(-50%, -50%) scale(0.8); opacity: 0.4; }
+    100% { transform: translate(-50%, -50%) scale(1.2); opacity: 1; }
+  }
+`}</style>
 
       {/* アニメーションを適用した背景のボケ */}
       <div style={styles.blob}></div>
@@ -117,22 +117,25 @@ const styles: { [key: string]: CSSProperties } = {
     display: 'flex',
     justifyContent: 'center',
     alignItems: 'center',
-    background: 'radial-gradient(circle at 50% 50%, #1a0f0f 0%, #050505 100%)',
+    // 背景自体も少しだけ明るい赤みを混ぜる
+    background: 'radial-gradient(circle at center, #1e1111 0%, #050505 100%)',
     color: '#eee',
     position: 'relative',
     overflow: 'hidden',
   },
   blob: {
     position: 'absolute',
-    width: '600px',
-    height: '600px',
-    background: 'radial-gradient(circle, rgba(255, 50, 0, 0.12) 0%, transparent 70%)',
-    filter: 'blur(80px)',
+    // 画面全体に広がるサイズ感に
+    width: '100vw',
+    height: '100vw',
+    // 色を少し強める
+    background: 'radial-gradient(circle, rgba(255, 60, 0, 0.25) 0%, transparent 60%)',
+    filter: 'blur(100px)',
     top: '50%',
     left: '50%',
+    transform: 'translate(-50%, -50%)', // ここで位置を固定
     zIndex: 0,
-    // アニメーションを指定: 名前(pulse) 時間(8秒) 加減速(ease-in-out) 無限ループ(infinite) 往復(alternate)
-    animation: 'pulse 8s ease-in-out infinite alternate',
+    animation: 'pulse 10s ease-in-out infinite alternate',
   },
   card: {
     width: '100%',
