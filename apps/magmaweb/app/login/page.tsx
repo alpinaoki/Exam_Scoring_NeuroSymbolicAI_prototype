@@ -47,8 +47,6 @@ export default function LoginPage() {
       <div style={styles.blob}></div>
       <div style={{...styles.blob, ...styles.blob2}}></div>
 
-      <div style={styles.card}></div>
-
       {/* アニメーションを適用した背景のボケ */}
 
       <div style={styles.card}>
