@@ -182,7 +182,7 @@ const styles: { [key: string]: CSSProperties } = {
     padding: '14px',
     borderRadius: '12px',
     border: 'none',
-    background: 'linear-gradient(135deg, #ce7d5f, #e3ccb9)',
+    background: 'linear-gradient(135deg, #ad5a71, #b9a088)',
     color: '#fff',
     fontWeight: '600',
     fontSize: '16px',
