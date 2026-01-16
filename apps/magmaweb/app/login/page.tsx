@@ -43,7 +43,7 @@ export default function LoginPage() {
 
       <div style={styles.card}>
         <header style={styles.header}>
-          <h1 style={styles.title}>Magmathe</h1>
+          <h1 style={styles.title}>MAGMATHE</h1>
           <p style={styles.subtitle}>
             {mode === 'login' ? 'おかえりなさい' : '新しいアカウントを作成'}
           </p>
