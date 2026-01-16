@@ -33,12 +33,17 @@ export default function LoginPage() {
 
   return (
     <div style={styles.page}>
-      {/* タイトルに使用する Inter 200 を読み込み */}
+      {/* ここにアニメーションの定義を追加 */}
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@200&display=swap');
+        
+        @keyframes pulse {
+          0% { transform: translate(-50%, -50%) scale(1); opacity: 0.5; }
+          100% { transform: translate(-50%, -50%) scale(1.3); opacity: 0.8; }
+        }
       `}</style>
 
-      {/* 装飾用の背景のボケ */}
+      {/* アニメーションを適用した背景のボケ */}
       <div style={styles.blob}></div>
 
       <div style={styles.card}>
@@ -105,41 +110,39 @@ export default function LoginPage() {
     </div>
   )
 }
+
 const styles: { [key: string]: CSSProperties } = {
   page: {
     height: '100vh',
     display: 'flex',
     justifyContent: 'center',
     alignItems: 'center',
-    // 真っ黒ではなく、深いワインレッド/ブラウンを混ぜたダークグラデーション
     background: 'radial-gradient(circle at 50% 50%, #1a0f0f 0%, #050505 100%)',
     color: '#eee',
     position: 'relative',
     overflow: 'hidden',
   },
-  // 背景のボケ（マグマの鼓動のような光）
   blob: {
     position: 'absolute',
     width: '600px',
     height: '600px',
-    // より熱を感じる色に変更し、少し位置をずらして深みを出す
-    background: 'radial-gradient(circle, rgba(255, 50, 0, 0.08) 0%, transparent 70%)',
+    background: 'radial-gradient(circle, rgba(255, 50, 0, 0.12) 0%, transparent 70%)',
     filter: 'blur(80px)',
-    top: '40%',
-    left: '30%',
+    top: '50%',
+    left: '50%',
     zIndex: 0,
-    animation: 'pulse 8s ease-in-out infinite alternate', // 動きを想定
+    // アニメーションを指定: 名前(pulse) 時間(8秒) 加減速(ease-in-out) 無限ループ(infinite) 往復(alternate)
+    animation: 'pulse 8s ease-in-out infinite alternate',
   },
   card: {
     width: '100%',
     maxWidth: '400px',
     padding: '48px 40px',
     borderRadius: '28px',
-    // 背景を真っ黒から「少し明るいグレーの半透明」にすることで、背景との境界を作る
     background: 'rgba(30, 30, 30, 0.4)',
-    backdropFilter: 'blur(20px)', // ガラスの曇り具合を強化
+    backdropFilter: 'blur(20px)',
     WebkitBackdropFilter: 'blur(20px)',
-    border: '1px solid rgba(255, 255, 255, 0.08)', // 繊細なエッジ
+    border: '1px solid rgba(255, 255, 255, 0.08)',
     boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
     zIndex: 1,
     textAlign: 'center',
@@ -147,7 +150,6 @@ const styles: { [key: string]: CSSProperties } = {
   header: {
     marginBottom: '40px',
   },
-  /* タイトル: フォントの良さを活かしつつ少しサイズ調整 */
   title: {
     fontFamily: "'Inter', sans-serif",
     fontSize: '38px',
@@ -156,7 +158,7 @@ const styles: { [key: string]: CSSProperties } = {
     textTransform: 'uppercase',
     margin: '0 0 8px 0',
     paddingLeft: '10px', 
-    background: 'linear-gradient(180deg, #fff 0%, #ff4d00 100%)', // 上から白が入るグラデーションで高級感
+    background: 'linear-gradient(180deg, #fff 0%, #ff4d00 100%)',
     WebkitBackgroundClip: 'text',
     WebkitTextFillColor: 'transparent',
   },
@@ -181,7 +183,6 @@ const styles: { [key: string]: CSSProperties } = {
     color: '#fff',
     fontSize: '16px',
     outline: 'none',
-    transition: 'border-color 0.2s',
     boxSizing: 'border-box',
   },
   button: {
