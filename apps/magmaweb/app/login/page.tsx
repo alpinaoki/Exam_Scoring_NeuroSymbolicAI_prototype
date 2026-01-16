@@ -33,18 +33,23 @@ export default function LoginPage() {
 
   return (
     <div style={styles.page}>
-      {/* ここにアニメーションの定義を追加 */}
       <style>{`
-  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@200&display=swap');
-  
-  @keyframes pulse {
-    0% { transform: translate(-50%, -50%) scale(0.8); opacity: 0.4; }
-    100% { transform: translate(-50%, -50%) scale(1.2); opacity: 1; }
-  }
-`}</style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@200&display=swap');
+        
+        @keyframes flow {
+          0% { transform: translate(-10%, -10%) scale(1); opacity: 0.3; }
+          50% { transform: translate(10%, 10%) scale(1.2); opacity: 0.6; }
+          100% { transform: translate(-10%, -10%) scale(1); opacity: 0.3; }
+        }
+      `}</style>
+
+      {/* 2つの巨大な光の層 */}
+      <div style={styles.blob}></div>
+      <div style={{...styles.blob, ...styles.blob2}}></div>
+
+      <div style={styles.card}></div>
 
       {/* アニメーションを適用した背景のボケ */}
-      <div style={styles.blob}></div>
 
       <div style={styles.card}>
         <header style={styles.header}>
@@ -117,36 +122,45 @@ const styles: { [key: string]: CSSProperties } = {
     display: 'flex',
     justifyContent: 'center',
     alignItems: 'center',
-    // 背景自体も少しだけ明るい赤みを混ぜる
-    background: 'radial-gradient(circle at center, #1e1111 0%, #050505 100%)',
+    // 全体的に少し赤みのある黒に
+    background: '#0d0202',
     color: '#eee',
     position: 'relative',
     overflow: 'hidden',
   },
   blob: {
     position: 'absolute',
-    // 画面全体に広がるサイズ感に
-    width: '100vw',
-    height: '100vw',
-    // 色を少し強める
-    background: 'radial-gradient(circle, rgba(255, 60, 0, 0.25) 0%, transparent 60%)',
-    filter: 'blur(100px)',
-    top: '50%',
-    left: '50%',
-    transform: 'translate(-50%, -50%)', // ここで位置を固定
+    width: '120vw', // 画面より大きく
+    height: '120vw',
+    // オレンジと赤の混ざった光
+    background: 'radial-gradient(circle, rgba(255, 40, 0, 0.2) 0%, transparent 60%)',
+    filter: 'blur(80px)',
+    top: '-20%',
+    left: '-20%',
     zIndex: 0,
-    animation: 'pulse 10s ease-in-out infinite alternate',
+    animation: 'flow 15s ease-in-out infinite',
+  },
+  blob2: {
+    // もう一つの光を右下に配置して、画面全体を照らす
+    top: 'auto',
+    left: 'auto',
+    bottom: '-20%',
+    right: '-20%',
+    background: 'radial-gradient(circle, rgba(255, 100, 0, 0.15) 0%, transparent 60%)',
+    animationDuration: '20s',
+    animationDirection: 'reverse',
   },
   card: {
-    width: '100%',
+    width: '90%', // モバイルで見やすいように
     maxWidth: '400px',
-    padding: '48px 40px',
-    borderRadius: '28px',
-    background: 'rgba(30, 30, 30, 0.4)',
-    backdropFilter: 'blur(20px)',
-    WebkitBackdropFilter: 'blur(20px)',
-    border: '1px solid rgba(255, 255, 255, 0.08)',
-    boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
+    padding: '48px 32px',
+    borderRadius: '32px',
+    // ここがポイント：透明度を下げて背後の光を通す
+    background: 'rgba(255, 255, 255, 0.03)', 
+    backdropFilter: 'blur(30px)', // ガラスのボケを強く
+    WebkitBackdropFilter: 'blur(30px)',
+    border: '1px solid rgba(255, 255, 255, 0.1)',
+    boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.8)',
     zIndex: 1,
     textAlign: 'center',
   },
@@ -155,13 +169,13 @@ const styles: { [key: string]: CSSProperties } = {
   },
   title: {
     fontFamily: "'Inter', sans-serif",
-    fontSize: '38px',
+    fontSize: '42px', // 少し大きく
     fontWeight: 200,
-    letterSpacing: '10px', 
+    letterSpacing: '12px', 
     textTransform: 'uppercase',
     margin: '0 0 8px 0',
-    paddingLeft: '10px', 
-    background: 'linear-gradient(180deg, #fff 0%, #ff4d00 100%)',
+    paddingLeft: '12px', 
+    background: 'linear-gradient(180deg, #fff 20%, #ff5500 100%)',
     WebkitBackgroundClip: 'text',
     WebkitTextFillColor: 'transparent',
   },
