@@ -96,6 +96,13 @@ export default function LoginPage() {
               </div>
             )}
           </button>
+          {/* サインアップ時のみ利用規約を表示 */}
+          {mode === 'signup' && (
+            <p style={styles.terms}>
+              登録することで、<a href="/terms" style={styles.link}>利用規約</a>と
+              <a href="/privacy" style={styles.link}>プライバシーポリシー</a>に同意したことになります。
+            </p>
+          )}
         </div>
 
         <button
@@ -238,5 +245,19 @@ const styles: { [key: string]: CSSProperties } = {
     cursor: 'pointer',
     textDecoration: 'underline',
     textUnderlineOffset: '4px',
+  },
+  terms: {
+    fontSize: '11px',
+    color: '#666',
+    marginTop: '12px',
+    lineHeight: '1.6',
+    textAlign: 'center',
+  },
+  link: {
+    color: '#888',
+    textDecoration: 'underline',
+    margin: '0 4px',
+    cursor: 'pointer',
+    transition: 'color 0.2s',
   },
 }
