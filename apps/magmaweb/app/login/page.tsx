@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import type { CSSProperties } from 'react'
 import { signIn, signUp } from '../../lib/auth'
-import { LogIn, UserPlus, AlertCircle } from 'lucide-react' // アイコン追加
+import { LogIn, UserPlus, AlertCircle } from 'lucide-react'
 
 export default function LoginPage() {
   const router = useRouter()
@@ -33,12 +33,17 @@ export default function LoginPage() {
 
   return (
     <div style={styles.page}>
+      {/* タイトルに使用する Inter 200 を読み込み */}
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@200&display=swap');
+      `}</style>
+
       {/* 装飾用の背景のボケ */}
       <div style={styles.blob}></div>
 
       <div style={styles.card}>
         <header style={styles.header}>
-          <h1 style={styles.title}>Magmathe</h1>
+          <h1 style={styles.title}>MAGMATHE</h1>
           <p style={styles.subtitle}>
             {mode === 'login' ? 'おかえりなさい' : '新しいアカウントを作成'}
           </p>
@@ -107,12 +112,11 @@ const styles: { [key: string]: CSSProperties } = {
     display: 'flex',
     justifyContent: 'center',
     alignItems: 'center',
-    background: '#0a0a0a', // 真っ黒に近い背景
+    background: '#0a0a0a',
     color: '#eee',
     position: 'relative',
     overflow: 'hidden',
   },
-  // 背景に浮かぶマグマのような光
   blob: {
     position: 'absolute',
     width: '400px',
@@ -127,7 +131,7 @@ const styles: { [key: string]: CSSProperties } = {
     padding: '40px',
     borderRadius: '24px',
     background: 'rgba(20, 20, 20, 0.8)',
-    backdropFilter: 'blur(12px)', // グラスモーフィズム
+    backdropFilter: 'blur(12px)',
     border: '1px solid rgba(255, 255, 255, 0.1)',
     boxShadow: '0 20px 40px rgba(0,0,0,0.4)',
     zIndex: 1,
@@ -136,11 +140,15 @@ const styles: { [key: string]: CSSProperties } = {
   header: {
     marginBottom: '32px',
   },
+  /* タイトルのみ Inter フォントを適用し、洗練された細字に変更 */
   title: {
-    fontSize: '32px',
-    fontWeight: '800',
-    letterSpacing: '-1px',
+    fontFamily: "'Inter', sans-serif",
+    fontSize: '36px',
+    fontWeight: 200,      // ここを細くするのがポイント
+    letterSpacing: '8px', // 字間を広げて高級感を出す
+    textTransform: 'uppercase', // タイトルは全大文字が映えます
     margin: '0 0 8px 0',
+    paddingLeft: '8px',   // 字間による中心のズレを補正
     background: 'linear-gradient(to right, #ff4d00, #ff8c00)',
     WebkitBackgroundClip: 'text',
     WebkitTextFillColor: 'transparent',
@@ -174,7 +182,7 @@ const styles: { [key: string]: CSSProperties } = {
     padding: '14px',
     borderRadius: '12px',
     border: 'none',
-    background: 'linear-gradient(135deg, #ce7d5f, #e3ccb9)', // マグマ・グラデーション
+    background: 'linear-gradient(135deg, #ce7d5f, #e3ccb9)',
     color: '#fff',
     fontWeight: '600',
     fontSize: '16px',
