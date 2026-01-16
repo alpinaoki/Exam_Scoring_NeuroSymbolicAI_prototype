@@ -1,5 +1,3 @@
-'use client'
-
 export default function TermsOfUse() {
   return (
     <div style={{ fontSize: 12, lineHeight: 1.6 }}>
