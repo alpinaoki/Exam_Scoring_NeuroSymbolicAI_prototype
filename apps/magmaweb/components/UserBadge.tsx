@@ -1,14 +1,57 @@
 'use client'
 
 import { getUserColors } from '../lib/userColor'
+import {
+  Cat,
+  Dog,
+  Rabbit,
+  Bird,
+  Fish,
+  Turtle,
+  PawPrint,
+  Flower,
+  Leaf,
+  Clover,
+  Sparkles,
+  Sun,
+  MoonStar,
+} from 'lucide-react'
 
 type Props = {
   username: string
   size?: number
 }
 
+const ICONS = [
+  Cat,
+  Dog,
+  Rabbit,
+  Bird,
+  Fish,
+  Turtle,
+  PawPrint,
+  Flower,
+  Leaf,
+  Clover,
+  Sparkles,
+  Sun,
+  MoonStar,
+]
+
+function hashString(str: string) {
+  let hash = 0
+  for (let i = 0; i < str.length; i++) {
+    hash = (hash << 5) - hash + str.charCodeAt(i)
+    hash |= 0
+  }
+  return Math.abs(hash)
+}
+
 export default function UserBadge({ username, size = 24 }: Props) {
   const { bg, fg } = getUserColors(username)
+
+  const index = hashString(username) % ICONS.length
+  const Icon = ICONS[index]
 
   return (
     <div
@@ -21,13 +64,11 @@ export default function UserBadge({ username, size = 24 }: Props) {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        fontSize: Math.floor(size * 0.5),
-        fontWeight: 600,
         flexShrink: 0,
         userSelect: 'none',
       }}
     >
-      {username[0]?.toUpperCase()}
+      <Icon size={Math.floor(size * 0.6)} strokeWidth={2} />
     </div>
   )
 }
