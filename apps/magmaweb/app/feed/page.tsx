@@ -43,13 +43,11 @@ export default function LoginPage() {
         }
       `}</style>
 
-      {/* 背景の光の演出 */}
       <div style={styles.blob}></div>
       <div style={{...styles.blob, ...styles.blob2}}></div>
 
       <div style={styles.card}>
         <header style={styles.header}>
-          {/* ロゴが切れないように調整したタイトル */}
           <h1 style={styles.title}>MAGMATHE</h1>
           <p style={styles.subtitle}>
             {mode === 'login' ? 'おかえりなさい' : '新しいアカウントを作成'}
@@ -96,7 +94,6 @@ export default function LoginPage() {
             )}
           </button>
 
-          {/* サインアップ時のみ利用規約を表示 */}
           {mode === 'signup' && (
             <p style={styles.terms}>
               登録することで、<a href="/terms" style={styles.link}>利用規約</a>と
@@ -155,7 +152,7 @@ const styles: { [key: string]: CSSProperties } = {
   card: {
     width: '90%',
     maxWidth: '400px',
-    padding: '40px 24px', // 左右パディングを少し詰め、タイトルスペースを確保
+    padding: '40px 24px',
     borderRadius: '32px',
     background: 'rgba(255, 255, 255, 0.03)', 
     backdropFilter: 'blur(30px)',
@@ -172,17 +169,18 @@ const styles: { [key: string]: CSSProperties } = {
   },
   title: {
     fontFamily: "'Inter', sans-serif",
-    fontSize: '32px', // モバイルで切れないようサイズを落としました
+    fontSize: '28px', // さらに少し小さくして確実に収まるように
     fontWeight: 200,
-    letterSpacing: '0.2em', // 字間を相対指定に変更して安定化
+    letterSpacing: '0.3em', // 字間を広めに
+    paddingLeft: '0.3em',  // ★ここが重要：字間の分だけ左にパディングを入れて中央に寄せる
     textTransform: 'uppercase',
     margin: '0 auto 8px auto',
-    display: 'block',
     width: '100%',
     background: 'linear-gradient(180deg, #fff 20%, #ff5500 100%)',
     WebkitBackgroundClip: 'text',
     WebkitTextFillColor: 'transparent',
-    whiteSpace: 'nowrap', // 改行防止
+    whiteSpace: 'nowrap',
+    boxSizing: 'border-box',
   },
   subtitle: {
     color: '#888',
