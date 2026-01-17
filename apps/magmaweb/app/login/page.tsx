@@ -35,28 +35,31 @@ export default function LoginPage() {
     <div style={styles.page}>
       <style>{`
         @keyframes flow {
-          0% { transform: translate(-10%, -10%) scale(1); opacity: 0.3; }
-          50% { transform: translate(10%, 10%) scale(1.2); opacity: 0.6; }
-          100% { transform: translate(-10%, -10%) scale(1); opacity: 0.3; }
+          0% { transform: translate(-10%, -10%) scale(1); opacity: 0.4; }
+          50% { transform: translate(10%, 15%) scale(1.1); opacity: 0.7; }
+          100% { transform: translate(-10%, -10%) scale(1); opacity: 0.4; }
+        }
+        @keyframes pulse {
+          0% { box-shadow: 0 0 20px rgba(255, 69, 0, 0.2); }
+          50% { box-shadow: 0 0 40px rgba(255, 69, 0, 0.4); }
+          100% { box-shadow: 0 0 20px rgba(255, 69, 0, 0.2); }
         }
       `}</style>
 
-      {/* 背景の光 */}
+      {/* 背景の動的な光の演出 */}
       <div style={styles.blob}></div>
       <div style={{...styles.blob, ...styles.blob2}}></div>
+      <div style={{...styles.blob, ...styles.blob3}}></div>
 
       <div style={styles.card}>
         <header style={styles.header}>
-          {/* 切れる原因であるletterSpacingを廃止。
-              代わりにflexで文字の間隔を開ける手法で確実に中央へ
-          */}
           <h1 style={styles.titleContainer}>
             {"MAGMATHE".split("").map((char, i) => (
               <span key={i} style={styles.titleChar}>{char}</span>
             ))}
           </h1>
           <p style={styles.subtitle}>
-            {mode === 'login' ? 'おかえりなさい' : '新しいアカウントを作成'}
+            {mode === 'login' ? 'おかえりなさい' : '新しい物語を始めましょう'}
           </p>
         </header>
 
@@ -95,7 +98,7 @@ export default function LoginPage() {
             {loading ? '処理中...' : (
               <div style={styles.buttonInner}>
                 {mode === 'login' ? <LogIn size={18} /> : <UserPlus size={18} />}
-                <span>{mode === 'login' ? 'ログイン' : 'サインアップ'}</span>
+                <span>{mode === 'login' ? 'ログイン' : 'アカウント作成'}</span>
               </div>
             )}
           </button>
@@ -116,8 +119,8 @@ export default function LoginPage() {
           }}
         >
           {mode === 'login'
-            ? '初めての方はこちら：サインアップ'
-            : '既にアカウントをお持ちの方：ログイン'}
+            ? 'まだ登録がお済みでない方はこちら'
+            : '既にアカウントをお持ちの方はこちら'}
         </button>
       </div>
     </div>
@@ -130,137 +133,148 @@ const styles: { [key: string]: CSSProperties } = {
     display: 'flex',
     justifyContent: 'center',
     alignItems: 'center',
-    background: '#0d0202',
+    /* 真っ黒から深みのある赤褐色へのグラデーション */
+    background: 'radial-gradient(circle at center, #2c0a05 0%, #0f0505 100%)',
     color: '#eee',
     position: 'relative',
     overflow: 'hidden',
   },
   blob: {
     position: 'absolute',
-    width: '120vw',
-    height: '120vw',
-    background: 'radial-gradient(circle, rgba(255, 40, 0, 0.2) 0%, transparent 60%)',
-    filter: 'blur(80px)',
-    top: '-20%',
-    left: '-20%',
+    width: '100vw',
+    height: '100vw',
+    background: 'radial-gradient(circle, rgba(255, 60, 0, 0.15) 0%, transparent 70%)',
+    filter: 'blur(60px)',
+    top: '-30%',
+    left: '-10%',
     zIndex: 0,
-    animation: 'flow 15s ease-in-out infinite',
+    animation: 'flow 18s ease-in-out infinite',
   },
   blob2: {
-    top: 'auto',
-    left: 'auto',
-    bottom: '-20%',
-    right: '-20%',
-    background: 'radial-gradient(circle, rgba(255, 100, 0, 0.15) 0%, transparent 60%)',
-    animationDuration: '20s',
+    top: '20%',
+    left: '40%',
+    background: 'radial-gradient(circle, rgba(139, 0, 0, 0.2) 0%, transparent 60%)',
+    animationDuration: '25s',
     animationDirection: 'reverse',
   },
+  blob3: {
+    bottom: '-20%',
+    right: '-10%',
+    background: 'radial-gradient(circle, rgba(255, 140, 0, 0.1) 0%, transparent 70%)',
+    animationDuration: '20s',
+  },
   card: {
-    width: '90%',
-    maxWidth: '400px',
-    padding: '48px 24px',
-    borderRadius: '32px',
-    background: 'rgba(255, 255, 255, 0.03)', 
-    backdropFilter: 'blur(30px)',
-    WebkitBackdropFilter: 'blur(30px)',
-    border: '1px solid rgba(255, 255, 255, 0.1)',
-    boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.8)',
+    width: '92%',
+    maxWidth: '420px',
+    padding: '56px 32px',
+    borderRadius: '40px',
+    /* 背景を少し明るい半透明にして、背後の赤褐色を透かす */
+    background: 'rgba(30, 10, 10, 0.4)', 
+    backdropFilter: 'blur(25px)',
+    WebkitBackdropFilter: 'blur(25px)',
+    border: '1px solid rgba(255, 255, 255, 0.08)',
+    boxShadow: '0 20px 50px rgba(0, 0, 0, 0.6)',
     zIndex: 1,
     textAlign: 'center',
     boxSizing: 'border-box',
+    animation: 'pulse 5s infinite ease-in-out',
   },
   header: {
     marginBottom: '40px',
   },
-  /* ロゴの部分をflexboxに変更して一文字ずつ並べる */
   titleContainer: {
     display: 'flex',
     justifyContent: 'center',
-    gap: '12px', // ここで文字の間隔を調整（これが確実です）
-    margin: '0 0 12px 0',
+    gap: '10px',
+    margin: '0 0 16px 0',
     padding: '0',
     width: '100%',
   },
   titleChar: {
-    fontSize: '32px',
-    fontWeight: 300,
-    fontFamily: 'sans-serif',
-    background: 'linear-gradient(180deg, #fff 20%, #ff5500 100%)',
+    fontSize: '34px',
+    fontWeight: 200,
+    fontFamily: "'Inter', sans-serif",
+    /* ロゴが目立つように白からオレンジへのグラデーションを強調 */
+    background: 'linear-gradient(180deg, #ffffff 30%, #ff8c00 100%)',
     WebkitBackgroundClip: 'text',
     WebkitTextFillColor: 'transparent',
+    textShadow: '0 4px 10px rgba(0,0,0,0.3)',
   },
   subtitle: {
-    color: '#888',
-    fontSize: '14px',
+    color: '#aaa',
+    fontSize: '15px',
+    letterSpacing: '1px',
   },
   form: {
     display: 'flex',
     flexDirection: 'column',
-    gap: '16px',
+    gap: '20px',
   },
   inputGroup: {
     width: '100%',
   },
   input: {
     width: '100%',
-    padding: '14px 16px',
-    borderRadius: '12px',
-    border: '1px solid #333',
-    background: '#1a1a1a',
+    padding: '16px 20px',
+    borderRadius: '16px',
+    border: '1px solid rgba(255, 255, 255, 0.1)',
+    background: 'rgba(0, 0, 0, 0.3)',
     color: '#fff',
     fontSize: '16px',
     outline: 'none',
     boxSizing: 'border-box',
+    transition: 'all 0.3s ease',
   },
   button: {
-    marginTop: '8px',
-    padding: '14px',
-    borderRadius: '12px',
+    marginTop: '10px',
+    padding: '16px',
+    borderRadius: '16px',
     border: 'none',
-    background: 'linear-gradient(135deg, #ad5a71, #b9a088)',
+    /* マグマを連想させる夕焼けのようなグラデーション */
+    background: 'linear-gradient(135deg, #8b0000 0%, #ff4500 100%)',
     color: '#fff',
-    fontWeight: '600',
+    fontWeight: '700',
     fontSize: '16px',
     cursor: 'pointer',
+    boxShadow: '0 4px 15px rgba(255, 69, 0, 0.3)',
+    transition: 'transform 0.2s ease, box-shadow 0.2s ease',
   },
   buttonInner: {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: '8px',
+    gap: '10px',
   },
   errorBox: {
     display: 'flex',
     alignItems: 'center',
-    gap: '8px',
-    color: '#ff6b6b',
-    fontSize: '13px',
-    background: 'rgba(255, 107, 107, 0.1)',
-    padding: '10px',
-    borderRadius: '8px',
+    gap: '10px',
+    color: '#ff8a8a',
+    fontSize: '14px',
+    background: 'rgba(255, 0, 0, 0.15)',
+    padding: '12px',
+    borderRadius: '12px',
     textAlign: 'left',
+    border: '1px solid rgba(255, 0, 0, 0.2)',
   },
   switch: {
-    marginTop: '24px',
+    marginTop: '32px',
     background: 'none',
     border: 'none',
-    color: '#666',
-    fontSize: '13px',
+    color: '#999',
+    fontSize: '14px',
     cursor: 'pointer',
-    textDecoration: 'underline',
-    textUnderlineOffset: '4px',
+    transition: 'color 0.2s',
   },
   terms: {
-    fontSize: '11px',
-    color: '#666',
-    marginTop: '12px',
+    fontSize: '12px',
+    color: '#777',
+    marginTop: '16px',
     lineHeight: '1.6',
-    textAlign: 'center',
   },
   link: {
-    color: '#888',
-    textDecoration: 'underline',
-    margin: '0 4px',
-    cursor: 'pointer',
+    color: '#ff4500',
+    textDecoration: 'none',
+    fontWeight: '600',
   },
 }
