@@ -230,8 +230,7 @@ const styles: { [key: string]: CSSProperties } = {
     padding: '16px',
     borderRadius: '16px',
     border: 'none',
-    /* マグマを連想させる夕焼けのようなグラデーション */
-    background: 'linear-gradient(135deg, #8b0000 0%, #ff4500 100%)',
+    background: 'linear-gradient(135deg, #ad5a71, #b9a088)',
     color: '#fff',
     fontWeight: '700',
     fontSize: '16px',
