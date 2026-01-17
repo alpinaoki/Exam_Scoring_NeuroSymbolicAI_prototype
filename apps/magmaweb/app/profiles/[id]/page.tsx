@@ -18,13 +18,15 @@ type PostItem = {
 export default function ProfilePage() {
   const router = useRouter()
   const params = useParams()
-  const userId = params.id as string
+
+  // 🔑 URL の id は handle として扱う
+  const handle = params.id as string
 
   const [profile, setProfile] = useState<Profile | null>(null)
   const [posts, setPosts] = useState<PostItem[]>([])
   const [loading, setLoading] = useState(true)
 
-  /** プロフィール取得 */
+  /** プロフィール取得（handle ベース） */
   useEffect(() => {
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -35,7 +37,7 @@ export default function ProfilePage() {
       const { data, error } = await supabase
         .from('profiles')
         .select('handle')
-        .eq('user_id', userId)
+        .eq('handle', handle)
         .single()
 
       if (error) {
@@ -47,14 +49,14 @@ export default function ProfilePage() {
     }
 
     loadProfile()
-  }, [userId])
+  }, [handle])
 
-  /** その人の投稿取得 */
+  /** その人の投稿取得（handle → user_id → posts） */
   useEffect(() => {
     async function loadPosts() {
       try {
-        const { getProblemsByUser } = await import('../../../lib/posts')
-        const data = await getProblemsByUser(userId)
+        const { getProblemsByHandle } = await import('../../../lib/posts')
+        const data = await getProblemsByHandle(handle)
         setPosts(data ?? [])
       } catch (e) {
         console.error(e)
@@ -64,19 +66,23 @@ export default function ProfilePage() {
     }
 
     loadPosts()
-  }, [userId])
+  }, [handle])
 
   return (
     <div style={styles.wrapper}>
       {/* Profile */}
       <section style={styles.profile}>
         <UserBadge
-          username={profile?.handle ?? 'unknown'}
+          username={profile?.handle ?? handle}
           size={48}
         />
         <div>
-          <div style={styles.name}>{profile?.handle ?? 'unknown'}</div>
-          <div style={styles.id}>@{profile?.handle ?? 'unknown'}</div>
+          <div style={styles.name}>
+            {profile?.handle ?? handle}
+          </div>
+          <div style={styles.id}>
+            @{profile?.handle ?? handle}
+          </div>
         </div>
       </section>
 
@@ -103,16 +109,28 @@ export default function ProfilePage() {
 }
 
 const styles: { [key: string]: React.CSSProperties } = {
-  wrapper: { padding: '16px', color: '#111' },
+  wrapper: {
+    padding: '16px',
+    color: '#111',
+  },
   profile: {
     display: 'flex',
     alignItems: 'center',
     gap: 12,
     marginBottom: 24,
   },
-  name: { fontWeight: 'bold', fontSize: 16 },
-  id: { fontSize: 12, color: '#555' },
-  empty: { fontSize: 14, color: '#666' },
+  name: {
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
+  id: {
+    fontSize: 12,
+    color: '#555',
+  },
+  empty: {
+    fontSize: 14,
+    color: '#666',
+  },
   thumb: {
     width: '100%',
     borderRadius: 8,

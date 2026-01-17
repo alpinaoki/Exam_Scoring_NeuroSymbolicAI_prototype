@@ -177,18 +177,29 @@ export async function getMyAnswers() {
   return data
 }
 
-export async function getProblemsByUser(userId: string) {
+export async function getProblemsByHandle(handle: string) {
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   )
 
+  // ① handle → user_id
+  const { data: profile, error: profileError } = await supabase
+    .from('profiles')
+    .select('user_id')
+    .eq('handle', handle)
+    .single()
+
+  if (profileError) throw profileError
+
+  // ② user_id → posts
   const { data, error } = await supabase
     .from('posts')
     .select('id, image_url, created_at')
-    .eq('user_id', userId)
+    .eq('user_id', profile.user_id)
     .order('created_at', { ascending: false })
 
   if (error) throw error
   return data
 }
+

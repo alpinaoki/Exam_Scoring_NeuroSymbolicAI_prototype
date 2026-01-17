@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@supabase/supabase-js'
-import UserBadge from './UserBadge'
+import UserBadge from '../../components/UserBadge'
 
 type Profile = {
   handle: string
