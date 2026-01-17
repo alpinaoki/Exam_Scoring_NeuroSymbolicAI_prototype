@@ -143,7 +143,7 @@ const styles: { [key: string]: CSSProperties } = {
     position: 'absolute',
     width: '100vw',
     height: '100vw',
-    background: 'radial-gradient(circle, rgba(255, 60, 0, 0.15) 0%, transparent 70%)',
+    background: 'radial-gradient(circle, rgba(255, 0, 166, 0.15) 0%, transparent 70%)',
     filter: 'blur(60px)',
     top: '-30%',
     left: '-10%',
@@ -153,7 +153,7 @@ const styles: { [key: string]: CSSProperties } = {
   blob2: {
     top: '20%',
     left: '40%',
-    background: 'radial-gradient(circle, rgba(139, 0, 0, 0.2) 0%, transparent 60%)',
+    background: 'radial-gradient(circle, rgba(139, 0, 67, 0.2) 0%, transparent 60%)',
     animationDuration: '25s',
     animationDirection: 'reverse',
   },
