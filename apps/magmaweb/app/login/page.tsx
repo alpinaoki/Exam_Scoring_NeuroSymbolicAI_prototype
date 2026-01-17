@@ -134,7 +134,7 @@ const styles: { [key: string]: CSSProperties } = {
     justifyContent: 'center',
     alignItems: 'center',
     /* 真っ黒から深みのある赤褐色へのグラデーション */
-    background: 'radial-gradient(circle at center, #2c0a05 0%, #0f0505 100%)',
+    background: 'radial-gradient(circle at center, #2c0516 0%, #0f0505 100%)',
     color: '#eee',
     position: 'relative',
     overflow: 'hidden',
