@@ -1,6 +1,7 @@
 'use client'
 
 import type { CSSProperties } from 'react'
+import { useRouter } from 'next/navigation'
 import AnswerActionBar from './AnswerActionBar'
 import { formatDateTime } from '../lib/time'
 import UserBadge from './UserBadge'
@@ -20,17 +21,23 @@ export default function AnswerCard({
   username,
   createdAt,
 }: Props) {
-  const date = new Date(createdAt).toLocaleDateString('ja-JP')
+  const router = useRouter()
   const timeLabel = formatDateTime(createdAt)
+
+  /** 回答者プロフィールへ */
+  const goProfile = () => {
+    router.push(`/profiles/${username}`)
+  }
 
   return (
     <div style={styles.card}>
       <div style={styles.header}>
-  <UserBadge username={username} />
-  <span>@{username}</span>
-  <span style={styles.date}>· {timeLabel}</span>
-</div>
-
+        <div style={styles.user} onClick={goProfile}>
+          <UserBadge username={username} />
+          <span>@{username}</span>
+        </div>
+        <span style={styles.date}>· {timeLabel}</span>
+      </div>
 
       {image && (
         <img
@@ -57,12 +64,18 @@ const styles: { [key: string]: CSSProperties } = {
     padding: '0 16px',
   },
   header: {
-  display: 'flex',
-  alignItems: 'center',
-  gap: 6,
-  fontSize: '13px',
-  color: '#555',
-},
+    display: 'flex',
+    alignItems: 'center',
+    gap: 6,
+    fontSize: 13,
+    color: '#555',
+  },
+  user: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 6,
+    cursor: 'pointer',
+  },
   date: {
     marginLeft: 4,
     color: '#aaa',
