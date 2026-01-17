@@ -40,7 +40,7 @@ export default function LoginPage() {
           100% { transform: translate(-10%, -10%) scale(1); opacity: 0.4; }
         }
         @keyframes pulse {
-          0% { box-shadow: 0 0 20px rgba(255, 69, 0, 0.2); }
+          0% { box-shadow: 0 0 20px rgba(255, 0, 179, 0.2); }
           50% { box-shadow: 0 0 40px rgba(255, 69, 0, 0.4); }
           100% { box-shadow: 0 0 20px rgba(255, 69, 0, 0.2); }
         }
@@ -272,7 +272,7 @@ const styles: { [key: string]: CSSProperties } = {
     lineHeight: '1.6',
   },
   link: {
-    color: '#ff4500',
+    color: '#db63bb',
     textDecoration: 'none',
     fontWeight: '600',
   },
