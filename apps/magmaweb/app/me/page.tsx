@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@supabase/supabase-js'
+import UserBadge from './UserBadge'
 
 type Profile = {
   handle: string
@@ -91,12 +92,16 @@ export default function MePage() {
     <div style={styles.wrapper}>
       {/* Profile */}
       <section style={styles.profile}>
-        <div style={styles.avatar} />
-        <div>
-          <div style={styles.name}>You</div>
-          <div style={styles.id}>@{profile?.handle ?? 'unknown'}</div>
-        </div>
-      </section>
+  <UserBadge
+    username={profile?.handle ?? 'unknown'}
+    size={48}
+  />
+  <div>
+    <div style={styles.name}>You</div>
+    <div style={styles.id}>@{profile?.handle ?? 'unknown'}</div>
+  </div>
+</section>
+
 
       {/* Tabs */}
       <section style={styles.tabs}>
@@ -181,12 +186,6 @@ const styles: { [key: string]: React.CSSProperties } = {
     alignItems: 'center',
     gap: 12,
     marginBottom: 16,
-  },
-  avatar: {
-    width: 48,
-    height: 48,
-    borderRadius: '50%',
-    background: '#999',
   },
   name: { fontWeight: 'bold', fontSize: 16 },
   id: { fontSize: 12, color: '#555' },
