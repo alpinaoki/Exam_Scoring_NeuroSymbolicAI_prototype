@@ -59,7 +59,7 @@ export default function LoginPage() {
             ))}
           </h1>
           <p style={styles.subtitle}>
-            {mode === 'login' ? 'おかえりなさい' : '新しい物語を始めましょう'}
+            {mode === 'login' ? 'おかえりなさい' : 'サインアップ'}
           </p>
         </header>
 
