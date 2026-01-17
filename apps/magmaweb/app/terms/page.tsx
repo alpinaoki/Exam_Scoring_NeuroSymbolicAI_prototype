@@ -1,5 +1,25 @@
+'use client'
+
+import { useRouter } from 'next/navigation'
+
 export default function TermsPage() {
+  const router = useRouter()
+
   return (
+    <main style={{ padding: 24, maxWidth: 800, margin: '0 auto' }}>
+      <button
+        onClick={() => router.back()}
+        style={{
+          marginBottom: 16,
+          background: 'none',
+          border: 'none',
+          color: '#666',
+          cursor: 'pointer',
+          fontSize: 14,
+        }}
+      >
+        ← 戻る
+      </button>
     <main style={{ padding: 24, maxWidth: 800, margin: '0 auto', fontSize: 12, lineHeight: 1.6 }}>
       <h3>記述答案データの提供および利用に関する同意</h3>
 
@@ -52,5 +72,8 @@ export default function TermsPage() {
         可能な範囲で削除します。
       </p>
     </main>
+
+    </main>
   )
 }
+

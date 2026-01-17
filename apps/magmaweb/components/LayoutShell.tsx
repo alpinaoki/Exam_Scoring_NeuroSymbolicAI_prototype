@@ -21,9 +21,13 @@ export default function LayoutShell({ children }: Props) {
   const [file, setFile] = useState<File | null>(null)
   const [uploading, setUploading] = useState(false)
 
-  if (pathname === '/login') {
+  if (
+    pathname === '/login' ||
+    pathname === '/terms'
+  ) {
     return <>{children}</>
   }
+
 
   return (
     <div style={styles.wrapper}>
