@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react'
 import ProblemActionBar from './ProblemActionBar'
 import { getAnswerCount } from '../lib/posts'
 import { formatDateTime } from '../lib/time'
+import UserBadge from './UserBadge'
 
 type Props = {
   image: string | null
@@ -33,9 +34,11 @@ export default function ProblemCard({
   return (
     <div style={styles.card}>
       <div style={styles.header}>
-        <span>@{username}</span>
-        <span style={styles.date}>· {timeLabel}</span>
-      </div>
+  <UserBadge username={username} />
+  <span>@{username}</span>
+  <span style={styles.date}>· {timeLabel}</span>
+</div>
+
 
       {image && (
         <img
@@ -62,9 +65,12 @@ const styles: { [key: string]: CSSProperties } = {
     gap: '12px',
   },
   header: {
-    fontSize: '13px',
-    color: '#555',
-  },
+  display: 'flex',
+  alignItems: 'center',
+  gap: 6,
+  fontSize: '13px',
+  color: '#555',
+},
   date: {
     marginLeft: 4,
     color: '#999',
