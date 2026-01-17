@@ -1,7 +1,7 @@
 'use client'
 
 import type { CSSProperties } from 'react'
-import ProblemActionBar from './ProblemActionBar'
+import AnswerActionBar from './AnswerActionBar'
 import { formatDateTime } from '../lib/time'
 
 type Props = {
@@ -37,10 +37,10 @@ export default function AnswerCard({
         />
       )}
 
-      <ProblemActionBar
+      <AnswerActionBar
         problemId={answerId}
         rootId={rootId}
-        answerCount={0}
+        reactionCount={0}
       />
     </div>
   )
