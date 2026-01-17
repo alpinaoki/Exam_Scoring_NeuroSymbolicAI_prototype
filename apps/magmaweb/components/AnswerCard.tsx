@@ -3,6 +3,7 @@
 import type { CSSProperties } from 'react'
 import AnswerActionBar from './AnswerActionBar'
 import { formatDateTime } from '../lib/time'
+import UserBadge from './UserBadge'
 
 type Props = {
   image: string | null
@@ -25,9 +26,11 @@ export default function AnswerCard({
   return (
     <div style={styles.card}>
       <div style={styles.header}>
-        <span>@{username}</span>
-        <span style={styles.date}>· {timeLabel}</span>
-      </div>
+  <UserBadge username={username} />
+  <span>@{username}</span>
+  <span style={styles.date}>· {timeLabel}</span>
+</div>
+
 
       {image && (
         <img
@@ -54,9 +57,12 @@ const styles: { [key: string]: CSSProperties } = {
     padding: '0 16px',
   },
   header: {
-    fontSize: 12,
-    color: '#666',
-  },
+  display: 'flex',
+  alignItems: 'center',
+  gap: 6,
+  fontSize: '13px',
+  color: '#555',
+},
   date: {
     marginLeft: 4,
     color: '#aaa',
