@@ -49,7 +49,6 @@ export default function ProblemCard({
       <ProblemActionBar
         problemId={problemId}
         rootId={problemId}
-        bookmarkCount={12} // 仮
         answerCount={answerCount}
       />
     </div>

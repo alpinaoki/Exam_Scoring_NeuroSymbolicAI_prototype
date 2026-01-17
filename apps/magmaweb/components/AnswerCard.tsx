@@ -40,7 +40,6 @@ export default function AnswerCard({
       <ProblemActionBar
         problemId={answerId}
         rootId={rootId}
-        bookmarkCount={0}
         answerCount={0}
       />
     </div>
