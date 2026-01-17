@@ -40,9 +40,9 @@ export default function LoginPage() {
           100% { transform: translate(-10%, -10%) scale(1); opacity: 0.4; }
         }
         @keyframes pulse {
-          0% { box-shadow: 0 0 15px rgba(255, 204, 0, 0.2); }
-          50% { box-shadow: 0 0 30px rgba(255, 0, 98, 0.4); }
-          100% { box-shadow: 0 0 15px rgba(255, 115, 0, 0.2); }
+          0% { box-shadow: 0 0 15px rgba(255, 174, 0, 0.2); }
+          50% { box-shadow: 0 0 30px rgba(255, 0, 89, 0.23); }
+          100% { box-shadow: 0 0 15px rgba(255, 174, 0, 0.2); }
         }
       `}</style>
 
