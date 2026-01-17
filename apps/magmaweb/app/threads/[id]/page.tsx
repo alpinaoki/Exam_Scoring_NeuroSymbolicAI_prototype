@@ -98,7 +98,7 @@ export default function ThreadPage({
         style={{
           flexGrow: 1,
           background:
-            'linear-gradient(to bottom, #ffffff 0%, #f1ece1 1%, #e6dbca 5%, #e0cac3 60%, #d2b6ae 99%, #ffffff 100%)',
+            'linear-gradient(to bottom, #ffffff 0%, #f1ece1b6 1%, #e6dbcab6 5%, #e0cac3b6 60%, #d2b6aeb6 99%, #ffffff 100%)',
           padding: '24px 8px 48px',
         }}
       >
