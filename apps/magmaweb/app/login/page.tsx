@@ -34,8 +34,6 @@ export default function LoginPage() {
   return (
     <div style={styles.page}>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@200&display=swap');
-        
         @keyframes flow {
           0% { transform: translate(-10%, -10%) scale(1); opacity: 0.3; }
           50% { transform: translate(10%, 10%) scale(1.2); opacity: 0.6; }
@@ -43,15 +41,20 @@ export default function LoginPage() {
         }
       `}</style>
 
-      {/* 2つの巨大な光の層 */}
+      {/* 背景の光 */}
       <div style={styles.blob}></div>
       <div style={{...styles.blob, ...styles.blob2}}></div>
 
-      {/* アニメーションを適用した背景のボケ */}
-
       <div style={styles.card}>
         <header style={styles.header}>
-          <h1 style={styles.title}>MAGMATHE</h1>
+          {/* 切れる原因であるletterSpacingを廃止。
+              代わりにflexで文字の間隔を開ける手法で確実に中央へ
+          */}
+          <h1 style={styles.titleContainer}>
+            {"MAGMATHE".split("").map((char, i) => (
+              <span key={i} style={styles.titleChar}>{char}</span>
+            ))}
+          </h1>
           <p style={styles.subtitle}>
             {mode === 'login' ? 'おかえりなさい' : '新しいアカウントを作成'}
           </p>
@@ -96,7 +99,7 @@ export default function LoginPage() {
               </div>
             )}
           </button>
-          {/* サインアップ時のみ利用規約を表示 */}
+
           {mode === 'signup' && (
             <p style={styles.terms}>
               登録することで、<a href="/terms" style={styles.link}>利用規約</a>と
@@ -127,7 +130,6 @@ const styles: { [key: string]: CSSProperties } = {
     display: 'flex',
     justifyContent: 'center',
     alignItems: 'center',
-    // 全体的に少し赤みのある黒に
     background: '#0d0202',
     color: '#eee',
     position: 'relative',
@@ -135,9 +137,8 @@ const styles: { [key: string]: CSSProperties } = {
   },
   blob: {
     position: 'absolute',
-    width: '120vw', // 画面より大きく
+    width: '120vw',
     height: '120vw',
-    // オレンジと赤の混ざった光
     background: 'radial-gradient(circle, rgba(255, 40, 0, 0.2) 0%, transparent 60%)',
     filter: 'blur(80px)',
     top: '-20%',
@@ -146,7 +147,6 @@ const styles: { [key: string]: CSSProperties } = {
     animation: 'flow 15s ease-in-out infinite',
   },
   blob2: {
-    // もう一つの光を右下に配置して、画面全体を照らす
     top: 'auto',
     left: 'auto',
     bottom: '-20%',
@@ -156,30 +156,35 @@ const styles: { [key: string]: CSSProperties } = {
     animationDirection: 'reverse',
   },
   card: {
-    width: '90%', // モバイルで見やすいように
+    width: '90%',
     maxWidth: '400px',
-    padding: '48px 32px',
+    padding: '48px 24px',
     borderRadius: '32px',
-    // ここがポイント：透明度を下げて背後の光を通す
     background: 'rgba(255, 255, 255, 0.03)', 
-    backdropFilter: 'blur(30px)', // ガラスのボケを強く
+    backdropFilter: 'blur(30px)',
     WebkitBackdropFilter: 'blur(30px)',
     border: '1px solid rgba(255, 255, 255, 0.1)',
     boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.8)',
     zIndex: 1,
     textAlign: 'center',
+    boxSizing: 'border-box',
   },
   header: {
     marginBottom: '40px',
   },
-  title: {
-    fontFamily: "'Inter', sans-serif",
-    fontSize: '42px', // 少し大きく
-    fontWeight: 200,
-    letterSpacing: '12px', 
-    textTransform: 'uppercase',
-    margin: '0 0 8px 0',
-    paddingLeft: '12px', 
+  /* ロゴの部分をflexboxに変更して一文字ずつ並べる */
+  titleContainer: {
+    display: 'flex',
+    justifyContent: 'center',
+    gap: '12px', // ここで文字の間隔を調整（これが確実です）
+    margin: '0 0 12px 0',
+    padding: '0',
+    width: '100%',
+  },
+  titleChar: {
+    fontSize: '32px',
+    fontWeight: 300,
+    fontFamily: 'sans-serif',
     background: 'linear-gradient(180deg, #fff 20%, #ff5500 100%)',
     WebkitBackgroundClip: 'text',
     WebkitTextFillColor: 'transparent',
@@ -217,7 +222,6 @@ const styles: { [key: string]: CSSProperties } = {
     fontWeight: '600',
     fontSize: '16px',
     cursor: 'pointer',
-    transition: 'transform 0.1s, box-shadow 0.2s',
   },
   buttonInner: {
     display: 'flex',
@@ -258,6 +262,5 @@ const styles: { [key: string]: CSSProperties } = {
     textDecoration: 'underline',
     margin: '0 4px',
     cursor: 'pointer',
-    transition: 'color 0.2s',
   },
 }
