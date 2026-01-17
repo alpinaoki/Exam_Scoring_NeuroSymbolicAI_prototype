@@ -104,11 +104,12 @@ export default function LoginPage() {
           </button>
 
           {mode === 'signup' && (
-            <p style={styles.terms}>
-              登録することで、<a href="/terms" style={styles.link}>利用規約</a>と
-              <a href="/privacy" style={styles.link}>プライバシーポリシー</a>に同意したことになります。
-            </p>
-          )}
+  <p style={styles.terms}>
+    登録することで、
+    <a href="/terms" style={styles.link}>利用規約</a>
+    に同意したことになります。
+  </p>
+)}
         </div>
 
         <button
