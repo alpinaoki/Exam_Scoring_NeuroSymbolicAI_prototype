@@ -20,6 +20,7 @@ export default function ProblemActionBar({
   const cameraInputRef = useRef<HTMLInputElement>(null)
   const [file, setFile] = useState<File | null>(null)
   const [uploading, setUploading] = useState(false)
+  const [anonymous, setAnonymous] = useState(false)
 
   return (
     <>
@@ -50,22 +51,33 @@ export default function ProblemActionBar({
       {/* Image Editor */}
       {file && (
         <ImageEditorModal
-          file={file}
-          uploading={uploading}
-          onCancel={() => {
-            if (!uploading) setFile(null)
-          }}
-          onPost={async (editedFile) => {
-            if (uploading) return
-            setUploading(true)
+  file={file}
+  uploading={uploading}
+  anonymous={anonymous}
+  onAnonymousChange={setAnonymous}
+  onCancel={() => {
+    if (!uploading) {
+      setFile(null)
+      setAnonymous(false)
+    }
+  }}
+  onPost={async (editedFile) => {
+    if (uploading) return
+    setUploading(true)
 
-            const imageUrl = await uploadImageToCloudinary(editedFile)
-            await createAnswer({ imageUrl, problemId, rootId })
+    const imageUrl = await uploadImageToCloudinary(editedFile)
+    await createAnswer({
+      imageUrl,
+      problemId,
+      rootId,
+      anonymous,
+    })
 
-            setUploading(false)
-            setFile(null)
-          }}
-        />
+    setUploading(false)
+    setFile(null)
+    setAnonymous(false)
+  }}
+/>
       )}
     </>
   )

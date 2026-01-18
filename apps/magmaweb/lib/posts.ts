@@ -48,10 +48,12 @@ export async function createAnswer({
   imageUrl,
   problemId,
   rootId,
+  anonymous,
 }: {
   imageUrl: string
   problemId: string
   rootId: string
+  anonymous: boolean
 }) {
   const { data } = await supabase.auth.getUser()
   const user = data.user
@@ -64,6 +66,7 @@ export async function createAnswer({
     parent_id: problemId,
     root_id: rootId,
     label: null,
+    anonymous,
   })
 
   if (error) throw error

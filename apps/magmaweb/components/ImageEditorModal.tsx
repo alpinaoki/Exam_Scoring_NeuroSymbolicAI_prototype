@@ -5,6 +5,8 @@ import { SendHorizontal, Loader2, RotateCw, Sun, Contrast } from 'lucide-react'
 type Props = {
   file: File
   uploading: boolean
+  anonymous: boolean
+  onAnonymousChange: (v: boolean) => void
   onCancel: () => void
   onPost: (editedFile: File) => void
 }
@@ -220,6 +222,18 @@ export default function ImageEditorModal({
               {Math.round(contrast * 100)}%
             </div>
           </div>
+          {/* controlPanel の一番下に追加 */}
+<div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 4 }}>
+  <input
+    type="checkbox"
+    checked={anonymous}
+    onChange={(e) => onAnonymousChange(e.target.checked)}
+  />
+  <span style={{ fontSize: 13, color: '#ccc' }}>
+    匿名で投稿
+  </span>
+</div>
+
         </div>
 
         <div ref={containerRef} style={styles.body}>

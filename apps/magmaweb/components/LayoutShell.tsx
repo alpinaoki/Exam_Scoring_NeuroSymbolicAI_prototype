@@ -88,6 +88,8 @@ export default function LayoutShell({ children }: Props) {
     setFile(null)
     router.push('/feed')
   }}
+  anonymous = {false}
+  onAnonymousChange={setAnonymous}
 />
 
       )}
