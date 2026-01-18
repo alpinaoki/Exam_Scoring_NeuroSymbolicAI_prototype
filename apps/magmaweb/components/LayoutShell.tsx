@@ -74,6 +74,8 @@ export default function LayoutShell({ children }: Props) {
         <ImageEditorModal
   file={file}
   uploading={uploading}
+  anonymous={false}
+  onAnonymousChange={() => {}}
   onCancel={() => {
     if (!uploading) setFile(null)
   }}
@@ -81,17 +83,14 @@ export default function LayoutShell({ children }: Props) {
     if (uploading) return
     setUploading(true)
 
-    const imageUrl = await uploadImageToCloudinary(editedFile) // ← 修正点
+    const imageUrl = await uploadImageToCloudinary(editedFile)
     await createPost({ imageUrl })
 
     setUploading(false)
     setFile(null)
     router.push('/feed')
   }}
-  anonymous = {false}
-  onAnonymousChange={setAnonymous}
 />
-
       )}
     </div>
   )

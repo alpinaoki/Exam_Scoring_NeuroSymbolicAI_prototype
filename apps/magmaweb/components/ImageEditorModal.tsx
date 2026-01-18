@@ -17,6 +17,8 @@ type Handle = 'top' | 'right' | 'bottom' | 'left' | 'top-left' | 'top-right' | '
 export default function ImageEditorModal({
   file,
   uploading,
+  anonymous,
+  onAnonymousChange,
   onCancel,
   onPost,
 }: Props) {
