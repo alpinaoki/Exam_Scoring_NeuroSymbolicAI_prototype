@@ -105,6 +105,7 @@ export async function getAnswersByProblemId(problemId: string) {
       image_url,
       user_id,
       created_at,
+      anonymous,
       profiles (
         handle
       )
@@ -115,6 +116,7 @@ export async function getAnswersByProblemId(problemId: string) {
   if (error) throw error
   return data
 }
+
 
 /**
  * 問題に紐づく解答数を取得
