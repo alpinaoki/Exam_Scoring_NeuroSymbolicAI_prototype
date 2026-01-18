@@ -126,6 +126,7 @@ export default function ThreadPage({
                   rootId={problem.id}
                   username={a.profiles.handle}
                   createdAt={a.created_at}
+                  anonymous={a.anonymous}
                 />
               </div>
             ))
