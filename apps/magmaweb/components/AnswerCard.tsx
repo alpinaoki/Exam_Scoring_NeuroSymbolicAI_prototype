@@ -12,6 +12,7 @@ type Props = {
   rootId: string
   username: string
   createdAt: string
+  anonymous: boolean
 }
 
 export default function AnswerCard({
@@ -20,21 +21,30 @@ export default function AnswerCard({
   rootId,
   username,
   createdAt,
+  anonymous,
 }: Props) {
   const router = useRouter()
   const timeLabel = formatDateTime(createdAt)
 
-  /** 回答者プロフィールへ */
+  const displayName = anonymous ? 'Anonymous' : username
+
   const goProfile = () => {
+    if (anonymous) return
     router.push(`/profiles/${username}`)
   }
 
   return (
     <div style={styles.card}>
       <div style={styles.header}>
-        <div style={styles.user} onClick={goProfile}>
-          <UserBadge username={username} />
-          <span>@{username}</span>
+        <div
+          style={{
+            ...styles.user,
+            cursor: anonymous ? 'default' : 'pointer',
+          }}
+          onClick={goProfile}
+        >
+          <UserBadge username={displayName} />
+          <span>@{displayName}</span>
         </div>
         <span style={styles.date}>· {timeLabel}</span>
       </div>
@@ -74,7 +84,6 @@ const styles: { [key: string]: CSSProperties } = {
     display: 'flex',
     alignItems: 'center',
     gap: 6,
-    cursor: 'pointer',
   },
   date: {
     marginLeft: 4,

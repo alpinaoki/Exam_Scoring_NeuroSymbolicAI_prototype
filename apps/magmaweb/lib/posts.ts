@@ -104,18 +104,27 @@ export async function getAnswersByProblemId(problemId: string) {
     .select(`
       id,
       image_url,
-      user_id,
       created_at,
+      anonymous,
       profiles (
         handle
       )
     `)
+    .eq('type', 'answer')
     .eq('parent_id', problemId)
     .order('created_at', { ascending: true })
 
   if (error) throw error
-  return data
+
+  return data.map((a: any) => ({
+    id: a.id,
+    image_url: a.image_url,
+    created_at: a.created_at,
+    anonymous: a.anonymous,
+    username: a.profiles?.handle ?? 'unknown',
+  }))
 }
+
 
 /**
  * 問題に紐づく解答数を取得
