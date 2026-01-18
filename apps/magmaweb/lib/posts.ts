@@ -48,10 +48,12 @@ export async function createAnswer({
   imageUrl,
   problemId,
   rootId,
+  anonymous,
 }: {
   imageUrl: string
   problemId: string
   rootId: string
+  anonymous: boolean
 }) {
   const { data } = await supabase.auth.getUser()
   const user = data.user
@@ -64,10 +66,12 @@ export async function createAnswer({
     parent_id: problemId,
     root_id: rootId,
     label: null,
+    anonymous, // ← ここだけ
   })
 
   if (error) throw error
 }
+
 
 /**
  * 問題（thread root）を1件取得（投稿者handle付き）
