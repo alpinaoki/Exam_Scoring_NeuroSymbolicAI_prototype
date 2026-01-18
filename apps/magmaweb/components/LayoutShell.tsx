@@ -75,6 +75,7 @@ export default function LayoutShell({ children }: Props) {
   file={file}
   uploading={uploading}
   anonymous={false}
+  showAnonymous={false}   // ← これだけ追加
   onAnonymousChange={() => {}}
   onCancel={() => {
     if (!uploading) setFile(null)

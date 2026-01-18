@@ -9,6 +9,7 @@ type Props = {
   onAnonymousChange: (v: boolean) => void
   onCancel: () => void
   onPost: (editedFile: File) => void
+  showAnonymous?: boolean   // ← 追加（省略時 true）
 }
 
 type Crop = { x: number; y: number; w: number; h: number }
@@ -21,6 +22,7 @@ export default function ImageEditorModal({
   onAnonymousChange,
   onCancel,
   onPost,
+  showAnonymous = true,
 }: Props) {
   const imgRef = useRef<HTMLImageElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
@@ -225,17 +227,18 @@ export default function ImageEditorModal({
             </div>
           </div>
           {/* controlPanel の一番下に追加 */}
-<div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 4 }}>
-  <input
-    type="checkbox"
-    checked={anonymous}
-    onChange={(e) => onAnonymousChange(e.target.checked)}
-  />
-  <span style={{ fontSize: 13, color: '#ccc' }}>
-    匿名で投稿
-  </span>
-</div>
-
+{showAnonymous && (
+  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 4 }}>
+    <input
+      type="checkbox"
+      checked={anonymous}
+      onChange={(e) => onAnonymousChange(e.target.checked)}
+    />
+    <span style={{ fontSize: 13, color: '#ccc' }}>
+      匿名で投稿
+    </span>
+  </div>
+)}
         </div>
 
         <div ref={containerRef} style={styles.body}>
