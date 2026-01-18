@@ -106,6 +106,7 @@ export async function getAnswersByProblemId(problemId: string) {
       image_url,
       created_at,
       anonymous,
+      user_id,
       profiles (
         handle
       )
@@ -121,9 +122,11 @@ export async function getAnswersByProblemId(problemId: string) {
     image_url: a.image_url,
     created_at: a.created_at,
     anonymous: a.anonymous,
+    user_id: a.user_id,              // ← 判定用（UIでは使わない）
     username: a.profiles?.handle ?? 'unknown',
   }))
 }
+
 
 
 /**
