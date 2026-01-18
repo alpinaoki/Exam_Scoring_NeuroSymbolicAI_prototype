@@ -1,4 +1,4 @@
-// lib/posts.ts
+ // lib/posts.ts
 'use client'
 
 import { createClient } from '@supabase/supabase-js'
@@ -48,12 +48,10 @@ export async function createAnswer({
   imageUrl,
   problemId,
   rootId,
-  anonymous,
 }: {
   imageUrl: string
   problemId: string
   rootId: string
-  anonymous: boolean
 }) {
   const { data } = await supabase.auth.getUser()
   const user = data.user
@@ -66,12 +64,10 @@ export async function createAnswer({
     parent_id: problemId,
     root_id: rootId,
     label: null,
-    anonymous, // ← ここだけ
   })
 
   if (error) throw error
 }
-
 
 /**
  * 問題（thread root）を1件取得（投稿者handle付き）
@@ -104,30 +100,18 @@ export async function getAnswersByProblemId(problemId: string) {
     .select(`
       id,
       image_url,
-      created_at,
-      anonymous,
       user_id,
+      created_at,
       profiles (
         handle
       )
     `)
-    .eq('type', 'answer')
     .eq('parent_id', problemId)
     .order('created_at', { ascending: true })
 
   if (error) throw error
-
-  return data.map((a: any) => ({
-    id: a.id,
-    image_url: a.image_url,
-    created_at: a.created_at,
-    anonymous: a.anonymous,
-    user_id: a.user_id,              // ← 判定用（UIでは使わない）
-    username: a.profiles?.handle ?? 'unknown',
-  }))
+  return data
 }
-
-
 
 /**
  * 問題に紐づく解答数を取得
@@ -218,4 +202,3 @@ export async function getProblemsByHandle(handle: string) {
   if (error) throw error
   return data
 }
-

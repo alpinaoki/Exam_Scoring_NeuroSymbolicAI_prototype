@@ -1,9 +1,10 @@
 'use client'
-
-import { useState } from 'react'
-import ImageEditorModal from './ImageEditorModal'
+import { useRef, useState } from 'react'
+import type { CSSProperties } from 'react'
 import { uploadImageToCloudinary } from '../lib/upload'
 import { createAnswer } from '../lib/posts'
+import ImageEditorModal from './ImageEditorModal'
+import { Lightbulb } from 'lucide-react'
 
 type Props = {
   problemId: string
@@ -16,28 +17,37 @@ export default function ProblemActionBar({
   rootId,
   answerCount,
 }: Props) {
+  const cameraInputRef = useRef<HTMLInputElement>(null)
   const [file, setFile] = useState<File | null>(null)
   const [uploading, setUploading] = useState(false)
 
   return (
     <>
       <div style={styles.bar}>
-        <label style={styles.button}>
-          ＋ 解答
-          <input
-            type="file"
-            accept="image/*"
-            hidden
-            onChange={(e) => {
-              const f = e.target.files?.[0]
-              if (f) setFile(f)
-            }}
-          />
-        </label>
-
-        <span style={styles.count}>{answerCount} 件</span>
+        {/* 解答投稿 */}
+        <button
+          style={styles.action}
+          onClick={() => cameraInputRef.current?.click()}
+        >
+          <Lightbulb size={20} style={styles.filledLightbulb} />
+          <span>解答 {answerCount}</span>
+        </button>
       </div>
 
+      {/* hidden camera input */}
+      <input
+        ref={cameraInputRef}
+        type="file"
+        accept="image/*"
+        capture="environment"
+        hidden
+        onChange={(e) => {
+          const f = e.target.files?.[0]
+          if (f) setFile(f)
+        }}
+      />
+
+      {/* Image Editor */}
       {file && (
         <ImageEditorModal
           file={file}
@@ -45,18 +55,12 @@ export default function ProblemActionBar({
           onCancel={() => {
             if (!uploading) setFile(null)
           }}
-          onPost={async (editedFile, anonymous) => {
+          onPost={async (editedFile) => {
             if (uploading) return
             setUploading(true)
 
             const imageUrl = await uploadImageToCloudinary(editedFile)
-
-            await createAnswer({
-              imageUrl,
-              problemId,
-              rootId,
-              anonymous,
-            })
+            await createAnswer({ imageUrl, problemId, rootId })
 
             setUploading(false)
             setFile(null)
@@ -67,19 +71,27 @@ export default function ProblemActionBar({
   )
 }
 
-const styles: { [key: string]: React.CSSProperties } = {
+const styles: { [key: string]: CSSProperties } = {
   bar: {
     display: 'flex',
     alignItems: 'center',
-    gap: 12,
+    gap: 24,
+    color: 'black',
   },
-  button: {
+  action: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: 4,
+    background: 'none',
+    border: 'none',
     cursor: 'pointer',
-    fontSize: 13,
-    color: '#0070f3',
+    color: 'black',
+    padding: 0,
+    fontSize: 'inherit',
+    fontFamily: 'inherit',
+    lineHeight: 1,
   },
-  count: {
-    fontSize: 12,
-    color: '#666',
+  filledLightbulb: {
+    fill: '#fad646',
   },
-}
+} 
