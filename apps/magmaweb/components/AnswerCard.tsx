@@ -59,7 +59,6 @@ export default function AnswerCard({
 
       <AnswerActionBar
         problemId={answerId}
-        rootId={rootId}
         reactionCount={0}
       />
     </div>

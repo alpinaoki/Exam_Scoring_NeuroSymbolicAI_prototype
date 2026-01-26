@@ -1,19 +1,35 @@
 'use client'
+
 import type { CSSProperties } from 'react'
 import { SmilePlus } from 'lucide-react'
-
+import { createReaction } from '../lib/reactions'
 
 type Props = {
   problemId: string
   reactionCount: number
-  rootId: string
-  onReact?: () => void
 }
 
 export default function AnswerActionBar({
+  problemId,
   reactionCount,
-  onReact,
 }: Props) {
+  const onReact = async () => {
+    const comment = window.prompt('リアクションにこめた意味...')
+    if (!comment) return
+
+    try {
+      await createReaction({
+        postId: problemId,
+        type: 'star',
+        comment,
+      })
+      alert('リアクションを追加しました')
+    } catch (e) {
+      console.error(e)
+      alert('失敗しました')
+    }
+  }
+
   return (
     <div style={styles.bar}>
       <button style={styles.action} onClick={onReact}>
@@ -23,6 +39,7 @@ export default function AnswerActionBar({
     </div>
   )
 }
+
 
 const styles: { [key: string]: CSSProperties } = {
   bar: {
