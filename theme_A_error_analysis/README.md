@@ -5,28 +5,37 @@
 - ・誤りの手動での分析
 - ・全体の流れの最後に位置する、評価の基準もアナログで検討する。
 
-<magmatheの現状でのファイル構成>（1/10更新）
+<magmatheの現状でのファイル構成>（1/26更新）
 magmaweb/
 ーapp/
 ｜ーfeed/page.tsx
 ｜ーlogin/page.tsx
 ｜ーme/page.ts
-｜ーstyles/
-｜｜ーlayout.tsx
-｜｜ーpage.tsx
+｜ーprofiles/[id]/page.tsx
+｜ーstyles/globals.css
+｜ーterms/page.tsx
+｜ーthreads/[id]/page.tsx
+｜ーlayout.tsx
+｜ーpage.tsx
 ーcomponents/
+｜ーAnswerActionBar.tsx
+｜ーAnswerCard.tsx
+｜ーImageEditorModal.tsx
 ｜ーLayoutShell.tsx
 ｜ーProblemActionBar.tsx
 ｜ーProblemCard.tsx
 ｜ーProblemFeed.tsx
 ｜ーSubmitButton.tsx（たぶんいらない空ファイル）
+｜ーUserBadge.tsx
 ーdata/
 ｜ーproblems.ts
 ーlib/
 ｜ーauth.ts
 ｜ーpost.ts
 ｜ーsupabase.ts
+｜ーtime.ts
 ｜ーupload.ts
+｜ーuserColor.ts
 ーpublic
 ｜ーproblems/
 ｜｜ーsample1.jpg
@@ -38,6 +47,9 @@ magmaweb/
 ーnext.config.js
 ーpackage.json
 ーtsconfig.json
+
+<magmathe用データベースの現状の構造(1/26現在)>
+{"tables":[{"table_name":"reactions","columns":[{"column_name":"x_float","data_type":"double precision"},{"column_name":"post_id","data_type":"uuid"},{"column_name":"user_id","data_type":"uuid"},{"column_name":"id","data_type":"uuid"},{"column_name":"y_float","data_type":"double precision"},{"column_name":"created_at","data_type":"timestamp with time zone"},{"column_name":"type","data_type":"text"}]},{"table_name":"posts","columns":[{"column_name":"anonymous","data_type":"boolean"},{"column_name":"user_id","data_type":"uuid"},{"column_name":"created_at","data_type":"timestamp with time zone"},{"column_name":"root_id","data_type":"uuid"},{"column_name":"id","data_type":"uuid"},{"column_name":"parent_id","data_type":"uuid"},{"column_name":"image_url","data_type":"text"},{"column_name":"type","data_type":"text"},{"column_name":"label","data_type":"text"}]},{"table_name":"profiles","columns":[{"column_name":"user_id","data_type":"uuid"},{"column_name":"created_at","data_type":"timestamp with time zone"},{"column_name":"username","data_type":"text"},{"column_name":"handle","data_type":"text"}]}]}
 
 ＜タスク整理（1/10現在）＞
 ・magmatheを使える状態にする。
