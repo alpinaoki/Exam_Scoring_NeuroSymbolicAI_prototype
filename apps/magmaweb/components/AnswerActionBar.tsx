@@ -20,7 +20,6 @@ type ReactionType =
 type Props = {
   problemId: string // ← 実質 post_id（answer_id）
   reactionCount: number
-  rootId: string
 }
 
 export default function AnswerActionBar({
