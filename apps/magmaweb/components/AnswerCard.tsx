@@ -35,7 +35,10 @@ export default function AnswerCard({
 }: Props) {
   const router = useRouter()
   const timeLabel = formatDateTime(createdAt)
+
   const [reactions, setReactions] = useState<Reaction[]>([])
+  const [activeReactionId, setActiveReactionId] =
+    useState<string | null>(null)
 
   const displayName = anonymous ? 'Anonymous' : username
 
@@ -68,19 +71,33 @@ export default function AnswerCard({
         <div style={styles.imageWrapper}>
           <img src={image} alt="answer" style={styles.image} />
 
-          {reactions.map((r) => (
-            <div
-              key={r.id}
-              style={{
-                ...styles.reaction,
-                left: `${r.x_float * 100}%`,
-                top: `${r.y_float * 100}%`,
-              }}
-              title={r.comment ?? ''}
-            >
-              <ReactionIcon type={r.type} />
-            </div>
-          ))}
+          {reactions.map((r) => {
+            const isActive = activeReactionId === r.id
+
+            return (
+              <div
+                key={r.id}
+                style={{
+                  ...styles.reaction,
+                  left: `${r.x_float * 100}%`,
+                  top: `${r.y_float * 100}%`,
+                }}
+                onClick={() =>
+                  setActiveReactionId(
+                    isActive ? null : r.id
+                  )
+                }
+              >
+                <ReactionIcon type={r.type} />
+
+                {isActive && r.comment && (
+                  <div style={styles.bubble}>
+                    {r.comment}
+                  </div>
+                )}
+              </div>
+            )
+          })}
         </div>
       )}
 
@@ -129,5 +146,20 @@ const styles: { [key: string]: CSSProperties } = {
     position: 'absolute',
     transform: 'translate(-50%, -50%)',
     cursor: 'pointer',
+  },
+  bubble: {
+    position: 'absolute',
+    bottom: '120%',
+    left: '50%',
+    transform: 'translateX(-50%)',
+    background: 'rgba(255,255,255,0.95)',
+    border: '1px solid #ddd',
+    borderRadius: 8,
+    padding: '6px 10px',
+    fontSize: 12,
+    color: '#333',
+    whiteSpace: 'nowrap',
+    boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+    zIndex: 10,
   },
 }
