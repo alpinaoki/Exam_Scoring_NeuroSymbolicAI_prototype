@@ -1,10 +1,21 @@
 'use client'
 
+import { useEffect, useState } from 'react'
 import type { CSSProperties } from 'react'
 import { useRouter } from 'next/navigation'
 import AnswerActionBar from './AnswerActionBar'
+import ReactionIcon from './ReactionIcon'
 import { formatDateTime } from '../lib/time'
+import { getReactionsByPostId } from '../lib/posts'
 import UserBadge from './UserBadge'
+
+type Reaction = {
+  id: string
+  type: string
+  comment: string | null
+  x_float: number
+  y_float: number
+}
 
 type Props = {
   image: string | null
@@ -18,15 +29,19 @@ type Props = {
 export default function AnswerCard({
   image,
   answerId,
-  rootId,
   username,
   createdAt,
   anonymous,
 }: Props) {
   const router = useRouter()
   const timeLabel = formatDateTime(createdAt)
+  const [reactions, setReactions] = useState<Reaction[]>([])
 
   const displayName = anonymous ? 'Anonymous' : username
+
+  useEffect(() => {
+    getReactionsByPostId(answerId).then(setReactions)
+  }, [answerId])
 
   const goProfile = () => {
     if (anonymous) return
@@ -50,16 +65,28 @@ export default function AnswerCard({
       </div>
 
       {image && (
-        <img
-          src={image}
-          alt="answer"
-          style={styles.image}
-        />
+        <div style={styles.imageWrapper}>
+          <img src={image} alt="answer" style={styles.image} />
+
+          {reactions.map((r) => (
+            <div
+              key={r.id}
+              style={{
+                ...styles.reaction,
+                left: `${r.x_float * 100}%`,
+                top: `${r.y_float * 100}%`,
+              }}
+              title={r.comment ?? ''}
+            >
+              <ReactionIcon type={r.type} />
+            </div>
+          ))}
+        </div>
       )}
 
       <AnswerActionBar
         problemId={answerId}
-        reactionCount={0}
+        reactionCount={reactions.length}
       />
     </div>
   )
@@ -89,9 +116,18 @@ const styles: { [key: string]: CSSProperties } = {
     color: '#aaa',
     fontSize: 11,
   },
+  imageWrapper: {
+    position: 'relative',
+    width: '100%',
+  },
   image: {
     width: '100%',
     borderRadius: 8,
     border: '1px solid #eee',
+  },
+  reaction: {
+    position: 'absolute',
+    transform: 'translate(-50%, -50%)',
+    cursor: 'pointer',
   },
 }

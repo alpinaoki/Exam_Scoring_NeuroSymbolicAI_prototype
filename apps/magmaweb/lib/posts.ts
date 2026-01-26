@@ -207,3 +207,13 @@ export async function getProblemsByHandle(handle: string) {
   if (error) throw error
   return data
 }
+
+export async function getReactionsByPostId(postId: string) {
+  const { data, error } = await supabase
+    .from('reactions')
+    .select('id, type, comment, x_float, y_float')
+    .eq('post_id', postId)
+
+  if (error) throw error
+  return data
+}
