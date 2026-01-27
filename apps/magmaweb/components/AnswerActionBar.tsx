@@ -1,17 +1,17 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import type { CSSProperties } from 'react'
 import {
   Heart,
   Star,
   AlertTriangle,
   HelpCircle,
-  SendHorizontal
+  SendHorizontal,
+  X // 閉じるボタン用
 } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 
-// Heartを削除し3種類に
 type ReactionType = 'star' | 'exclamation' | 'question'
 
 type Props = {
@@ -24,9 +24,43 @@ export default function AnswerActionBar({
   reactionCount,
 }: Props) {
   const [open, setOpen] = useState(false)
+  const [step, setStep] = useState<'position' | 'input'>('position') // 座標選択か入力か
+  const [pos, setPos] = useState({ x: 0.5, y: 0.5 })
   const [type, setType] = useState<ReactionType>('star')
   const [comment, setComment] = useState('')
   const [loading, setLoading] = useState(false)
+
+  // ハートボタンを押した時の処理
+  const toggleOpen = () => {
+    if (!open) {
+      setOpen(true)
+      setStep('position')
+      // ここでユーザーに「画像をクリックして」と伝えるためのヒントを出す
+    } else {
+      setOpen(false)
+    }
+  }
+
+  // 画像がクリックされたことを検知するためのグローバルな処理
+  // 注意: 本来はAnswerCardの画像にonClickを仕込むのがベストですが、
+  // ActionBar単体で完結させるために「次に画面のどこかがクリックされたらそこを座標にする」簡易ロジックにします
+  useEffect(() => {
+    if (open && step === 'position') {
+      const handleGlobalClick = (e: MouseEvent) => {
+        // 画像要素を探す（もっとも近いimgタグなど）
+        const img = document.querySelector('img[alt="answer"]')
+        if (img && img.contains(e.target as Node)) {
+          const rect = img.getBoundingClientRect()
+          const x = (e.clientX - rect.left) / rect.width
+          const y = (e.clientY - rect.top) / rect.height
+          setPos({ x, y })
+          setStep('input')
+        }
+      }
+      window.addEventListener('click', handleGlobalClick)
+      return () => window.removeEventListener('click', handleGlobalClick)
+    }
+  }, [open, step])
 
   async function submitReaction() {
     if (!comment.trim()) return
@@ -42,14 +76,15 @@ export default function AnswerActionBar({
         user_id: user.id,
         type,
         comment,
-        x_float: 0.5,
-        y_float: 0.5,
+        x_float: pos.x,
+        y_float: pos.y,
       })
 
       if (error) throw error
 
       setComment('')
       setOpen(false)
+      window.location.reload() // 簡易的に再読込
     } catch (e) {
       console.error(e)
       alert('送信に失敗しました')
@@ -60,93 +95,73 @@ export default function AnswerActionBar({
 
   return (
     <div style={styles.wrapper}>
-      {/* メインのアクションボタン */}
       <button
         style={{
           ...styles.action,
-          color: open ? '#ff8c00' : '#888' // 開いているときは色を変える
+          color: open ? '#ff8c00' : '#888'
         }}
-        onClick={() => setOpen((v) => !v)}
+        onClick={toggleOpen}
       >
-        <Heart size={20} />
+        <Heart size={20} fill={open ? '#ff8c00' : 'none'} />
         <span style={styles.countText}>リアクション {reactionCount}</span>
       </button>
 
       {open && (
         <div style={styles.reactionBox}>
-          {/* アイコン選択エリア */}
-          <div style={styles.typePicker}>
-            <IconButton
-              active={type === 'star'}
-              label="なるほど"
-              onClick={() => setType('star')}
-            >
-              <Star size={18} fill={type === 'star' ? '#ff8c00' : 'none'} color={type === 'star' ? '#ff8c00' : '#666'} />
-            </IconButton>
-            
-            <IconButton
-              active={type === 'exclamation'}
-              label="すごい！"
-              onClick={() => setType('exclamation')}
-            >
-              <AlertTriangle size={18} color={type === 'exclamation' ? '#ff8c00' : '#666'} />
-            </IconButton>
-            
-            <IconButton
-              active={type === 'question'}
-              label="もっと詳しく"
-              onClick={() => setType('question')}
-            >
-              <HelpCircle size={18} color={type === 'question' ? '#ff8c00' : '#666'} />
-            </IconButton>
+          <div style={styles.boxHeader}>
+            <span style={styles.stepTitle}>
+              {step === 'position' ? '① 場所を選択' : '② メッセージを入力'}
+            </span>
+            <button onClick={() => setOpen(false)} style={styles.closeBtn}><X size={16}/></button>
           </div>
 
-          {/* 入力エリア */}
-          <div style={styles.inputContainer}>
-            <input
-              style={styles.input}
-              placeholder="一言メッセージを送る..."
-              value={comment}
-              onChange={(e) => setComment(e.target.value)}
-              disabled={loading}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && !e.nativeEvent.isComposing) submitReaction()
-              }}
-            />
-            <button
-              style={{
-                ...styles.submit,
-                opacity: comment.trim() && !loading ? 1 : 0.4
-              }}
-              onClick={submitReaction}
-              disabled={loading || !comment.trim()}
-            >
-              <SendHorizontal size={18} />
-            </button>
-          </div>
+          {step === 'position' ? (
+            <div style={styles.guide}>
+              <div style={styles.pulseIcon} />
+              <p style={styles.guideText}>画像の中の、リアクションしたい場所をタップしてください</p>
+            </div>
+          ) : (
+            <>
+              <div style={styles.typePicker}>
+                <IconButton active={type === 'star'} label="なるほど" onClick={() => setType('star')}>
+                  <Star size={18} fill={type === 'star' ? '#ff8c00' : 'none'} color={type === 'star' ? '#ff8c00' : '#666'} />
+                </IconButton>
+                <IconButton active={type === 'exclamation'} label="すごい！" onClick={() => setType('exclamation')}>
+                  <AlertTriangle size={18} color={type === 'exclamation' ? '#ff8c00' : '#666'} />
+                </IconButton>
+                <IconButton active={type === 'question'} label="もっと詳しく" onClick={() => setType('question')}>
+                  <HelpCircle size={18} color={type === 'question' ? '#ff8c00' : '#666'} />
+                </IconButton>
+              </div>
+
+              <div style={styles.inputContainer}>
+                <input
+                  style={styles.input}
+                  placeholder="メッセージ..."
+                  value={comment}
+                  onChange={(e) => setComment(e.target.value)}
+                  autoFocus
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !e.nativeEvent.isComposing) submitReaction()
+                  }}
+                />
+                <button onClick={submitReaction} style={styles.submit}>
+                  <SendHorizontal size={18} />
+                </button>
+              </div>
+            </>
+          )}
         </div>
       )}
     </div>
   )
 }
 
-/* ---------- 小コンポーネント ---------- */
-
-function IconButton({
-  children,
-  active,
-  onClick,
-  label
-}: {
-  children: React.ReactNode
-  active: boolean
-  onClick: () => void
-  label: string
-}) {
+/* ---------- 小コンポーネント (変更なし) ---------- */
+function IconButton({ children, active, onClick, label }: any) {
   return (
     <button
       onClick={onClick}
-      title={label}
       style={{
         ...styles.iconButton,
         backgroundColor: active ? 'rgba(255, 140, 0, 0.1)' : 'transparent',
@@ -158,83 +173,24 @@ function IconButton({
   )
 }
 
-/* ---------- styles ---------- */
-
+/* ---------- styles (追記・修正分) ---------- */
 const styles: { [key: string]: CSSProperties } = {
-  wrapper: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: 12,
-    marginTop: 8,
+  wrapper: { display: 'flex', flexDirection: 'column', gap: 12, marginTop: 8 },
+  action: { display: 'inline-flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', cursor: 'pointer', padding: '4px 8px', fontSize: '14px', fontWeight: 600 },
+  countText: { color: '#666' },
+  reactionBox: { 
+    display: 'flex', flexDirection: 'column', gap: 12, padding: '16px', borderRadius: '20px', 
+    background: '#fff', border: '1px solid #eee', boxShadow: '0 10px 30px rgba(0,0,0,0.1)', maxWidth: '320px' 
   },
-  action: {
-    display: 'inline-flex',
-    alignItems: 'center',
-    gap: 6,
-    background: 'none',
-    border: 'none',
-    cursor: 'pointer',
-    padding: '4px 8px',
-    fontSize: '14px',
-    fontWeight: 500,
-    transition: 'all 0.2s',
-  },
-  countText: {
-    color: '#666',
-  },
-  reactionBox: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: 12,
-    padding: '12px',
-    borderRadius: '16px',
-    background: 'rgba(255, 255, 255, 0.95)',
-    border: '1px solid rgba(0, 0, 0, 0.08)',
-    boxShadow: '0 8px 24px rgba(0, 0, 0, 0.08)',
-    maxWidth: '350px',
-  },
-  typePicker: {
-    display: 'flex',
-    gap: 8,
-    justifyContent: 'flex-start',
-  },
-  iconButton: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    border: '1px solid transparent',
-    cursor: 'pointer',
-    padding: '8px',
-    borderRadius: '10px',
-    transition: 'all 0.2s ease',
-  },
-  inputContainer: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: 8,
-    background: '#f5f5f7',
-    borderRadius: '12px',
-    padding: '4px 4px 4px 12px',
-  },
-  input: {
-    flex: 1,
-    background: 'transparent',
-    border: 'none',
-    padding: '8px 0',
-    fontSize: '14px',
-    outline: 'none',
-    color: '#333',
-  },
-  submit: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: '8px',
-    borderRadius: '8px',
-    border: 'none',
-    background: '#333',
-    color: 'white',
-    cursor: 'pointer',
-    transition: 'all 0.2s',
-  },
+  boxHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
+  stepTitle: { fontSize: '12px', fontWeight: 700, color: '#ff8c00', letterSpacing: '0.05em' },
+  closeBtn: { background: 'none', border: 'none', color: '#ccc', cursor: 'pointer' },
+  guide: { padding: '20px 10px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 },
+  guideText: { fontSize: '13px', color: '#555', lineHeight: 1.4, margin: 0 },
+  pulseIcon: { width: 12, height: 12, background: '#ff8c00', borderRadius: '50%', boxShadow: '0 0 0 0 rgba(255, 140, 0, 0.7)', animation: 'pulse 1.5s infinite' },
+  typePicker: { display: 'flex', gap: 8 },
+  iconButton: { display: 'flex', padding: '10px', borderRadius: '12px', border: '1px solid transparent', cursor: 'pointer' },
+  inputContainer: { display: 'flex', alignItems: 'center', gap: 8, background: '#f0f0f2', borderRadius: '12px', padding: '4px 4px 4px 12px' },
+  input: { flex: 1, background: 'transparent', border: 'none', outline: 'none', fontSize: '14px' },
+  submit: { display: 'flex', background: '#333', color: '#fff', border: 'none', padding: '8px', borderRadius: '8px', cursor: 'pointer' },
 }
