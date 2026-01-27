@@ -15,6 +15,9 @@ type Reaction = {
   comment: string | null
   x_float: number
   y_float: number
+  // ↓ 追加：誰がリアクションしたかを表示するため
+  user_id?: string 
+  username?: string 
 }
 
 type Props = {
@@ -42,6 +45,7 @@ export default function AnswerCard({
   const displayName = anonymous ? 'Anonymous' : username
 
   useEffect(() => {
+    // getReactionsByPostId 内で profile 情報も結合(Join)して取得するようにしてください
     getReactionsByPostId(answerId).then(setReactions)
   }, [answerId])
 
@@ -50,7 +54,6 @@ export default function AnswerCard({
     router.push(`/profiles/${username}`)
   }
 
-  // アイコンの中身を塗りつぶす色
   const getReactionColor = (type: string) => {
     switch (type) {
       case 'star': return '#FFD700'
@@ -83,6 +86,7 @@ export default function AnswerCard({
           {reactions.map((r) => {
             const isActive = activeReactionId === r.id
             const themeColor = getReactionColor(r.type)
+            const reactorName = r.username || 'unknown'
 
             return (
               <div
@@ -94,7 +98,6 @@ export default function AnswerCard({
                 }}
                 onClick={() => setActiveReactionId(isActive ? null : r.id)}
               >
-                {/* マルを削除し、アイコン自体にスタイルを適用 */}
                 <div style={{
                   display: 'flex',
                   transition: 'all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
@@ -103,15 +106,19 @@ export default function AnswerCard({
                 }}>
                   <ReactionIcon 
                     type={r.type} 
-                    size={22} // 枠がなくなった分、少し大きくして視認性を確保
+                    size={22} 
                     color="#000" 
                     fillColor={themeColor} 
                   />
                 </div>
 
-                {isActive && r.comment && (
+                {isActive && (
                   <div style={styles.bubble}>
-                    {r.comment}
+                    <div style={styles.bubbleHeader}>
+                      <UserBadge username={reactorName} size={14} />
+                      <span style={styles.reactorName}>@{reactorName}</span>
+                    </div>
+                    {r.comment && <div style={styles.bubbleComment}>{r.comment}</div>}
                   </div>
                 )}
               </div>
@@ -175,23 +182,41 @@ const styles: { [key: string]: CSSProperties } = {
     transform: 'translate(-50%, -50%)',
     cursor: 'pointer',
     zIndex: 5,
-    padding: '15px', // クリックエリアを広めに
+    padding: '15px',
   },
   bubble: {
     position: 'absolute',
     bottom: '100%',
     left: '50%',
     transform: 'translateX(-50%) translateY(-10px)',
-    background: 'rgba(0,0,0,0.9)',
-    borderRadius: '8px',
-    padding: '6px 12px',
-    fontSize: '12px',
-    fontWeight: 600,
-    color: '#fff',
-    whiteSpace: 'nowrap',
-    boxShadow: '0 4px 15px rgba(0,0,0,0.3)',
+    background: 'rgba(0,0,0,0.92)',
+    borderRadius: '10px',
+    padding: '8px 12px',
+    boxShadow: '0 4px 20px rgba(0,0,0,0.4)',
     zIndex: 10,
     pointerEvents: 'none',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 4,
+    minWidth: '80px',
+  },
+  bubbleHeader: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 6,
+    borderBottom: '1px solid rgba(255,255,255,0.1)',
+    paddingBottom: 4,
+  },
+  reactorName: {
+    fontSize: '11px',
+    fontWeight: 700,
+    color: '#aaa',
+  },
+  bubbleComment: {
+    fontSize: '13px',
+    fontWeight: 500,
+    color: '#fff',
+    whiteSpace: 'nowrap',
   },
   footer: {
     marginTop: 4,

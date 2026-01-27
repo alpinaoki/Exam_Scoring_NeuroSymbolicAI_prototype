@@ -211,9 +211,28 @@ export async function getProblemsByHandle(handle: string) {
 export async function getReactionsByPostId(postId: string) {
   const { data, error } = await supabase
     .from('reactions')
-    .select('id, type, comment, x_float, y_float')
+    .select(`
+      id, 
+      type, 
+      comment, 
+      x_float, 
+      y_float,
+      user_id,
+      profiles (
+        handle
+      )
+    `)
     .eq('post_id', postId)
 
   if (error) throw error
-  return data
+
+  // AnswerCardで扱いやすいようにデータを整形して返す
+  return data.map((r: any) => ({
+    id: r.id,
+    type: r.type,
+    comment: r.comment,
+    x_float: r.x_float,
+    y_float: r.y_float,
+    username: r.profiles?.handle || 'unknown'
+  }))
 }
