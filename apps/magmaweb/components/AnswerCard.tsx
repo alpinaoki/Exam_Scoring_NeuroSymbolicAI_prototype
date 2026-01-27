@@ -31,7 +31,7 @@ export default function AnswerCard({ image, answerId, username, createdAt, anony
   const router = useRouter()
   const [reactions, setReactions] = useState<Reaction[]>([])
   const [activeReactionId, setActiveReactionId] = useState<string | null>(null)
-  const [preview, setPreview] = useState<{ x: number, y: number, type: string } | null>(null)
+  const [preview, setPreview] = useState<{ x: number, y: number, type: string, isDragging?: boolean } | null>(null)
 
   const displayName = anonymous ? 'Anonymous' : username
 
@@ -40,7 +40,7 @@ export default function AnswerCard({ image, answerId, username, createdAt, anony
   }, [answerId])
 
   const getIcon = (type: string, size = 22, fill = "none") => {
-    const props = { size, style: { color: '#000' }, fill }
+    const props = { size, style: { color: '#000' } }
     if (type === 'star') return <Star {...props} fill={fill === "none" ? "none" : "#FFD700"} />
     if (type === 'exclamation') return <AlertTriangle {...props} fill={fill === "none" ? "none" : "#FF4500"} />
     return <HelpCircle {...props} fill={fill === "none" ? "none" : "#00BFFF"} />
@@ -60,7 +60,6 @@ export default function AnswerCard({ image, answerId, username, createdAt, anony
         <div style={styles.imageWrapper}>
           <img src={image} alt="answer" style={styles.image} />
 
-          {/* 既存リアクション */}
           {reactions.map((r) => (
             <div key={r.id} style={{ ...styles.reactionContainer, left: `${r.x_float * 100}%`, top: `${r.y_float * 100}%` }} onClick={() => setActiveReactionId(activeReactionId === r.id ? null : r.id)}>
               <div style={{ transform: activeReactionId === r.id ? 'scale(1.4)' : 'scale(1)', transition: '0.2s' }}>
@@ -68,16 +67,29 @@ export default function AnswerCard({ image, answerId, username, createdAt, anony
               </div>
               {activeReactionId === r.id && (
                 <div style={styles.bubble}>
-                  <span style={styles.reactorName}>@{r.username}</span>
+                  <div style={styles.bubbleHeader}>
+                    <UserBadge username={r.username || ''} size={14} />
+                    <span style={styles.reactorName}>@{r.username}</span>
+                  </div>
                   <div style={styles.bubbleComment}>{r.comment}</div>
                 </div>
               )}
             </div>
           ))}
 
-          {/* ★ プレビューピン：Lucideアイコンを直接使用 ★ */}
+          {/* ★ プレビューピン：ここ自体をドラッグ可能にする ★ */}
           {preview && (
-            <div style={{ ...styles.reactionContainer, left: `${preview.x * 100}%`, top: `${preview.y * 100}%`, zIndex: 1000, pointerEvents: 'none' }}>
+            <div 
+              id="preview-pin"
+              style={{ 
+                ...styles.reactionContainer, 
+                left: `${preview.x * 100}%`, 
+                top: `${preview.y * 100}%`, 
+                zIndex: 1000,
+                cursor: 'grab',
+                touchAction: 'none'
+              }}
+            >
               <div style={{ transform: 'scale(1.5)', filter: 'drop-shadow(0 0 8px rgba(255,140,0,0.8))' }}>
                 {getIcon(preview.type, 24, "filled")}
               </div>
@@ -99,11 +111,16 @@ const styles: { [key: string]: CSSProperties } = {
   user: { display: 'flex', alignItems: 'center', gap: 6 },
   usernameText: { fontWeight: 600, color: '#333' },
   date: { color: '#aaa', fontSize: 11 },
-  imageWrapper: { position: 'relative', width: '100%', lineHeight: 0, overflow: 'hidden', borderRadius: '12px' },
-  image: { width: '100%', display: 'block' },
+  imageWrapper: { position: 'relative', width: '100%', lineHeight: 0, overflow: 'visible', borderRadius: '12px' },
+  image: { width: '100%', display: 'block', borderRadius: '12px' },
   reactionContainer: { position: 'absolute', transform: 'translate(-50%, -50%)', zIndex: 10, cursor: 'pointer' },
-  bubble: { position: 'absolute', bottom: '120%', left: '50%', transform: 'translateX(-50%)', background: '#000', color: '#fff', padding: '6px 10px', borderRadius: '8px', fontSize: '12px', whiteSpace: 'nowrap', zIndex: 20 },
-  reactorName: { fontSize: '10px', opacity: 0.7, display: 'block' },
-  bubbleComment: { fontWeight: 500 },
+  bubble: { 
+    position: 'absolute', bottom: '120%', left: '50%', transform: 'translateX(-50%)', 
+    background: 'rgba(0,0,0,0.85)', color: '#fff', padding: '8px 12px', borderRadius: '12px', 
+    fontSize: '12px', minWidth: '100px', zIndex: 20, boxShadow: '0 4px 12px rgba(0,0,0,0.2)' 
+  },
+  bubbleHeader: { display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4, borderBottom: '1px solid rgba(255,255,255,0.2)', paddingBottom: 4 },
+  reactorName: { fontSize: '11px', fontWeight: 700, color: '#ccc' },
+  bubbleComment: { fontWeight: 500, lineHeight: '1.4', whiteSpace: 'normal', wordBreak: 'break-word' },
   footer: { marginTop: 4 }
 }

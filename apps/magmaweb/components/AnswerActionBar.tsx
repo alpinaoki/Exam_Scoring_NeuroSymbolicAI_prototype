@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import type { CSSProperties } from 'react'
-import { Heart, Star, AlertTriangle, HelpCircle, SendHorizontal, X, GripHorizontal } from 'lucide-react'
+import { Heart, Star, AlertTriangle, HelpCircle, SendHorizontal, X } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 
 type ReactionType = 'star' | 'exclamation' | 'question'
@@ -15,12 +15,10 @@ export default function AnswerActionBar({ problemId, reactionCount, onPreviewCha
   const [comment, setComment] = useState('')
   const [isDragging, setIsDragging] = useState(false)
 
-  // 親への同期
   useEffect(() => {
-    onPreviewChange(open && step === 'input' ? { ...pos, type } : null)
-  }, [open, step, pos, type, onPreviewChange])
+    onPreviewChange(open && step === 'input' ? { ...pos, type, isDragging } : null)
+  }, [open, step, pos, type, isDragging, onPreviewChange])
 
-  // 初期位置決定クリック
   useEffect(() => {
     if (open && step === 'position') {
       const handleClick = (e: MouseEvent) => {
@@ -36,17 +34,31 @@ export default function AnswerActionBar({ problemId, reactionCount, onPreviewCha
     }
   }, [open, step])
 
-  // ドラッグ移動処理
+  useEffect(() => {
+    const pin = document.getElementById('preview-pin')
+    if (!pin || step !== 'input') return
+
+    const startDragging = (e: any) => {
+      e.preventDefault()
+      setIsDragging(true)
+    }
+
+    pin.addEventListener('mousedown', startDragging)
+    pin.addEventListener('touchstart', startDragging, { passive: false })
+
+    return () => {
+      pin.removeEventListener('mousedown', startDragging)
+      pin.removeEventListener('touchstart', startDragging)
+    }
+  }, [step, open])
+
   useEffect(() => {
     if (!isDragging) return
     const handleMove = (e: any) => {
-      // 画面のスクロール・ズームを防止
       if (e.cancelable) e.preventDefault()
-
       const img = document.querySelector('img[alt="answer"]')
       if (!img) return
       const rect = img.getBoundingClientRect()
-      
       const clientX = e.touches ? e.touches[0].clientX : e.clientX
       const clientY = e.touches ? e.touches[0].clientY : e.clientY
       
@@ -69,20 +81,6 @@ export default function AnswerActionBar({ problemId, reactionCount, onPreviewCha
     }
   }, [isDragging])
 
-  const handleSubmit = async () => {
-    const { data } = await supabase.auth.getUser()
-    if (!data.user) return alert('ログインが必要です')
-    await supabase.from('reactions').insert({
-      post_id: problemId,
-      user_id: data.user.id,
-      type,
-      comment,
-      x_float: pos.x,
-      y_float: pos.y
-    })
-    window.location.reload()
-  }
-
   return (
     <div style={{ position: 'static' }}>
       <button style={styles.heartBtn} onClick={() => { setOpen(!open); setStep('position'); }}>
@@ -100,18 +98,12 @@ export default function AnswerActionBar({ problemId, reactionCount, onPreviewCha
           left: `${pos.x * 100}%`,
           top: `${pos.y * 100}%`,
           transform: `translate(${pos.x > 0.5 ? '-105%' : '5%'}, ${pos.y > 0.5 ? '-105%' : '5%'})`,
-          // ★ ドラッグ中はボックスを隠す
           opacity: isDragging ? 0 : 1,
           pointerEvents: isDragging ? 'none' : 'auto',
-          transition: 'opacity 0.15s ease',
+          transition: 'opacity 0.2s ease',
         }}>
-          <div 
-            style={styles.dragHeader} 
-            onMouseDown={(e) => { e.preventDefault(); setIsDragging(true); }}
-            onTouchStart={() => setIsDragging(true)}
-          >
-            <GripHorizontal size={16} color="#ccc" />
-            <span style={{ fontSize: '10px', color: '#999', flex: 1 }}>ドラッグで移動</span>
+          <div style={styles.boxHeader}>
+            <span style={{ fontSize: '11px', color: '#999', fontWeight: 600 }}>アイコンをドラッグして位置調整</span>
             <X size={16} color="#ccc" onClick={() => setOpen(false)} style={{ cursor: 'pointer' }} />
           </div>
 
@@ -122,14 +114,12 @@ export default function AnswerActionBar({ problemId, reactionCount, onPreviewCha
           </div>
 
           <div style={styles.inputRow}>
-            <input 
-              autoFocus 
-              style={styles.input} 
-              placeholder="一言..." 
-              value={comment} 
-              onChange={e => setComment(e.target.value)} 
-            />
-            <button onClick={handleSubmit} style={styles.sendBtn}><SendHorizontal size={18} /></button>
+            <input autoFocus style={styles.input} placeholder="一言..." value={comment} onChange={e => setComment(e.target.value)} />
+            <button onClick={async () => {
+              const { data } = await supabase.auth.getUser()
+              await supabase.from('reactions').insert({ post_id: problemId, user_id: data.user?.id, type, comment, x_float: pos.x, y_float: pos.y })
+              window.location.reload()
+            }} style={styles.sendBtn}><SendHorizontal size={18} /></button>
           </div>
         </div>
       )}
@@ -139,16 +129,7 @@ export default function AnswerActionBar({ problemId, reactionCount, onPreviewCha
 
 function TypeBtn({ children, active, onClick }: any) {
   return (
-    <button 
-      type="button"
-      onClick={(e) => { e.stopPropagation(); onClick(); }} 
-      style={{ 
-        ...styles.typeBtn, 
-        borderColor: active ? '#ff8c00' : '#eee', 
-        color: active ? '#ff8c00' : '#666',
-        background: active ? '#fff9f2' : '#fff'
-      }}
-    >
+    <button type="button" onClick={(e) => { e.stopPropagation(); onClick(); }} style={{ ...styles.typeBtn, borderColor: active ? '#ff8c00' : '#eee', color: active ? '#ff8c00' : '#666', background: active ? '#fff9f2' : '#fff' }}>
       {children}
     </button>
   )
@@ -157,18 +138,10 @@ function TypeBtn({ children, active, onClick }: any) {
 const styles: { [key: string]: CSSProperties } = {
   heartBtn: { display: 'inline-flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', cursor: 'pointer', padding: '8px 0', fontWeight: 600 },
   guide: { position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', background: 'rgba(0,0,0,0.8)', color: '#fff', padding: '12px 20px', borderRadius: '40px', zIndex: 2000, pointerEvents: 'none' },
-  inputBox: { 
-    position: 'absolute', width: '220px', background: '#fff', border: '1px solid #ddd', borderRadius: '16px', padding: '12px', 
-    boxShadow: '0 10px 40px rgba(0,0,0,0.2)', zIndex: 3000, display: 'flex', flexDirection: 'column', gap: 10,
-    touchAction: 'none' 
-  },
-  dragHeader: { display: 'flex', alignItems: 'center', gap: 6, cursor: 'grab', paddingBottom: 4, borderBottom: '1px solid #f0f0f0' },
+  inputBox: { position: 'absolute', width: '220px', background: '#fff', border: '1px solid #ddd', borderRadius: '16px', padding: '12px', boxShadow: '0 10px 40px rgba(0,0,0,0.2)', zIndex: 3000, display: 'flex', flexDirection: 'column', gap: 10 },
+  boxHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 2 },
   typeBtn: { flex: 1, display: 'flex', justifyContent: 'center', padding: '8px', borderRadius: '10px', border: '1px solid', cursor: 'pointer' },
   inputRow: { display: 'flex', background: '#f5f5f7', borderRadius: '12px', padding: '4px 4px 4px 12px' },
-  input: { 
-    flex: 1, background: 'transparent', border: 'none', outline: 'none', 
-    fontSize: '16px', // ★ iOSの自動ズーム防止
-    color: '#333' 
-  },
+  input: { flex: 1, background: 'transparent', border: 'none', outline: 'none', fontSize: '16px', color: '#333' },
   sendBtn: { background: '#333', color: '#fff', border: 'none', padding: '8px', borderRadius: '8px', cursor: 'pointer' }
 }
