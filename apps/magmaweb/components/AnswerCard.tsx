@@ -4,10 +4,10 @@ import { useEffect, useState } from 'react'
 import type { CSSProperties } from 'react'
 import { useRouter } from 'next/navigation'
 import AnswerActionBar from './AnswerActionBar'
-import ReactionIcon from './ReactionIcon'
 import { formatDateTime } from '../lib/time'
 import { getReactionsByPostId } from '../lib/posts'
 import UserBadge from './UserBadge'
+import { Star, AlertTriangle, HelpCircle } from 'lucide-react'
 
 type Reaction = {
   id: string
@@ -15,7 +15,6 @@ type Reaction = {
   comment: string | null
   x_float: number
   y_float: number
-  user_id?: string 
   username?: string 
 }
 
@@ -28,20 +27,10 @@ type Props = {
   anonymous: boolean
 }
 
-export default function AnswerCard({
-  image,
-  answerId,
-  username,
-  createdAt,
-  anonymous,
-}: Props) {
+export default function AnswerCard({ image, answerId, username, createdAt, anonymous }: Props) {
   const router = useRouter()
-  const timeLabel = formatDateTime(createdAt)
-
   const [reactions, setReactions] = useState<Reaction[]>([])
   const [activeReactionId, setActiveReactionId] = useState<string | null>(null)
-  
-  // ★ 追加: 新規作成中のピンの状態
   const [preview, setPreview] = useState<{ x: number, y: number, type: string } | null>(null)
 
   const displayName = anonymous ? 'Anonymous' : username
@@ -50,87 +39,47 @@ export default function AnswerCard({
     getReactionsByPostId(answerId).then(setReactions)
   }, [answerId])
 
-  const goProfile = () => {
-    if (anonymous) return
-    router.push(`/profiles/${username}`)
-  }
-
-  const getReactionColor = (type: string) => {
-    switch (type) {
-      case 'star': return '#FFD700'
-      case 'exclamation': return '#FF4500'
-      case 'question': return '#00BFFF'
-      default: return '#eee'
-    }
+  const getIcon = (type: string, size = 22, fill = "none") => {
+    const props = { size, style: { color: '#000' }, fill }
+    if (type === 'star') return <Star {...props} fill={fill === "none" ? "none" : "#FFD700"} />
+    if (type === 'exclamation') return <AlertTriangle {...props} fill={fill === "none" ? "none" : "#FF4500"} />
+    return <HelpCircle {...props} fill={fill === "none" ? "none" : "#00BFFF"} />
   }
 
   return (
     <div style={styles.card}>
       <div style={styles.header}>
-        <div
-          style={{
-            ...styles.user,
-            cursor: anonymous ? 'default' : 'pointer',
-          }}
-          onClick={goProfile}
-        >
+        <div style={{ ...styles.user, cursor: anonymous ? 'default' : 'pointer' }} onClick={() => !anonymous && router.push(`/profiles/${username}`)}>
           <UserBadge username={displayName} />
           <span style={styles.usernameText}>@{displayName}</span>
         </div>
-        <span style={styles.date}>· {timeLabel}</span>
+        <span style={styles.date}>· {formatDateTime(createdAt)}</span>
       </div>
 
       {image && (
-        <div style={styles.imageWrapper} id={`image-container-${answerId}`}>
+        <div style={styles.imageWrapper}>
           <img src={image} alt="answer" style={styles.image} />
 
-          {/* 既存のリアクション */}
-          {reactions.map((r) => {
-            const isActive = activeReactionId === r.id
-            const themeColor = getReactionColor(r.type)
-            return (
-              <div
-                key={r.id}
-                style={{
-                  ...styles.reactionContainer,
-                  left: `${r.x_float * 100}%`,
-                  top: `${r.y_float * 100}%`,
-                }}
-                onClick={() => setActiveReactionId(isActive ? null : r.id)}
-              >
-                <div style={{
-                  display: 'flex',
-                  transition: 'all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
-                  transform: isActive ? 'scale(1.5) translateY(-5px)' : 'scale(1)',
-                  filter: `drop-shadow(0 2px 4px rgba(0,0,0,0.5)) ${isActive ? `drop-shadow(0 0 8px ${themeColor})` : ''}`,
-                }}>
-                  <ReactionIcon type={r.type} size={22} color="#000" fillColor={themeColor} />
-                </div>
-
-                {isActive && (
-                  <div style={styles.bubble}>
-                    <div style={styles.bubbleHeader}>
-                      <UserBadge username={r.username || 'unknown'} size={14} />
-                      <span style={styles.reactorName}>@{r.username}</span>
-                    </div>
-                    {r.comment && <div style={styles.bubbleComment}>{r.comment}</div>}
-                  </div>
-                )}
+          {/* 既存リアクション */}
+          {reactions.map((r) => (
+            <div key={r.id} style={{ ...styles.reactionContainer, left: `${r.x_float * 100}%`, top: `${r.y_float * 100}%` }} onClick={() => setActiveReactionId(activeReactionId === r.id ? null : r.id)}>
+              <div style={{ transform: activeReactionId === r.id ? 'scale(1.4)' : 'scale(1)', transition: '0.2s' }}>
+                {getIcon(r.type, 22, "filled")}
               </div>
-            )
-          })}
+              {activeReactionId === r.id && (
+                <div style={styles.bubble}>
+                  <span style={styles.reactorName}>@{r.username}</span>
+                  <div style={styles.bubbleComment}>{r.comment}</div>
+                </div>
+              )}
+            </div>
+          ))}
 
-          {/* ★ 追加: 編集中のプレビューピン ★ */}
+          {/* ★ プレビューピン：Lucideアイコンを直接使用 ★ */}
           {preview && (
-            <div style={{
-              ...styles.reactionContainer,
-              left: `${preview.x * 100}%`,
-              top: `${preview.y * 100}%`,
-              zIndex: 100,
-              pointerEvents: 'none', // 入力ボックスのドラッグを邪魔しない
-            }}>
-              <div style={{ transform: 'scale(1.3)', filter: 'drop-shadow(0 0 10px rgba(255,140,0,0.5))' }}>
-                <ReactionIcon type={preview.type} size={24} color="#000" fillColor={getReactionColor(preview.type)} />
+            <div style={{ ...styles.reactionContainer, left: `${preview.x * 100}%`, top: `${preview.y * 100}%`, zIndex: 1000, pointerEvents: 'none' }}>
+              <div style={{ transform: 'scale(1.5)', filter: 'drop-shadow(0 0 8px rgba(255,140,0,0.8))' }}>
+                {getIcon(preview.type, 24, "filled")}
               </div>
             </div>
           )}
@@ -138,30 +87,23 @@ export default function AnswerCard({
       )}
 
       <div style={styles.footer}>
-        <AnswerActionBar
-          problemId={answerId}
-          reactionCount={reactions.length}
-          // ★ 追加: プレビュー情報を子から受け取る
-          onPreviewChange={setPreview}
-        />
+        <AnswerActionBar problemId={answerId} reactionCount={reactions.length} onPreviewChange={setPreview} />
       </div>
     </div>
   )
 }
 
-// styles は現状のものを維持し、適宜微調整してください
 const styles: { [key: string]: CSSProperties } = {
-  card: { display: 'flex', flexDirection: 'column', gap: 12, padding: '16px', background: '#fff', borderRadius: '16px', border: '1px solid #f0f0f0' },
+  card: { display: 'flex', flexDirection: 'column', gap: 12, padding: '16px', background: '#fff', borderRadius: '16px', border: '1px solid #f0f0f0', position: 'relative' },
   header: { display: 'flex', alignItems: 'center', gap: 6, fontSize: 13 },
   user: { display: 'flex', alignItems: 'center', gap: 6 },
   usernameText: { fontWeight: 600, color: '#333' },
-  date: { marginLeft: 4, color: '#aaa', fontSize: 11 },
-  imageWrapper: { position: 'relative', width: '100%', lineHeight: 0 },
-  image: { width: '100%', borderRadius: '12px', border: '1px solid #eee' },
-  reactionContainer: { position: 'absolute', transform: 'translate(-50%, -50%)', cursor: 'pointer', zIndex: 5, padding: '15px' },
-  bubble: { position: 'absolute', bottom: '100%', left: '50%', transform: 'translateX(-50%) translateY(-10px)', background: 'rgba(0,0,0,0.92)', borderRadius: '10px', padding: '8px 12px', boxShadow: '0 4px 20px rgba(0,0,0,0.4)', zIndex: 10, display: 'flex', flexDirection: 'column', gap: 4, minWidth: '80px' },
-  bubbleHeader: { display: 'flex', alignItems: 'center', gap: 6, borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: 4 },
-  reactorName: { fontSize: '11px', fontWeight: 700, color: '#aaa' },
-  bubbleComment: { fontSize: '13px', fontWeight: 500, color: '#fff', whiteSpace: 'nowrap' },
+  date: { color: '#aaa', fontSize: 11 },
+  imageWrapper: { position: 'relative', width: '100%', lineHeight: 0, overflow: 'hidden', borderRadius: '12px' },
+  image: { width: '100%', display: 'block' },
+  reactionContainer: { position: 'absolute', transform: 'translate(-50%, -50%)', zIndex: 10, cursor: 'pointer' },
+  bubble: { position: 'absolute', bottom: '120%', left: '50%', transform: 'translateX(-50%)', background: '#000', color: '#fff', padding: '6px 10px', borderRadius: '8px', fontSize: '12px', whiteSpace: 'nowrap', zIndex: 20 },
+  reactorName: { fontSize: '10px', opacity: 0.7, display: 'block' },
+  bubbleComment: { fontWeight: 500 },
   footer: { marginTop: 4 }
 }
