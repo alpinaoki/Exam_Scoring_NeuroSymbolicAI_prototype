@@ -37,8 +37,7 @@ export default function AnswerCard({
   const timeLabel = formatDateTime(createdAt)
 
   const [reactions, setReactions] = useState<Reaction[]>([])
-  const [activeReactionId, setActiveReactionId] =
-    useState<string | null>(null)
+  const [activeReactionId, setActiveReactionId] = useState<string | null>(null)
 
   const displayName = anonymous ? 'Anonymous' : username
 
@@ -49,6 +48,16 @@ export default function AnswerCard({
   const goProfile = () => {
     if (anonymous) return
     router.push(`/profiles/${username}`)
+  }
+
+  // リアクションのタイプ別にメインカラーを決定する
+  const getReactionColor = (type: string) => {
+    switch (type) {
+      case 'star': return '#FFD700'        // ゴールド（星）
+      case 'exclamation': return '#FF4500' // オレンジレッド（！）
+      case 'question': return '#00BFFF'    // スカイブルー（？）
+      default: return '#eee'
+    }
   }
 
   return (
@@ -62,7 +71,7 @@ export default function AnswerCard({
           onClick={goProfile}
         >
           <UserBadge username={displayName} />
-          <span>@{displayName}</span>
+          <span style={styles.usernameText}>@{displayName}</span>
         </div>
         <span style={styles.date}>· {timeLabel}</span>
       </div>
@@ -73,22 +82,33 @@ export default function AnswerCard({
 
           {reactions.map((r) => {
             const isActive = activeReactionId === r.id
+            const themeColor = getReactionColor(r.type)
 
             return (
               <div
                 key={r.id}
                 style={{
-                  ...styles.reaction,
+                  ...styles.reactionContainer,
                   left: `${r.x_float * 100}%`,
                   top: `${r.y_float * 100}%`,
                 }}
-                onClick={() =>
-                  setActiveReactionId(
-                    isActive ? null : r.id
-                  )
-                }
+                onClick={() => setActiveReactionId(isActive ? null : r.id)}
               >
-                <ReactionIcon type={r.type} />
+                {/* バッジ自体を色付きに修正 */}
+                <div style={{
+                  ...styles.iconBadge,
+                  backgroundColor: themeColor, 
+                  transform: isActive ? 'scale(1.2) translateY(-5px)' : 'scale(1)',
+                  borderColor: '#000', // 枠線は黒で固定してクッキリさせる
+                  boxShadow: isActive ? `0 0 15px ${themeColor}88` : '0 2px 8px rgba(0,0,0,0.3)',
+                }}>
+                  <ReactionIcon 
+                    type={r.type} 
+                    size={14} // バッジ内でバランスの良いサイズ
+                    color="#000" // アイコンの線
+                    fillColor="rgba(255,255,255,0.3)" // アイコン内側を少し白くして立体感を出す
+                  />
+                </div>
 
                 {isActive && r.comment && (
                   <div style={styles.bubble}>
@@ -101,10 +121,12 @@ export default function AnswerCard({
         </div>
       )}
 
-      <AnswerActionBar
-        problemId={answerId}
-        reactionCount={reactions.length}
-      />
+      <div style={styles.footer}>
+        <AnswerActionBar
+          problemId={answerId}
+          reactionCount={reactions.length}
+        />
+      </div>
     </div>
   )
 }
@@ -113,20 +135,26 @@ const styles: { [key: string]: CSSProperties } = {
   card: {
     display: 'flex',
     flexDirection: 'column',
-    gap: 8,
-    padding: '0 16px',
+    gap: 12,
+    padding: '16px',
+    background: '#fff',
+    borderRadius: '16px',
+    border: '1px solid #f0f0f0',
   },
   header: {
     display: 'flex',
     alignItems: 'center',
     gap: 6,
     fontSize: 13,
-    color: '#555',
   },
   user: {
     display: 'flex',
     alignItems: 'center',
     gap: 6,
+  },
+  usernameText: {
+    fontWeight: 600,
+    color: '#333',
   },
   date: {
     marginLeft: 4,
@@ -136,30 +164,47 @@ const styles: { [key: string]: CSSProperties } = {
   imageWrapper: {
     position: 'relative',
     width: '100%',
+    lineHeight: 0,
   },
   image: {
     width: '100%',
-    borderRadius: 8,
+    borderRadius: '12px',
     border: '1px solid #eee',
   },
-  reaction: {
+  reactionContainer: {
     position: 'absolute',
     transform: 'translate(-50%, -50%)',
     cursor: 'pointer',
+    zIndex: 5,
+    padding: '12px',
+  },
+  iconBadge: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '26px',
+    height: '26px',
+    border: '2px solid #000',
+    borderRadius: '50%',
+    transition: 'all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
   },
   bubble: {
     position: 'absolute',
-    bottom: '120%',
+    bottom: '100%',
     left: '50%',
-    transform: 'translateX(-50%)',
-    background: 'rgba(255,255,255,0.95)',
-    border: '1px solid #ddd',
-    borderRadius: 8,
-    padding: '6px 10px',
-    fontSize: 12,
-    color: '#333',
+    transform: 'translateX(-50%) translateY(-10px)',
+    background: 'rgba(0,0,0,0.9)',
+    borderRadius: '8px',
+    padding: '6px 12px',
+    fontSize: '12px',
+    fontWeight: 600,
+    color: '#fff',
     whiteSpace: 'nowrap',
-    boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+    boxShadow: '0 4px 15px rgba(0,0,0,0.3)',
     zIndex: 10,
+    pointerEvents: 'none',
   },
+  footer: {
+    marginTop: 4,
+  }
 }
