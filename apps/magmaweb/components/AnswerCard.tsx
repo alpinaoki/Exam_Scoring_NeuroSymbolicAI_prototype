@@ -103,6 +103,7 @@ export default function AnswerCard({ image, answerId, username, createdAt, anony
             </div>
           ))}
 
+          {/* ドラッグ可能なプレビューピン */}
           {preview && (
             <div 
               id="preview-pin"
@@ -112,7 +113,7 @@ export default function AnswerCard({ image, answerId, username, createdAt, anony
                 top: `${preview.y * 100}%`, 
                 zIndex: 1001,
                 cursor: preview.isDragging ? 'grabbing' : 'grab',
-                padding: '20px',
+                padding: '20px', // 掴み判定を広く
                 touchAction: 'none'
               }}
             >
@@ -140,45 +141,18 @@ export default function AnswerCard({ image, answerId, username, createdAt, anony
 }
 
 const styles: { [key: string]: CSSProperties | any } = {
-  card: { 
-    display: 'flex', flexDirection: 'column', gap: 12, padding: '16px', background: '#fff', 
-    borderRadius: '16px', border: '1px solid #f0f0f0', position: 'relative' 
-  },
+  card: { display: 'flex', flexDirection: 'column', gap: 12, padding: '16px', background: '#fff', borderRadius: '16px', border: '1px solid #f0f0f0', position: 'relative' },
   header: { display: 'flex', alignItems: 'center', gap: 6, fontSize: 13 },
   user: { display: 'flex', alignItems: 'center', gap: 6 },
   usernameText: { fontWeight: 600, color: '#333' },
   date: { color: '#aaa', fontSize: 11 },
-  imageWrapper: { 
-    position: 'relative', width: '100%', lineHeight: 0, overflow: 'visible', 
-    borderRadius: '12px', backgroundColor: '#f9f9f9'
-  },
-  image: { 
-    width: '100%', display: 'block', borderRadius: '12px',
-    userSelect: 'none',
-    pointerEvents: 'auto',
-    // 修正: プロパティ名を文字列に、型をanyにすることでコンパイルエラーを回避
-    ['WebkitUserDrag' as any]: 'none'
-  },
-  reactionContainer: { 
-    position: 'absolute', transform: 'translate(-50%, -50%)', zIndex: 10, 
-    display: 'flex', alignItems: 'center', justifyContent: 'center'
-  },
-  bubble: { 
-    position: 'absolute', bottom: '140%', left: '50%', transform: 'translateX(-50%)', 
-    background: 'rgba(0,0,0,0.85)', color: '#fff', padding: '8px 12px', borderRadius: '12px', 
-    fontSize: '12px', minWidth: '120px', zIndex: 2000, boxShadow: '0 8px 24px rgba(0,0,0,0.3)',
-    backdropFilter: 'blur(4px)'
-  },
-  bubbleHeader: { 
-    display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6, 
-    borderBottom: '1px solid rgba(255,255,255,0.2)', paddingBottom: 4 
-  },
+  imageWrapper: { position: 'relative', width: '100%', lineHeight: 0, overflow: 'visible', borderRadius: '12px', backgroundColor: '#f9f9f9' },
+  image: { width: '100%', display: 'block', borderRadius: '12px', userSelect: 'none', pointerEvents: 'auto', ['WebkitUserDrag' as any]: 'none' },
+  reactionContainer: { position: 'absolute', transform: 'translate(-50%, -50%)', zIndex: 10, display: 'flex', alignItems: 'center', justifyContent: 'center' },
+  bubble: { position: 'absolute', bottom: '140%', left: '50%', transform: 'translateX(-50%)', background: 'rgba(0,0,0,0.85)', color: '#fff', padding: '8px 12px', borderRadius: '12px', fontSize: '12px', minWidth: '120px', zIndex: 2000, boxShadow: '0 8px 24px rgba(0,0,0,0.3)', backdropFilter: 'blur(4px)' },
+  bubbleHeader: { display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6, borderBottom: '1px solid rgba(255,255,255,0.2)', paddingBottom: 4 },
   reactorName: { fontSize: '11px', fontWeight: 700, color: '#ccc' },
   bubbleComment: { fontWeight: 500, lineHeight: '1.4', whiteSpace: 'normal', wordBreak: 'break-word' },
-  bubbleArrow: {
-    position: 'absolute', top: '100%', left: '50%', transform: 'translateX(-50%)',
-    borderWidth: '6px', borderStyle: 'solid',
-    borderColor: 'rgba(0,0,0,0.85) transparent transparent transparent'
-  },
+  bubbleArrow: { position: 'absolute', top: '100%', left: '50%', transform: 'translateX(-50%)', borderWidth: '6px', borderStyle: 'solid', borderColor: 'rgba(0,0,0,0.85) transparent transparent transparent' },
   footer: { marginTop: 4 }
 }
