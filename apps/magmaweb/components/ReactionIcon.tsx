@@ -4,7 +4,6 @@ import {
   HelpCircle,
 } from 'lucide-react'
 
-// プロパティの型定義を追加
 type ReactionIconProps = {
   type: string
   size?: number
@@ -14,27 +13,22 @@ type ReactionIconProps = {
 
 export default function ReactionIcon({
   type,
-  size = 18,       // デフォルトサイズ
-  color = '#000',  // デフォルトの線の色
-  fillColor = 'none' // デフォルトの塗りつぶし
+  size = 18,
+  color = '#000',
+  fillColor = 'none'
 }: ReactionIconProps) {
   
-  // Lucideアイコンに渡す共通設定
   const iconProps = {
     size,
     color,
     fill: fillColor,
-    strokeWidth: 2.5, // 視認性を高めるために線を少し太く
+    strokeWidth: 2.5, // 2.5~3.0くらいが塗りつぶした時にクッキリします
   }
 
   switch (type) {
-    case 'star':
-      return <Star {...iconProps} />
-    case 'exclamation':
-      return <AlertTriangle {...iconProps} />
-    case 'question':
-      return <HelpCircle {...iconProps} />
-    default:
-      return null
+    case 'star': return <Star {...iconProps} />
+    case 'exclamation': return <AlertTriangle {...iconProps} />
+    case 'question': return <HelpCircle {...iconProps} />
+    default: return null
   }
 }

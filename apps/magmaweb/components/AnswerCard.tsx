@@ -50,12 +50,12 @@ export default function AnswerCard({
     router.push(`/profiles/${username}`)
   }
 
-  // リアクションのタイプ別にメインカラーを決定する
+  // アイコンの中身を塗りつぶす色
   const getReactionColor = (type: string) => {
     switch (type) {
-      case 'star': return '#FFD700'        // ゴールド（星）
-      case 'exclamation': return '#FF4500' // オレンジレッド（！）
-      case 'question': return '#00BFFF'    // スカイブルー（？）
+      case 'star': return '#FFD700'
+      case 'exclamation': return '#FF4500'
+      case 'question': return '#00BFFF'
       default: return '#eee'
     }
   }
@@ -94,19 +94,18 @@ export default function AnswerCard({
                 }}
                 onClick={() => setActiveReactionId(isActive ? null : r.id)}
               >
-                {/* バッジ自体を色付きに修正 */}
+                {/* マルを削除し、アイコン自体にスタイルを適用 */}
                 <div style={{
-                  ...styles.iconBadge,
-                  backgroundColor: themeColor, 
-                  transform: isActive ? 'scale(1.2) translateY(-5px)' : 'scale(1)',
-                  borderColor: '#000', // 枠線は黒で固定してクッキリさせる
-                  boxShadow: isActive ? `0 0 15px ${themeColor}88` : '0 2px 8px rgba(0,0,0,0.3)',
+                  display: 'flex',
+                  transition: 'all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
+                  transform: isActive ? 'scale(1.5) translateY(-5px)' : 'scale(1)',
+                  filter: `drop-shadow(0 2px 4px rgba(0,0,0,0.5)) ${isActive ? `drop-shadow(0 0 8px ${themeColor})` : ''}`,
                 }}>
                   <ReactionIcon 
                     type={r.type} 
-                    size={14} // バッジ内でバランスの良いサイズ
-                    color="#000" // アイコンの線
-                    fillColor="rgba(255,255,255,0.3)" // アイコン内側を少し白くして立体感を出す
+                    size={22} // 枠がなくなった分、少し大きくして視認性を確保
+                    color="#000" 
+                    fillColor={themeColor} 
                   />
                 </div>
 
@@ -176,17 +175,7 @@ const styles: { [key: string]: CSSProperties } = {
     transform: 'translate(-50%, -50%)',
     cursor: 'pointer',
     zIndex: 5,
-    padding: '12px',
-  },
-  iconBadge: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    width: '26px',
-    height: '26px',
-    border: '2px solid #000',
-    borderRadius: '50%',
-    transition: 'all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
+    padding: '15px', // クリックエリアを広めに
   },
   bubble: {
     position: 'absolute',
