@@ -19,7 +19,7 @@ type Reaction = {
 type Props = {
   image: string | null
   answerId: string
-  rootId: string // 追加
+  rootId: string
   username: string
   createdAt: string
   anonymous: boolean
@@ -28,7 +28,7 @@ type Props = {
 export default function AnswerCard({
   image,
   answerId,
-  rootId, // 追加
+  rootId,
   username,
   createdAt,
   anonymous,
@@ -63,14 +63,14 @@ export default function AnswerCard({
 
       {image && (
         <div style={styles.imageWrapper}>
-          <img 
-            src={image} 
-            alt="answer" 
-            style={styles.image as CSSProperties} 
-            draggable={false} // 画像自体のドラッグを禁止
+          <img
+            src={image}
+            alt="answer"
+            style={styles.image}
+            draggable={false}
           />
 
-          {reactions.map(r => (
+          {reactions.map((r) => (
             <div
               key={r.id}
               style={{
@@ -87,7 +87,6 @@ export default function AnswerCard({
 
       <AnswerActionBar
         answerId={answerId}
-        rootId={rootId} // 渡す
         imageUrl={image}
         reactionCount={reactions.length}
       />
@@ -95,18 +94,44 @@ export default function AnswerCard({
   )
 }
 
-const styles: { [key: string]: CSSProperties | any } = {
-  card: { display: 'flex', flexDirection: 'column', gap: 8, padding: '0 16px' },
-  header: { display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: '#555' },
-  user: { display: 'flex', alignItems: 'center', gap: 6 },
-  date: { marginLeft: 4, color: '#aaa', fontSize: 11 },
-  imageWrapper: { position: 'relative', width: '100%' },
-  image: { 
-    width: '100%', 
-    borderRadius: 8, 
+const styles: { [key: string]: CSSProperties } = {
+  card: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 8,
+    padding: '0 16px',
+  },
+  header: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 6,
+    fontSize: 13,
+    color: '#555',
+  },
+  user: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 6,
+  },
+  date: {
+    marginLeft: 4,
+    color: '#aaa',
+    fontSize: 11,
+  },
+  imageWrapper: {
+    position: 'relative',
+    width: '100%',
+  },
+  image: {
+    width: '100%',
+    borderRadius: 8,
     border: '1px solid #eee',
     userSelect: 'none',
-    ['WebkitUserDrag' as any]: 'none' // ビルドエラー対策
+    WebkitUserDrag: 'none',
   },
-  reaction: { position: 'absolute', transform: 'translate(-50%, -50%)', pointerEvents: 'none' },
+  reaction: {
+    position: 'absolute',
+    transform: 'translate(-50%, -50%)',
+    pointerEvents: 'none',
+  },
 }
