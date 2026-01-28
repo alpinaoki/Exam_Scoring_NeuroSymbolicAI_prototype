@@ -1,220 +1,206 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import type { CSSProperties } from 'react'
-import {
-  Star,
-  AlertTriangle,
-  HelpCircle,
-  SendHorizontal,
-  X,
-} from 'lucide-react'
-import { supabase } from '../lib/supabase'
+import { useEffect, useState } from 'react'
+import { Star, Heart, AlertCircle, HelpCircle, X } from 'lucide-react'
 
-type ReactionType = 'star' | 'exclamation' | 'question'
+type ReactionType = 'star' | 'heart' | 'exclamation' | 'question'
 
-type Props = {
+interface Props {
   open: boolean
-  imageUrl: string
-  postId: string
   onClose: () => void
+  onSubmit: (payload: {
+    type: ReactionType
+    comment: string
+    x: number
+    y: number
+  }) => void
 }
 
-export default function ReactionEditorModal({
-  open,
-  imageUrl,
-  postId,
-  onClose,
-}: Props) {
-  const [pos, setPos] = useState({ x: 0.5, y: 0.5 })
+export default function AnswerReactionModal({ open, onClose, onSubmit }: Props) {
   const [type, setType] = useState<ReactionType>('star')
   const [comment, setComment] = useState('')
-  const [dragging, setDragging] = useState(false)
+  const [pos, setPos] = useState<{ x: number; y: number } | null>(null)
 
-  // bodyスクロールを止める（ImageEditorModalと同じ）
+  // 🔒 背景スクロール完全ロック（ImageEditorModalと同じ）
   useEffect(() => {
     if (!open) return
-    const prev = document.body.style.overflow
+
+    const originalOverflow = document.body.style.overflow
+    const originalTouchAction = document.body.style.touchAction
+
     document.body.style.overflow = 'hidden'
+    document.body.style.touchAction = 'none'
+
     return () => {
-      document.body.style.overflow = prev
+      document.body.style.overflow = originalOverflow
+      document.body.style.touchAction = originalTouchAction
     }
   }, [open])
 
-  // ドラッグ処理
-  useEffect(() => {
-    if (!dragging) return
-
-    const handleMove = (e: PointerEvent) => {
-      const img = document.getElementById('reaction-editor-img')
-      if (!img) return
-      const r = img.getBoundingClientRect()
-      setPos({
-        x: Math.max(0, Math.min(1, (e.clientX - r.left) / r.width)),
-        y: Math.max(0, Math.min(1, (e.clientY - r.top) / r.height)),
-      })
-    }
-
-    const handleUp = () => setDragging(false)
-
-    window.addEventListener('pointermove', handleMove)
-    window.addEventListener('pointerup', handleUp)
-    return () => {
-      window.removeEventListener('pointermove', handleMove)
-      window.removeEventListener('pointerup', handleUp)
-    }
-  }, [dragging])
-
   if (!open) return null
-
-  const submit = async () => {
-    if (!comment.trim()) return
-    const { data } = await supabase.auth.getUser()
-
-    await supabase.from('reactions').insert({
-      post_id: postId,
-      user_id: data.user?.id,
-      type,
-      comment,
-      x_float: pos.x,
-      y_float: pos.y,
-    })
-
-    onClose()
-    location.reload()
-  }
-
-  const icon = (size = 28) => {
-    if (type === 'star')
-      return <Star size={size} fill="#FFD700" color="#FFD700" />
-    if (type === 'exclamation')
-      return <AlertTriangle size={size} fill="#FF4500" color="#FF4500" />
-    return <HelpCircle size={size} fill="#00BFFF" color="#00BFFF" />
-  }
 
   return (
     <div style={styles.overlay}>
-      <div style={styles.header}>
-        <button onClick={onClose} style={styles.close}>
-          <X />
-        </button>
-        <button onClick={submit} style={styles.send}>
-          <SendHorizontal />
-        </button>
-      </div>
-
-      <div style={styles.body}>
-        <div style={styles.imageWrapper}>
-          <img
-            id="reaction-editor-img"
-            src={imageUrl}
-            alt="reaction target"
-            style={styles.image}
-            draggable={false}
-          />
-
-          {/* ドラッグするリアクション */}
-          <div
-            style={{
-              ...styles.marker,
-              left: `${pos.x * 100}%`,
-              top: `${pos.y * 100}%`,
-            }}
-            onPointerDown={() => setDragging(true)}
-          >
-            {icon(36)}
-          </div>
+      <div style={styles.container}>
+        {/* ヘッダー */}
+        <div style={styles.header}>
+          <span>リアクションを追加</span>
+          <button onClick={onClose} style={styles.close}>
+            <X size={20} />
+          </button>
         </div>
 
-        {/* 下部UI */}
-        <div style={styles.panel}>
-          <div style={styles.typeRow}>
-            <button onClick={() => setType('star')}>{icon()}</button>
-            <button onClick={() => setType('exclamation')}>
-              <AlertTriangle size={28} />
-            </button>
-            <button onClick={() => setType('question')}>
-              <HelpCircle size={28} />
-            </button>
-          </div>
-
-          <input
-            value={comment}
-            onChange={(e) => setComment(e.target.value)}
-            placeholder="コメントを書く"
-            style={styles.input}
-          />
+        {/* タイプ選択 */}
+        <div style={styles.typeRow}>
+          <TypeButton icon={<Star />} active={type === 'star'} onClick={() => setType('star')} />
+          <TypeButton icon={<Heart />} active={type === 'heart'} onClick={() => setType('heart')} />
+          <TypeButton icon={<AlertCircle />} active={type === 'exclamation'} onClick={() => setType('exclamation')} />
+          <TypeButton icon={<HelpCircle />} active={type === 'question'} onClick={() => setType('question')} />
         </div>
+
+        {/* コメント */}
+        <input
+          placeholder="コメントを入力"
+          value={comment}
+          onChange={(e) => setComment(e.target.value)}
+          style={styles.input}
+        />
+
+        {/* 配置エリア（全画面基準） */}
+        <div
+          style={styles.canvas}
+          onClick={(e) => {
+            const rect = e.currentTarget.getBoundingClientRect()
+            setPos({
+              x: e.clientX - rect.left,
+              y: e.clientY - rect.top,
+            })
+          }}
+        >
+          {pos && (
+            <div
+              style={{
+                ...styles.marker,
+                left: pos.x,
+                top: pos.y,
+              }}
+            >
+              {iconMap[type]}
+            </div>
+          )}
+        </div>
+
+        {/* 送信 */}
+        <button
+          style={styles.submit}
+          disabled={!pos}
+          onClick={() => {
+            if (!pos) return
+            onSubmit({ type, comment, x: pos.x, y: pos.y })
+            onClose()
+          }}
+        >
+          決定
+        </button>
       </div>
     </div>
   )
 }
 
-const styles: { [k: string]: CSSProperties } = {
+function TypeButton({
+  icon,
+  active,
+  onClick,
+}: {
+  icon: React.ReactNode
+  active: boolean
+  onClick: () => void
+}) {
+  return (
+    <button
+      onClick={onClick}
+      style={{
+        ...styles.typeButton,
+        background: active ? '#eee' : '#fff',
+      }}
+    >
+      {icon}
+    </button>
+  )
+}
+
+const iconMap = {
+  star: <Star size={20} />,
+  heart: <Heart size={20} />,
+  exclamation: <AlertCircle size={20} />,
+  question: <HelpCircle size={20} />,
+}
+
+const styles: { [key: string]: React.CSSProperties } = {
   overlay: {
     position: 'fixed',
     inset: 0,
-    background: '#000',
-    zIndex: 3000,
-    color: '#fff',
+    zIndex: 9999,
+    background: 'rgba(0,0,0,0.6)',
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    overscrollBehavior: 'none',
+  },
+  container: {
+    width: '100vw',
+    height: '100vh',
+    background: '#fff',
+    display: 'flex',
+    flexDirection: 'column',
   },
   header: {
-    height: 56,
+    padding: '12px 16px',
+    borderBottom: '1px solid #ddd',
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: '0 16px',
-    background: 'rgba(255,255,255,0.05)',
+    fontWeight: 600,
   },
   close: {
     background: 'none',
     border: 'none',
-    color: '#fff',
+    cursor: 'pointer',
   },
-  send: {
-    background: 'none',
-    border: 'none',
-    color: '#fff',
-  },
-  body: {
-    flex: 1,
+  typeRow: {
     display: 'flex',
-    flexDirection: 'column',
-    height: 'calc(100vh - 56px)',
+    gap: 8,
+    padding: 12,
   },
-  imageWrapper: {
+  typeButton: {
+    border: '1px solid #ccc',
+    borderRadius: 8,
+    padding: 8,
+    cursor: 'pointer',
+  },
+  input: {
+    margin: '0 12px 12px',
+    padding: 8,
+    borderRadius: 6,
+    border: '1px solid #ccc',
+  },
+  canvas: {
     flex: 1,
     position: 'relative',
-    display: 'flex',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  image: {
-    maxWidth: '100%',
-    maxHeight: '100%',
-    userSelect: 'none',
-    pointerEvents: 'none',
+    background: '#f7f7f7',
   },
   marker: {
     position: 'absolute',
     transform: 'translate(-50%, -50%)',
-    cursor: 'grab',
+    pointerEvents: 'none',
   },
-  panel: {
-    padding: 16,
-    background: 'rgba(255,255,255,0.08)',
-    display: 'flex',
-    flexDirection: 'column',
-    gap: 12,
-  },
-  typeRow: {
-    display: 'flex',
-    justifyContent: 'space-around',
-  },
-  input: {
-    padding: '10px 12px',
+  submit: {
+    margin: 12,
+    padding: 12,
     borderRadius: 8,
     border: 'none',
-    fontSize: 14,
+    background: '#111',
+    color: '#fff',
+    fontWeight: 600,
   },
 }
