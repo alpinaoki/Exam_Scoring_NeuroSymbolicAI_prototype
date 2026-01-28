@@ -2,39 +2,40 @@
 
 import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { Star, Heart, AlertCircle, HelpCircle, X } from 'lucide-react'
+import { Star, AlertCircle, HelpCircle, X } from 'lucide-react'
+import { createReaction } from '@/lib/reactions'
 
-type ReactionType = 'star' | 'heart' | 'exclamation' | 'question'
+type ReactionType = 'star' | 'exclamation' | 'question'
 
 interface Props {
   open: boolean
   imageUrl: string
+  postId: string
   onClose: () => void
 }
 
 export default function ReactionEditorModal({
   open,
   imageUrl,
+  postId,
   onClose,
 }: Props) {
   const [mounted, setMounted] = useState(false)
   const [type, setType] = useState<ReactionType>('star')
   const [comment, setComment] = useState('')
   const [pos, setPos] = useState<{ x: number; y: number } | null>(null)
+  const [saving, setSaving] = useState(false)
 
-  // body完全ロック
+  // body lock（ImageEditorModal互換）
   useEffect(() => {
     if (!open) return
-
-    const originalOverflow = document.body.style.overflow
-    const originalTouchAction = document.body.style.touchAction
-
+    const o = document.body.style.overflow
+    const t = document.body.style.touchAction
     document.body.style.overflow = 'hidden'
     document.body.style.touchAction = 'none'
-
     return () => {
-      document.body.style.overflow = originalOverflow
-      document.body.style.touchAction = originalTouchAction
+      document.body.style.overflow = o
+      document.body.style.touchAction = t
     }
   }, [open])
 
@@ -43,6 +44,27 @@ export default function ReactionEditorModal({
   }, [])
 
   if (!open || !mounted) return null
+
+  const submit = async () => {
+    if (!pos || saving) return
+    setSaving(true)
+
+    try {
+      await createReaction({
+        postId,
+        type,
+        comment,
+        x: pos.x,
+        y: pos.y,
+      })
+      onClose()
+    } catch (e) {
+      console.error(e)
+      alert('リアクションの保存に失敗しました')
+    } finally {
+      setSaving(false)
+    }
+  }
 
   return createPortal(
     <div style={styles.overlay}>
@@ -55,19 +77,23 @@ export default function ReactionEditorModal({
           </button>
         </div>
 
-        {/* type selector */}
+        {/* type selector（ハート削除済） */}
         <div style={styles.typeRow}>
-          <TypeButton icon={<Star />} active={type === 'star'} onClick={() => setType('star')} />
-          <TypeButton icon={<Heart />} active={type === 'heart'} onClick={() => setType('heart')} />
-          <TypeButton icon={<AlertCircle />} active={type === 'exclamation'} onClick={() => setType('exclamation')} />
-          <TypeButton icon={<HelpCircle />} active={type === 'question'} onClick={() => setType('question')} />
+          <TypeButton active={type === 'star'} onClick={() => setType('star')}>
+            <Star />
+          </TypeButton>
+          <TypeButton active={type === 'exclamation'} onClick={() => setType('exclamation')}>
+            <AlertCircle />
+          </TypeButton>
+          <TypeButton active={type === 'question'} onClick={() => setType('question')}>
+            <HelpCircle />
+          </TypeButton>
         </div>
 
-        {/* comment (ズーム防止済み) */}
+        {/* comment（iOSズーム完全回避） */}
         <input
           placeholder="コメントを入力"
           value={comment}
-          inputMode="text"
           onChange={(e) => setComment(e.target.value)}
           style={styles.input}
         />
@@ -78,24 +104,19 @@ export default function ReactionEditorModal({
           onClick={(e) => {
             const rect = e.currentTarget.getBoundingClientRect()
             setPos({
-              x: e.clientX - rect.left,
-              y: e.clientY - rect.top,
+              x: (e.clientX - rect.left) / rect.width,
+              y: (e.clientY - rect.top) / rect.height,
             })
           }}
         >
-          <img
-            src={imageUrl}
-            alt=""
-            draggable={false}
-            style={styles.image}
-          />
+          <img src={imageUrl} style={styles.image} />
 
           {pos && (
             <div
               style={{
                 ...styles.marker,
-                left: pos.x,
-                top: pos.y,
+                left: `${pos.x * 100}%`,
+                top: `${pos.y * 100}%`,
               }}
             >
               {iconMap[type]}
@@ -103,7 +124,11 @@ export default function ReactionEditorModal({
           )}
         </div>
 
-        <button style={styles.submit} disabled={!pos}>
+        <button
+          style={styles.submit}
+          disabled={!pos || saving}
+          onClick={submit}
+        >
           決定
         </button>
       </div>
@@ -113,11 +138,11 @@ export default function ReactionEditorModal({
 }
 
 function TypeButton({
-  icon,
+  children,
   active,
   onClick,
 }: {
-  icon: React.ReactNode
+  children: React.ReactNode
   active: boolean
   onClick: () => void
 }) {
@@ -129,16 +154,15 @@ function TypeButton({
         background: active ? '#eee' : '#fff',
       }}
     >
-      {icon}
+      {children}
     </button>
   )
 }
 
 const iconMap = {
-  star: <Star size={20} />,
-  heart: <Heart size={20} />,
-  exclamation: <AlertCircle size={20} />,
-  question: <HelpCircle size={20} />,
+  star: <Star size={22} fill="#FFD700" stroke="#000" />,
+  exclamation: <AlertCircle size={22} fill="#FF6B6B" stroke="#000" />,
+  question: <HelpCircle size={22} fill="#4D96FF" stroke="#000" />,
 }
 
 const styles: { [key: string]: React.CSSProperties } = {
@@ -160,13 +184,11 @@ const styles: { [key: string]: React.CSSProperties } = {
     borderBottom: '1px solid #ddd',
     display: 'flex',
     justifyContent: 'space-between',
-    alignItems: 'center',
     fontWeight: 600,
   },
   close: {
     background: 'none',
     border: 'none',
-    cursor: 'pointer',
   },
   typeRow: {
     display: 'flex',
@@ -174,47 +196,37 @@ const styles: { [key: string]: React.CSSProperties } = {
     padding: 12,
   },
   typeButton: {
-    border: '1px solid #ccc',
+    border: '1px solid #000',
     borderRadius: 8,
     padding: 8,
-    cursor: 'pointer',
   },
-
-  // ★ ここが重要（ズーム防止）
   input: {
     margin: '0 12px 12px',
     padding: '10px 12px',
-    borderRadius: 6,
+    fontSize: 16,
     border: '1px solid #ccc',
-    fontSize: 16,          // ← iOSズーム回避の決定打
-    lineHeight: '20px',
+    borderRadius: 6,
   },
-
   canvas: {
     flex: 1,
     position: 'relative',
     background: '#000',
     overflow: 'hidden',
-    touchAction: 'none',
   },
   image: {
     width: '100%',
     height: '100%',
     objectFit: 'contain',
-    userSelect: 'none',
     pointerEvents: 'none',
   },
   marker: {
     position: 'absolute',
     transform: 'translate(-50%, -50%)',
-    pointerEvents: 'none',
-    color: '#fff',
   },
   submit: {
     margin: 12,
     padding: 12,
     borderRadius: 8,
-    border: 'none',
     background: '#111',
     color: '#fff',
     fontWeight: 600,

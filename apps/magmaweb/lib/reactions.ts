@@ -6,10 +6,14 @@ export async function createReaction({
   postId,
   type,
   comment,
+  x = 0.5,
+  y = 0.5,
 }: {
   postId: string
   type: 'star' | 'question' | 'exclamation'
   comment: string
+  x?: number
+  y?: number
 }) {
   const { data } = await supabase.auth.getUser()
   const user = data.user
@@ -20,8 +24,8 @@ export async function createReaction({
     user_id: user.id,
     type,
     comment,
-    x_float: 0.5,
-    y_float: 0.5,
+    x_float: x,
+    y_float: y,
   })
 
   if (error) throw error
