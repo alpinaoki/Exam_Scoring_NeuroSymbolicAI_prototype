@@ -35,7 +35,7 @@ export default function AnswerActionBar({
       <ReactionEditorModal
         open={open}
         imageUrl={imageUrl}
-        postId={answerId}          {/* ← ★ これを足すだけ */}
+        postId={answerId}
         onClose={() => setOpen(false)}
       />
     </>
