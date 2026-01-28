@@ -1,64 +1,58 @@
 'use client'
 
 import { useState } from 'react'
-import type { CSSProperties } from 'react'
-import { Heart } from 'lucide-react'
-import ReactionModal from './ReactionModal'
+import { Star } from 'lucide-react'
+import ReactionEditorModal from './ReactionEditorModal'
 
 type Props = {
-  problemId: string
+  answerId: string
+  imageUrl: string | null
   reactionCount: number
-  imageUrl: string
 }
 
 export default function AnswerActionBar({
-  problemId,
-  reactionCount,
+  answerId,
   imageUrl,
+  reactionCount,
 }: Props) {
   const [open, setOpen] = useState(false)
 
-  return (
-    <div style={styles.wrapper}>
-      {/* ❤️ リアクションボタン */}
-      <button
-        style={styles.heartBtn}
-        onClick={() => setOpen(true)}
-      >
-        <Heart size={20} />
-        <span style={styles.count}>
-          リアクション {reactionCount}
-        </span>
-      </button>
+  if (!imageUrl) return null
 
-      {/* Reaction 投稿モーダル */}
-      <ReactionModal
+  return (
+    <>
+      <div style={styles.bar}>
+        <button style={styles.button} onClick={() => setOpen(true)}>
+          <Star size={18} />
+          <span>{reactionCount}</span>
+        </button>
+      </div>
+
+      <ReactionEditorModal
         open={open}
+        postId={answerId}
         imageUrl={imageUrl}
-        postId={problemId}
         onClose={() => setOpen(false)}
       />
-    </div>
+    </>
   )
 }
 
-const styles: { [key: string]: CSSProperties } = {
-  wrapper: {
+const styles = {
+  bar: {
     display: 'flex',
     alignItems: 'center',
+    gap: 12,
+    marginTop: 6,
   },
-  heartBtn: {
-    display: 'inline-flex',
+  button: {
+    display: 'flex',
     alignItems: 'center',
     gap: 6,
     background: 'none',
     border: 'none',
     cursor: 'pointer',
-    padding: '8px 0',
-    fontWeight: 600,
-    color: '#666',
-  },
-  count: {
-    fontSize: 14,
+    color: '#555',
+    fontSize: 13,
   },
 }
