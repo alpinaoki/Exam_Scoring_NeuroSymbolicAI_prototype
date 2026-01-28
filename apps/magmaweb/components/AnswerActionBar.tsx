@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Star } from 'lucide-react'
+import { Heart } from 'lucide-react'
 import ReactionEditorModal from './ReactionEditorModal'
 
 type Props = {
@@ -23,7 +23,7 @@ export default function AnswerActionBar({
     <>
       <div style={styles.bar}>
         <button style={styles.button} onClick={() => setOpen(true)}>
-          <Star size={18} />
+          <Heart size={18} />
           <span>{reactionCount}</span>
         </button>
       </div>
