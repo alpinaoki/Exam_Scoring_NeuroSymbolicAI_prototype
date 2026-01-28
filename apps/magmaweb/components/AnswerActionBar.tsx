@@ -11,27 +11,21 @@ type Props = {
 }
 
 export default function AnswerActionBar({
-  answerId,
-  imageUrl,
   reactionCount,
 }: Props) {
   const [open, setOpen] = useState(false)
-
-  if (!imageUrl) return null
 
   return (
     <>
       <div style={styles.bar}>
         <button style={styles.button} onClick={() => setOpen(true)}>
           <Heart size={18} />
-          <span>{reactionCount}</span>
+          <span>{reactionCount}リアクションを追加</span>
         </button>
       </div>
 
       <ReactionEditorModal
         open={open}
-        postId={answerId}
-        imageUrl={imageUrl}
         onClose={() => setOpen(false)}
       />
     </>

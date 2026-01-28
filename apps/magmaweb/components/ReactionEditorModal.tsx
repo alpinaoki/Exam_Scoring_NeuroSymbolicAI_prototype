@@ -1,137 +1,191 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { X, Heart, Star, HelpCircle, AlertCircle } from 'lucide-react'
+import { createPortal } from 'react-dom'
+import { Star, Heart, AlertCircle, HelpCircle, X } from 'lucide-react'
 
-type ReactionType = 'heart' | 'star' | 'question' | 'exclamation'
+type ReactionType = 'star' | 'heart' | 'exclamation' | 'question'
 
-type Props = {
+interface Props {
   open: boolean
-  postId: string
-  imageUrl: string
   onClose: () => void
 }
 
-export default function ReactionEditorModal({
-  open,
-  postId,
-  imageUrl,
-  onClose,
-}: Props) {
-  const [type, setType] = useState<ReactionType>('heart')
+export default function ReactionEditorModal({ open, onClose }: Props) {
+  const [mounted, setMounted] = useState(false)
+  const [type, setType] = useState<ReactionType>('star')
+  const [comment, setComment] = useState('')
+  const [pos, setPos] = useState<{ x: number; y: number } | null>(null)
 
-  // スクロール完全停止（ImageEditorModalと同じ）
+  // body完全ロック
   useEffect(() => {
     if (!open) return
-    const original = document.body.style.overflow
+
+    const originalOverflow = document.body.style.overflow
+    const originalTouchAction = document.body.style.touchAction
+
     document.body.style.overflow = 'hidden'
+    document.body.style.touchAction = 'none'
+
     return () => {
-      document.body.style.overflow = original
+      document.body.style.overflow = originalOverflow
+      document.body.style.touchAction = originalTouchAction
     }
   }, [open])
 
-  if (!open) return null
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
-  return (
+  if (!open || !mounted) return null
+
+  return createPortal(
     <div style={styles.overlay}>
       <div style={styles.container}>
-        {/* ヘッダー */}
         <div style={styles.header}>
-          <div style={styles.types}>
-            <IconButton active={type === 'heart'} onClick={() => setType('heart')}>
-              <Heart />
-            </IconButton>
-            <IconButton active={type === 'star'} onClick={() => setType('star')}>
-              <Star />
-            </IconButton>
-            <IconButton active={type === 'question'} onClick={() => setType('question')}>
-              <HelpCircle />
-            </IconButton>
-            <IconButton active={type === 'exclamation'} onClick={() => setType('exclamation')}>
-              <AlertCircle />
-            </IconButton>
-          </div>
-
+          <span>リアクションを追加</span>
           <button onClick={onClose} style={styles.close}>
-            <X />
+            <X size={20} />
           </button>
         </div>
 
-        {/* 本体 */}
-        <div style={styles.imageWrapper}>
-          <img src={imageUrl} alt="answer" style={styles.image} />
-          {/* ここにドラッグ配置する⭐️!?を今後載せる */}
+        <div style={styles.typeRow}>
+          <TypeButton icon={<Star />} active={type === 'star'} onClick={() => setType('star')} />
+          <TypeButton icon={<Heart />} active={type === 'heart'} onClick={() => setType('heart')} />
+          <TypeButton icon={<AlertCircle />} active={type === 'exclamation'} onClick={() => setType('exclamation')} />
+          <TypeButton icon={<HelpCircle />} active={type === 'question'} onClick={() => setType('question')} />
         </div>
+
+        <input
+          placeholder="コメントを入力"
+          value={comment}
+          onChange={(e) => setComment(e.target.value)}
+          style={styles.input}
+        />
+
+        <div
+          style={styles.canvas}
+          onClick={(e) => {
+            const rect = e.currentTarget.getBoundingClientRect()
+            setPos({
+              x: e.clientX - rect.left,
+              y: e.clientY - rect.top,
+            })
+          }}
+        >
+          {pos && (
+            <div
+              style={{
+                ...styles.marker,
+                left: pos.x,
+                top: pos.y,
+              }}
+            >
+              {iconMap[type]}
+            </div>
+          )}
+        </div>
+
+        <button style={styles.submit} disabled={!pos}>
+          決定
+        </button>
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }
 
-function IconButton({
+function TypeButton({
+  icon,
   active,
-  children,
   onClick,
 }: {
-  active?: boolean
-  children: React.ReactNode
+  icon: React.ReactNode
+  active: boolean
   onClick: () => void
 }) {
   return (
     <button
       onClick={onClick}
       style={{
-        padding: 8,
-        borderRadius: 8,
-        border: active ? '2px solid #111' : '1px solid #ddd',
-        background: '#fff',
-        cursor: 'pointer',
+        ...styles.typeButton,
+        background: active ? '#eee' : '#fff',
       }}
     >
-      {children}
+      {icon}
     </button>
   )
 }
 
-const styles: Record<string, React.CSSProperties> = {
+const iconMap = {
+  star: <Star size={20} />,
+  heart: <Heart size={20} />,
+  exclamation: <AlertCircle size={20} />,
+  question: <HelpCircle size={20} />,
+}
+
+const styles: { [key: string]: React.CSSProperties } = {
   overlay: {
     position: 'fixed',
     inset: 0,
+    zIndex: 999999,
     background: 'rgba(0,0,0,0.6)',
-    zIndex: 1000,
+    overscrollBehavior: 'none',
   },
   container: {
-    position: 'absolute',
-    inset: 0,
+    width: '100vw',
+    height: '100vh',
     background: '#fff',
     display: 'flex',
     flexDirection: 'column',
   },
   header: {
+    padding: '12px 16px',
+    borderBottom: '1px solid #ddd',
     display: 'flex',
     justifyContent: 'space-between',
-    padding: 12,
-    borderBottom: '1px solid #eee',
-  },
-  types: {
-    display: 'flex',
-    gap: 8,
+    alignItems: 'center',
+    fontWeight: 600,
   },
   close: {
     background: 'none',
     border: 'none',
     cursor: 'pointer',
   },
-  imageWrapper: {
-    flex: 1,
-    overflow: 'hidden',
+  typeRow: {
     display: 'flex',
-    justifyContent: 'center',
-    alignItems: 'center',
-    background: '#fafafa',
+    gap: 8,
+    padding: 12,
   },
-  image: {
-    maxWidth: '100%',
-    maxHeight: '100%',
-    objectFit: 'contain',
+  typeButton: {
+    border: '1px solid #ccc',
+    borderRadius: 8,
+    padding: 8,
+    cursor: 'pointer',
+  },
+  input: {
+    margin: '0 12px 12px',
+    padding: 8,
+    borderRadius: 6,
+    border: '1px solid #ccc',
+  },
+  canvas: {
+    flex: 1,
+    position: 'relative',
+    background: '#f7f7f7',
+  },
+  marker: {
+    position: 'absolute',
+    transform: 'translate(-50%, -50%)',
+    pointerEvents: 'none',
+  },
+  submit: {
+    margin: 12,
+    padding: 12,
+    borderRadius: 8,
+    border: 'none',
+    background: '#111',
+    color: '#fff',
+    fontWeight: 600,
   },
 }
