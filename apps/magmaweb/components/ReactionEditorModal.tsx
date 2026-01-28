@@ -8,10 +8,15 @@ type ReactionType = 'star' | 'heart' | 'exclamation' | 'question'
 
 interface Props {
   open: boolean
+  imageUrl: string
   onClose: () => void
 }
 
-export default function ReactionEditorModal({ open, onClose }: Props) {
+export default function ReactionEditorModal({
+  open,
+  imageUrl,
+  onClose,
+}: Props) {
   const [mounted, setMounted] = useState(false)
   const [type, setType] = useState<ReactionType>('star')
   const [comment, setComment] = useState('')
@@ -42,6 +47,7 @@ export default function ReactionEditorModal({ open, onClose }: Props) {
   return createPortal(
     <div style={styles.overlay}>
       <div style={styles.container}>
+        {/* header */}
         <div style={styles.header}>
           <span>リアクションを追加</span>
           <button onClick={onClose} style={styles.close}>
@@ -49,6 +55,7 @@ export default function ReactionEditorModal({ open, onClose }: Props) {
           </button>
         </div>
 
+        {/* type selector */}
         <div style={styles.typeRow}>
           <TypeButton icon={<Star />} active={type === 'star'} onClick={() => setType('star')} />
           <TypeButton icon={<Heart />} active={type === 'heart'} onClick={() => setType('heart')} />
@@ -56,13 +63,16 @@ export default function ReactionEditorModal({ open, onClose }: Props) {
           <TypeButton icon={<HelpCircle />} active={type === 'question'} onClick={() => setType('question')} />
         </div>
 
+        {/* comment (ズーム防止済み) */}
         <input
           placeholder="コメントを入力"
           value={comment}
+          inputMode="text"
           onChange={(e) => setComment(e.target.value)}
           style={styles.input}
         />
 
+        {/* image canvas */}
         <div
           style={styles.canvas}
           onClick={(e) => {
@@ -73,6 +83,13 @@ export default function ReactionEditorModal({ open, onClose }: Props) {
             })
           }}
         >
+          <img
+            src={imageUrl}
+            alt=""
+            draggable={false}
+            style={styles.image}
+          />
+
           {pos && (
             <div
               style={{
@@ -130,7 +147,6 @@ const styles: { [key: string]: React.CSSProperties } = {
     inset: 0,
     zIndex: 999999,
     background: 'rgba(0,0,0,0.6)',
-    overscrollBehavior: 'none',
   },
   container: {
     width: '100vw',
@@ -163,21 +179,36 @@ const styles: { [key: string]: React.CSSProperties } = {
     padding: 8,
     cursor: 'pointer',
   },
+
+  // ★ ここが重要（ズーム防止）
   input: {
     margin: '0 12px 12px',
-    padding: 8,
+    padding: '10px 12px',
     borderRadius: 6,
     border: '1px solid #ccc',
+    fontSize: 16,          // ← iOSズーム回避の決定打
+    lineHeight: '20px',
   },
+
   canvas: {
     flex: 1,
     position: 'relative',
-    background: '#f7f7f7',
+    background: '#000',
+    overflow: 'hidden',
+    touchAction: 'none',
+  },
+  image: {
+    width: '100%',
+    height: '100%',
+    objectFit: 'contain',
+    userSelect: 'none',
+    pointerEvents: 'none',
   },
   marker: {
     position: 'absolute',
     transform: 'translate(-50%, -50%)',
     pointerEvents: 'none',
+    color: '#fff',
   },
   submit: {
     margin: 12,
