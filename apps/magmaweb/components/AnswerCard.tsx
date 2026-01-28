@@ -127,7 +127,6 @@ const styles: { [key: string]: CSSProperties } = {
     borderRadius: 8,
     border: '1px solid #eee',
     userSelect: 'none',
-    WebkitUserDrag: 'none',
   },
   reaction: {
     position: 'absolute',
