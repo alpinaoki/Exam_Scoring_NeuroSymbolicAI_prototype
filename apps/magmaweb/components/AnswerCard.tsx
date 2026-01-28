@@ -25,7 +25,14 @@ type Props = {
   anonymous: boolean
 }
 
-export default function AnswerCard({ image, answerId, rootId, username, createdAt, anonymous }: Props) {
+export default function AnswerCard({
+  image,
+  answerId,
+  rootId, // 追加
+  username,
+  createdAt,
+  anonymous,
+}: Props) {
   const router = useRouter()
   const [reactions, setReactions] = useState<Reaction[]>([])
 
@@ -35,16 +42,19 @@ export default function AnswerCard({ image, answerId, rootId, username, createdA
     getReactionsByPostId(answerId).then(setReactions)
   }, [answerId])
 
-  const renderIcon = (type: Reaction['type']) => {
-    if (type === 'star') return <Star size={20} fill="#FFD700" color="#FFD700" />
-    if (type === 'exclamation') return <AlertTriangle size={20} fill="#FF4500" color="#FF4500" />
-    return <HelpCircle size={20} fill="#00BFFF" color="#00BFFF" />
+  const icon = (type: Reaction['type']) => {
+    if (type === 'star') return <Star size={20} fill="#FFD700" />
+    if (type === 'exclamation') return <AlertTriangle size={20} fill="#FF4500" />
+    return <HelpCircle size={20} fill="#00BFFF" />
   }
 
   return (
     <div style={styles.card}>
       <div style={styles.header}>
-        <div style={{ ...styles.user, cursor: anonymous ? 'default' : 'pointer' }} onClick={() => !anonymous && router.push(`/profiles/${username}`)}>
+        <div
+          style={{ ...styles.user, cursor: anonymous ? 'default' : 'pointer' }}
+          onClick={() => !anonymous && router.push(`/profiles/${username}`)}
+        >
           <UserBadge username={displayName} />
           <span>@{displayName}</span>
         </div>
@@ -53,26 +63,50 @@ export default function AnswerCard({ image, answerId, rootId, username, createdA
 
       {image && (
         <div style={styles.imageWrapper}>
-          <img src={image} alt="answer" style={styles.image} draggable={false} />
+          <img 
+            src={image} 
+            alt="answer" 
+            style={styles.image as CSSProperties} 
+            draggable={false} // 画像自体のドラッグを禁止
+          />
+
           {reactions.map(r => (
-            <div key={r.id} style={{ ...styles.reaction, left: `${r.x_float * 100}%`, top: `${r.y_float * 100}%` }}>
-              {renderIcon(r.type)}
+            <div
+              key={r.id}
+              style={{
+                ...styles.reaction,
+                left: `${r.x_float * 100}%`,
+                top: `${r.y_float * 100}%`,
+              }}
+            >
+              {icon(r.type)}
             </div>
           ))}
         </div>
       )}
 
-      <AnswerActionBar answerId={answerId} imageUrl={image} reactionCount={reactions.length} />
+      <AnswerActionBar
+        answerId={answerId}
+        rootId={rootId} // 渡す
+        imageUrl={image}
+        reactionCount={reactions.length}
+      />
     </div>
   )
 }
 
-const styles: { [key: string]: CSSProperties } = {
-  card: { display: 'flex', flexDirection: 'column', gap: 8, padding: '16px', backgroundColor: '#fff', borderRadius: '12px' },
+const styles: { [key: string]: CSSProperties | any } = {
+  card: { display: 'flex', flexDirection: 'column', gap: 8, padding: '0 16px' },
   header: { display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: '#555' },
   user: { display: 'flex', alignItems: 'center', gap: 6 },
   date: { marginLeft: 4, color: '#aaa', fontSize: 11 },
-  imageWrapper: { position: 'relative', width: '100%', lineHeight: 0 },
-  image: { width: '100%', borderRadius: 8, border: '1px solid #eee', userSelect: 'none' },
+  imageWrapper: { position: 'relative', width: '100%' },
+  image: { 
+    width: '100%', 
+    borderRadius: 8, 
+    border: '1px solid #eee',
+    userSelect: 'none',
+    ['WebkitUserDrag' as any]: 'none' // ビルドエラー対策
+  },
   reaction: { position: 'absolute', transform: 'translate(-50%, -50%)', pointerEvents: 'none' },
 }
