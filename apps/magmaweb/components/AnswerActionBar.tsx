@@ -1,74 +1,52 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import type { CSSProperties } from 'react'
 import { Heart } from 'lucide-react'
 import ReactionModal from './ReactionModal'
 
-type ReactionType = 'star' | 'exclamation' | 'question'
-
-type Preview = {
-  x: number
-  y: number
-  type: ReactionType
-  isDragging?: boolean
-}
-
 type Props = {
   problemId: string
   reactionCount: number
-  onPreviewChange: (p: Preview | null) => void
+  imageUrl: string
 }
 
 export default function AnswerActionBar({
   problemId,
   reactionCount,
-  onPreviewChange,
+  imageUrl,
 }: Props) {
   const [open, setOpen] = useState(false)
-  const [preview, setPreview] = useState<Preview | null>(null)
-
-  // preview を親（AnswerCard）に同期
-  useEffect(() => {
-    onPreviewChange(preview)
-  }, [preview, onPreviewChange])
 
   return (
-    <div style={{ position: 'relative' }}>
-      {/* ハートボタン */}
+    <div style={styles.wrapper}>
+      {/* ❤️ リアクションボタン */}
       <button
         style={styles.heartBtn}
-        onClick={() => {
-          setOpen((v) => !v)
-          setPreview(null)
-        }}
+        onClick={() => setOpen(true)}
       >
-        <Heart
-          size={20}
-          fill={open ? '#ff8c00' : 'none'}
-          color={open ? '#ff8c00' : '#888'}
-        />
-        <span style={styles.countText}>
+        <Heart size={20} />
+        <span style={styles.count}>
           リアクション {reactionCount}
         </span>
       </button>
 
-      {/* モーダル本体 */}
-      {open && (
-        <ReactionModal
-          problemId={problemId}
-          onClose={() => {
-            setOpen(false)
-            setPreview(null)
-          }}
-          onPreviewChange={setPreview}
-        />
-      )}
+      {/* Reaction 投稿モーダル */}
+      <ReactionModal
+        open={open}
+        imageUrl={imageUrl}
+        postId={problemId}
+        onClose={() => setOpen(false)}
+      />
     </div>
   )
 }
 
 const styles: { [key: string]: CSSProperties } = {
+  wrapper: {
+    display: 'flex',
+    alignItems: 'center',
+  },
   heartBtn: {
     display: 'inline-flex',
     alignItems: 'center',
@@ -78,9 +56,9 @@ const styles: { [key: string]: CSSProperties } = {
     cursor: 'pointer',
     padding: '8px 0',
     fontWeight: 600,
-  },
-  countText: {
     color: '#666',
-    fontSize: '14px',
+  },
+  count: {
+    fontSize: 14,
   },
 }
