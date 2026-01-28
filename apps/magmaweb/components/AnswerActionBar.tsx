@@ -11,21 +11,30 @@ type Props = {
 }
 
 export default function AnswerActionBar({
+  answerId,
+  imageUrl,
   reactionCount,
 }: Props) {
   const [open, setOpen] = useState(false)
 
+  // 画像がない答案にはリアクションEditorを出さない
+  if (!imageUrl) return null
+
   return (
     <>
       <div style={styles.bar}>
-        <button style={styles.button} onClick={() => setOpen(true)}>
+        <button
+          style={styles.button}
+          onClick={() => setOpen(true)}
+        >
           <Heart size={18} />
-          <span>{reactionCount}リアクションを追加</span>
+          <span>{reactionCount} リアクションを追加</span>
         </button>
       </div>
 
       <ReactionEditorModal
         open={open}
+        imageUrl={imageUrl}          // ★ 必須
         onClose={() => setOpen(false)}
       />
     </>
