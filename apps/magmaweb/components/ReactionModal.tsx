@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import type { CSSProperties } from 'react'
 import { Star, AlertTriangle, HelpCircle, SendHorizontal, X } from 'lucide-react'
 import { supabase } from '../lib/supabase'
@@ -14,7 +14,12 @@ type Props = {
   onClose: () => void
 }
 
-export default function ReactionModal({ open, imageUrl, postId, onClose }: Props) {
+export default function ReactionEditorModal({
+  open,
+  imageUrl,
+  postId,
+  onClose,
+}: Props) {
   const [pos, setPos] = useState({ x: 0.5, y: 0.5 })
   const [type, setType] = useState<ReactionType>('star')
   const [comment, setComment] = useState('')
@@ -22,28 +27,14 @@ export default function ReactionModal({ open, imageUrl, postId, onClose }: Props
 
   if (!open) return null
 
-  const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
-    setDragging(true)
-    movePin(e)
-  }
-
-  const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
-    if (!dragging) return
-    movePin(e)
-  }
-
-  const handlePointerUp = () => {
-    setDragging(false)
-  }
-
   const movePin = (e: React.PointerEvent) => {
-    const img = document.getElementById('reaction-image')
+    const img = document.getElementById('reaction-editor-img')
     if (!img) return
-    const rect = img.getBoundingClientRect()
+    const r = img.getBoundingClientRect()
 
     setPos({
-      x: Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width)),
-      y: Math.max(0, Math.min(1, (e.clientY - rect.top) / rect.height)),
+      x: Math.max(0, Math.min(1, (e.clientX - r.left) / r.width)),
+      y: Math.max(0, Math.min(1, (e.clientY - r.top) / r.height)),
     })
   }
 
@@ -61,151 +52,67 @@ export default function ReactionModal({ open, imageUrl, postId, onClose }: Props
     })
 
     onClose()
-    window.location.reload()
+    location.reload()
   }
 
-  const icon = (size = 26) => {
+  const icon = (size = 28) => {
     if (type === 'star') return <Star size={size} fill="#FFD700" />
     if (type === 'exclamation') return <AlertTriangle size={size} fill="#FF4500" />
     return <HelpCircle size={size} fill="#00BFFF" />
   }
 
   return (
-    <div style={styles.backdrop}>
-      <div style={styles.modal}>
-        <div style={styles.header}>
-          <span style={styles.title}>リアクションを置く</span>
-          <X size={18} onClick={onClose} style={{ cursor: 'pointer' }} />
-        </div>
+    <div style={styles.overlay}>
+      <div style={styles.header}>
+        <X size={26} onClick={onClose} />
+        <button onClick={submit}><SendHorizontal size={24} /></button>
+      </div>
 
+      <div
+        style={styles.body}
+        onPointerDown={(e) => { setDragging(true); movePin(e) }}
+        onPointerMove={(e) => dragging && movePin(e)}
+        onPointerUp={() => setDragging(false)}
+      >
+        <img
+          id="reaction-editor-img"
+          src={imageUrl}
+          style={styles.image}
+          draggable={false}
+        />
         <div
-          style={styles.imageWrapper}
-          onPointerDown={handlePointerDown}
-          onPointerMove={handlePointerMove}
-          onPointerUp={handlePointerUp}
+          style={{
+            ...styles.pin,
+            left: `${pos.x * 100}%`,
+            top: `${pos.y * 100}%`,
+          }}
         >
-          <img
-            id="reaction-image"
-            src={imageUrl}
-            alt="answer"
-            style={styles.image}
-            draggable={false}
-          />
+          {icon()}
+        </div>
+      </div>
 
-          <div
+      <div style={styles.footer}>
+        {(['star', 'exclamation', 'question'] as const).map(t => (
+          <button
+            key={t}
+            onClick={() => setType(t)}
             style={{
-              ...styles.pin,
-              left: `${pos.x * 100}%`,
-              top: `${pos.y * 100}%`,
+              ...styles.typeBtn,
+              opacity: type === t ? 1 : 0.4,
             }}
           >
-            {icon()}
-          </div>
-        </div>
-
-        <div style={styles.typeRow}>
-          {(['star', 'exclamation', 'question'] as const).map(t => (
-            <button
-              key={t}
-              onClick={() => setType(t)}
-              style={{
-                ...styles.typeBtn,
-                borderColor: type === t ? '#ff8c00' : '#eee',
-              }}
-            >
-              {t === 'star' && <Star />}
-              {t === 'exclamation' && <AlertTriangle />}
-              {t === 'question' && <HelpCircle />}
-            </button>
-          ))}
-        </div>
-
-        <div style={styles.inputRow}>
-          <input
-            value={comment}
-            onChange={e => setComment(e.target.value)}
-            placeholder="一言コメント"
-            style={styles.input}
-          />
-          <button onClick={submit} style={styles.sendBtn}>
-            <SendHorizontal size={18} />
+            {t === 'star' && <Star />}
+            {t === 'exclamation' && <AlertTriangle />}
+            {t === 'question' && <HelpCircle />}
           </button>
-        </div>
+        ))}
+        <input
+          value={comment}
+          onChange={e => setComment(e.target.value)}
+          placeholder="一言コメント"
+          style={styles.input}
+        />
       </div>
     </div>
   )
-}
-
-const styles: { [key: string]: CSSProperties } = {
-  backdrop: {
-    position: 'fixed',
-    inset: 0,
-    background: 'rgba(0,0,0,0.55)',
-    zIndex: 5000,
-    display: 'flex',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  modal: {
-    width: '90%',
-    maxWidth: 420,
-    background: '#fff',
-    borderRadius: 16,
-    padding: 12,
-    display: 'flex',
-    flexDirection: 'column',
-    gap: 10,
-  },
-  header: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  title: { fontWeight: 700 },
-  imageWrapper: {
-    position: 'relative',
-    touchAction: 'none',
-  },
-  image: {
-    width: '100%',
-    borderRadius: 12,
-    userSelect: 'none',
-  },
-  pin: {
-    position: 'absolute',
-    transform: 'translate(-50%, -50%) scale(1.4)',
-    filter: 'drop-shadow(0 2px 6px rgba(0,0,0,0.4))',
-    pointerEvents: 'none',
-  },
-  typeRow: {
-    display: 'flex',
-    gap: 6,
-  },
-  typeBtn: {
-    flex: 1,
-    padding: 8,
-    borderRadius: 10,
-    border: '1px solid',
-    background: '#fff',
-    cursor: 'pointer',
-  },
-  inputRow: {
-    display: 'flex',
-    gap: 6,
-    alignItems: 'center',
-  },
-  input: {
-    flex: 1,
-    padding: 10,
-    borderRadius: 10,
-    border: '1px solid #ddd',
-  },
-  sendBtn: {
-    background: '#333',
-    color: '#fff',
-    borderRadius: 10,
-    padding: 8,
-    border: 'none',
-    cursor: 'pointer',
-  },
 }
