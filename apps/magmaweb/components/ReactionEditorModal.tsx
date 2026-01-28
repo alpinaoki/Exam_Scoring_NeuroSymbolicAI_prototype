@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Star, AlertCircle, HelpCircle, X } from 'lucide-react'
-import { createReaction } from '@/lib/reactions'
+import { createReaction } from '../lib/reactions'
 
 type ReactionType = 'star' | 'exclamation' | 'question'
 
