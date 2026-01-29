@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Star, AlertCircle, HelpCircle, X, Send } from 'lucide-react'
 import { createReaction } from '../lib/reactions'
@@ -25,6 +25,8 @@ export default function ReactionEditorModal({
   const [comment, setComment] = useState('')
   const [pos, setPos] = useState<{ x: number; y: number } | null>(null)
   const [saving, setSaving] = useState(false)
+
+  const imgRef = useRef<HTMLImageElement>(null)
 
   useEffect(() => {
     if (!open) return
@@ -74,12 +76,13 @@ export default function ReactionEditorModal({
             <X size={24} />
           </button>
           <span style={styles.headerTitle}>ポイントをタップして位置を指定</span>
-          <button 
-            onClick={submit} 
-            disabled={!pos || saving} 
-            style={{ 
-              ...styles.submitHeader, 
-              opacity: !pos || saving ? 0.4 : 1 
+          <button
+            onClick={submit}
+            disabled={!pos || saving}
+            style={{
+              ...styles.submitHeader,
+              opacity: !pos || saving ? 0.4 : 1,
+              color: pos ? '#4D96FF' : '#666',
             }}
           >
             {saving ? '保存中...' : <Send size={22} />}
@@ -90,14 +93,38 @@ export default function ReactionEditorModal({
         <div
           style={styles.canvas}
           onClick={(e) => {
-            const rect = e.currentTarget.getBoundingClientRect()
+            if (!imgRef.current) return
+            const rect = imgRef.current.getBoundingClientRect()
+
+            // 画像外クリックは無視
+            if (
+              e.clientX < rect.left ||
+              e.clientX > rect.right ||
+              e.clientY < rect.top ||
+              e.clientY > rect.bottom
+            ) {
+              return
+            }
+
             setPos({
               x: (e.clientX - rect.left) / rect.width,
               y: (e.clientY - rect.top) / rect.height,
             })
           }}
         >
-          <img src={imageUrl} style={styles.image} alt="Target" />
+          <img
+            ref={imgRef}
+            src={imageUrl}
+            style={styles.image}
+            alt="Target"
+          />
+
+          {!pos && (
+            <div style={styles.tapHint}>
+              画像をタップして位置を指定
+            </div>
+          )}
+
           {pos && (
             <div
               style={{
@@ -106,7 +133,6 @@ export default function ReactionEditorModal({
                 top: `${pos.y * 100}%`,
               }}
             >
-              <div style={styles.markerPing} />
               {iconMap[type]}
             </div>
           )}
@@ -117,15 +143,27 @@ export default function ReactionEditorModal({
           {/* Type Selector */}
           <div style={styles.typeRow}>
             {(['star', 'exclamation', 'question'] as const).map((t) => (
-              <TypeButton 
-                key={t} 
-                active={type === t} 
+              <TypeButton
+                key={t}
+                active={type === t}
                 onClick={() => setType(t)}
                 type={t}
               >
-                {t === 'star' && <Star size={20} fill={type === t ? "#FFD700" : "transparent"} />}
-                {t === 'exclamation' && <AlertCircle size={20} fill={type === t ? "#FF6B6B" : "transparent"} />}
-                {t === 'question' && <HelpCircle size={20} fill={type === t ? "#4D96FF" : "transparent"} />}
+                {t === 'star' && (
+                  <Star size={20} fill={type === t ? '#FFD700' : 'transparent'} />
+                )}
+                {t === 'exclamation' && (
+                  <AlertCircle
+                    size={20}
+                    fill={type === t ? '#FF6B6B' : 'transparent'}
+                  />
+                )}
+                {t === 'question' && (
+                  <HelpCircle
+                    size={20}
+                    fill={type === t ? '#4D96FF' : 'transparent'}
+                  />
+                )}
                 <span style={styles.typeLabel}>{typeLabels[t]}</span>
               </TypeButton>
             ))}
@@ -181,8 +219,12 @@ function TypeButton({
 
 const iconMap = {
   star: <Star size={28} fill="#FFD700" stroke="#000" strokeWidth={1.5} />,
-  exclamation: <AlertCircle size={28} fill="#FF6B6B" stroke="#000" strokeWidth={1.5} />,
-  question: <HelpCircle size={28} fill="#4D96FF" stroke="#000" strokeWidth={1.5} />,
+  exclamation: (
+    <AlertCircle size={28} fill="#FF6B6B" stroke="#000" strokeWidth={1.5} />
+  ),
+  question: (
+    <HelpCircle size={28} fill="#4D96FF" stroke="#000" strokeWidth={1.5} />
+  ),
 }
 
 const typeLabels = {
@@ -229,7 +271,6 @@ const styles: { [key: string]: React.CSSProperties } = {
   submitHeader: {
     background: 'none',
     border: 'none',
-    color: '#4D96FF',
     fontWeight: 700,
     fontSize: '16px',
     cursor: 'pointer',
@@ -243,6 +284,7 @@ const styles: { [key: string]: React.CSSProperties } = {
     alignItems: 'center',
     justifyContent: 'center',
     touchAction: 'none',
+    WebkitTapHighlightColor: 'transparent',
   },
   image: {
     maxWidth: '100%',
@@ -250,18 +292,20 @@ const styles: { [key: string]: React.CSSProperties } = {
     objectFit: 'contain',
     pointerEvents: 'none',
   },
+  tapHint: {
+    position: 'absolute',
+    bottom: 16,
+    left: '50%',
+    transform: 'translateX(-50%)',
+    fontSize: 12,
+    color: '#ccc',
+    opacity: 0.8,
+  },
   marker: {
     position: 'absolute',
     transform: 'translate(-50%, -50%)',
     zIndex: 10,
     filter: 'drop-shadow(0 0 8px rgba(0,0,0,0.5))',
-  },
-  markerPing: {
-    position: 'absolute',
-    inset: -4,
-    borderRadius: '50%',
-    border: '2px solid #fff',
-    animation: 'ping 1.5s cubic-bezier(0, 0, 0.2, 1) infinite',
   },
   controls: {
     padding: '20px 16px 40px',
