@@ -38,6 +38,9 @@ export default function AnswerCard({
   const [reactions, setReactions] = useState<Reaction[]>([])
   const [activeReactionId, setActiveReactionId] = useState<string | null>(null)
 
+  // ★ 追加：表示／非表示トグル（デフォルト表示）
+  const [showReactions, setShowReactions] = useState(true)
+
   const displayName = anonymous ? 'Anonymous' : username
 
   useEffect(() => {
@@ -73,50 +76,75 @@ export default function AnswerCard({
             draggable={false}
           />
 
-          {reactions.map((r) => (
-            <div
-              key={r.id}
-              style={{
-                ...styles.reaction,
-                left: `${r.x_float * 100}%`,
-                top: `${r.y_float * 100}%`,
-                pointerEvents: 'auto',
-              }}
-              onClick={(e) => {
-                e.stopPropagation()
-                setActiveReactionId(
-                  activeReactionId === r.id ? null : r.id
-                )
+          {/* ★ 追加：表示／非表示トグル（0件なら出さない） */}
+          {reactions.length > 0 && (
+            <button
+              style={styles.toggleButton}
+              onClick={() => {
+                setShowReactions(!showReactions)
+                setActiveReactionId(null)
               }}
             >
+              {showReactions
+                ? 'リアクションを非表示'
+                : 'リアクションを表示'}
+            </button>
+          )}
+
+          {/* ★ ここだけガード */}
+          {showReactions &&
+            reactions.map((r) => (
               <div
+                key={r.id}
                 style={{
-                  transform:
-                    activeReactionId === r.id ? 'scale(1.4)' : 'scale(1)',
-                  transition:
-                    'transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
-                  filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))',
+                  ...styles.reaction,
+                  left: `${r.x_float * 100}%`,
+                  top: `${r.y_float * 100}%`,
+                  pointerEvents: 'auto',
+                }}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setActiveReactionId(
+                    activeReactionId === r.id ? null : r.id
+                  )
                 }}
               >
-                {icon(r.type)}
-              </div>
-
-              {activeReactionId === r.id && (
-                <div style={styles.bubble}>
-                  <div style={styles.bubbleHeader}>
-                    <UserBadge username={r.username ?? ''} size={14} />
-                    <span style={styles.reactorName}>
-                      @{r.username ?? 'unknown'}
-                    </span>
-                  </div>
-                  {r.comment && (
-                    <div style={styles.bubbleComment}>{r.comment}</div>
-                  )}
-                  <div style={styles.bubbleArrow} />
+                <div
+                  style={{
+                    transform:
+                      activeReactionId === r.id
+                        ? 'scale(1.4)'
+                        : 'scale(1)',
+                    transition:
+                      'transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
+                    filter:
+                      'drop-shadow(0 2px 4px rgba(0,0,0,0.3))',
+                  }}
+                >
+                  {icon(r.type)}
                 </div>
-              )}
-            </div>
-          ))}
+
+                {activeReactionId === r.id && (
+                  <div style={styles.bubble}>
+                    <div style={styles.bubbleHeader}>
+                      <UserBadge
+                        username={r.username ?? ''}
+                        size={14}
+                      />
+                      <span style={styles.reactorName}>
+                        @{r.username ?? 'unknown'}
+                      </span>
+                    </div>
+                    {r.comment && (
+                      <div style={styles.bubbleComment}>
+                        {r.comment}
+                      </div>
+                    )}
+                    <div style={styles.bubbleArrow} />
+                  </div>
+                )}
+              </div>
+            ))}
         </div>
       )}
 
@@ -170,7 +198,22 @@ const styles: { [key: string]: CSSProperties } = {
     zIndex: 10,
   },
 
-  /* ↓ 追加分（表示用） */
+  /* ★ 追加：トグルボタン */
+  toggleButton: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    padding: '6px 10px',
+    fontSize: 11,
+    borderRadius: 999,
+    border: '1px solid rgba(255,255,255,0.4)',
+    background: 'rgba(0,0,0,0.45)',
+    color: '#fff',
+    cursor: 'pointer',
+    backdropFilter: 'blur(4px)',
+    zIndex: 20,
+  },
+
   bubble: {
     position: 'absolute',
     bottom: '140%',
