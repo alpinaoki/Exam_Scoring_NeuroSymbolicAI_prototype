@@ -73,7 +73,7 @@ export default function ReactionEditorModal({
           <button onClick={onClose} style={styles.iconBtn}>
             <X size={24} />
           </button>
-          <span style={styles.headerTitle}>ポイントをタップして保存</span>
+          <span style={styles.headerTitle}>ポイントをタップして位置を指定</span>
           <button 
             onClick={submit} 
             disabled={!pos || saving} 
