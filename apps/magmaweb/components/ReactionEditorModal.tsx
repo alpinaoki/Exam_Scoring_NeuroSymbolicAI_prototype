@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { Star, AlertCircle, HelpCircle, X } from 'lucide-react'
+import { Star, AlertCircle, HelpCircle, X, Send } from 'lucide-react'
 import { createReaction } from '../lib/reactions'
 
 type ReactionType = 'star' | 'exclamation' | 'question'
@@ -26,7 +26,6 @@ export default function ReactionEditorModal({
   const [pos, setPos] = useState<{ x: number; y: number } | null>(null)
   const [saving, setSaving] = useState(false)
 
-  // body lock（ImageEditorModal互換）
   useEffect(() => {
     if (!open) return
     const o = document.body.style.overflow
@@ -69,36 +68,25 @@ export default function ReactionEditorModal({
   return createPortal(
     <div style={styles.overlay}>
       <div style={styles.container}>
-        {/* header */}
+        {/* Header */}
         <div style={styles.header}>
-          <span>リアクションを追加</span>
-          <button onClick={onClose} style={styles.close}>
-            <X size={20} />
+          <button onClick={onClose} style={styles.iconBtn}>
+            <X size={24} />
+          </button>
+          <span style={styles.headerTitle}>ポイントをタップして保存</span>
+          <button 
+            onClick={submit} 
+            disabled={!pos || saving} 
+            style={{ 
+              ...styles.submitHeader, 
+              opacity: !pos || saving ? 0.4 : 1 
+            }}
+          >
+            {saving ? '保存中...' : <Send size={22} />}
           </button>
         </div>
 
-        {/* type selector（ハート削除済） */}
-        <div style={styles.typeRow}>
-          <TypeButton active={type === 'star'} onClick={() => setType('star')}>
-            <Star />
-          </TypeButton>
-          <TypeButton active={type === 'exclamation'} onClick={() => setType('exclamation')}>
-            <AlertCircle />
-          </TypeButton>
-          <TypeButton active={type === 'question'} onClick={() => setType('question')}>
-            <HelpCircle />
-          </TypeButton>
-        </div>
-
-        {/* comment（iOSズーム完全回避） */}
-        <input
-          placeholder="コメントを入力"
-          value={comment}
-          onChange={(e) => setComment(e.target.value)}
-          style={styles.input}
-        />
-
-        {/* image canvas */}
+        {/* Image Canvas */}
         <div
           style={styles.canvas}
           onClick={(e) => {
@@ -109,8 +97,7 @@ export default function ReactionEditorModal({
             })
           }}
         >
-          <img src={imageUrl} style={styles.image} />
-
+          <img src={imageUrl} style={styles.image} alt="Target" />
           {pos && (
             <div
               style={{
@@ -119,18 +106,41 @@ export default function ReactionEditorModal({
                 top: `${pos.y * 100}%`,
               }}
             >
+              <div style={styles.markerPing} />
               {iconMap[type]}
             </div>
           )}
         </div>
 
-        <button
-          style={styles.submit}
-          disabled={!pos || saving}
-          onClick={submit}
-        >
-          決定
-        </button>
+        {/* Controls Area */}
+        <div style={styles.controls}>
+          {/* Type Selector */}
+          <div style={styles.typeRow}>
+            {(['star', 'exclamation', 'question'] as const).map((t) => (
+              <TypeButton 
+                key={t} 
+                active={type === t} 
+                onClick={() => setType(t)}
+                type={t}
+              >
+                {t === 'star' && <Star size={20} fill={type === t ? "#FFD700" : "transparent"} />}
+                {t === 'exclamation' && <AlertCircle size={20} fill={type === t ? "#FF6B6B" : "transparent"} />}
+                {t === 'question' && <HelpCircle size={20} fill={type === t ? "#4D96FF" : "transparent"} />}
+                <span style={styles.typeLabel}>{typeLabels[t]}</span>
+              </TypeButton>
+            ))}
+          </div>
+
+          {/* Input Area */}
+          <div style={styles.inputWrapper}>
+            <input
+              placeholder="一言コメントを添える..."
+              value={comment}
+              onChange={(e) => setComment(e.target.value)}
+              style={styles.input}
+            />
+          </div>
+        </div>
       </div>
     </div>,
     document.body
@@ -141,17 +151,27 @@ function TypeButton({
   children,
   active,
   onClick,
+  type,
 }: {
   children: React.ReactNode
   active: boolean
   onClick: () => void
+  type: ReactionType
 }) {
+  const activeColors = {
+    star: 'rgba(255, 215, 0, 0.15)',
+    exclamation: 'rgba(255, 107, 107, 0.15)',
+    question: 'rgba(77, 150, 255, 0.15)',
+  }
+
   return (
     <button
       onClick={onClick}
       style={{
         ...styles.typeButton,
-        background: active ? '#eee' : '#fff',
+        background: active ? activeColors[type] : 'rgba(255,255,255,0.05)',
+        borderColor: active ? 'transparent' : 'rgba(255,255,255,0.1)',
+        color: active ? '#fff' : '#888',
       }}
     >
       {children}
@@ -160,9 +180,15 @@ function TypeButton({
 }
 
 const iconMap = {
-  star: <Star size={22} fill="#FFD700" stroke="#000" />,
-  exclamation: <AlertCircle size={22} fill="#FF6B6B" stroke="#000" />,
-  question: <HelpCircle size={22} fill="#4D96FF" stroke="#000" />,
+  star: <Star size={28} fill="#FFD700" stroke="#000" strokeWidth={1.5} />,
+  exclamation: <AlertCircle size={28} fill="#FF6B6B" stroke="#000" strokeWidth={1.5} />,
+  question: <HelpCircle size={28} fill="#4D96FF" stroke="#000" strokeWidth={1.5} />,
+}
+
+const typeLabels = {
+  star: 'いいね',
+  exclamation: '注目',
+  question: '疑問',
 }
 
 const styles: { [key: string]: React.CSSProperties } = {
@@ -170,65 +196,114 @@ const styles: { [key: string]: React.CSSProperties } = {
     position: 'fixed',
     inset: 0,
     zIndex: 999999,
-    background: 'rgba(0,0,0,0.6)',
+    background: '#000',
   },
   container: {
     width: '100vw',
     height: '100vh',
-    background: '#fff',
     display: 'flex',
     flexDirection: 'column',
+    color: '#fff',
   },
   header: {
-    padding: '12px 16px',
-    borderBottom: '1px solid #ddd',
+    padding: '8px 16px',
+    height: '60px',
     display: 'flex',
+    alignItems: 'center',
     justifyContent: 'space-between',
-    fontWeight: 600,
+    background: 'rgba(0,0,0,0.8)',
+    borderBottom: '1px solid rgba(255,255,255,0.1)',
   },
-  close: {
+  headerTitle: {
+    fontSize: '14px',
+    fontWeight: 500,
+    color: '#ccc',
+  },
+  iconBtn: {
     background: 'none',
     border: 'none',
+    color: '#fff',
+    padding: '8px',
+    cursor: 'pointer',
   },
-  typeRow: {
-    display: 'flex',
-    gap: 8,
-    padding: 12,
-  },
-  typeButton: {
-    border: '1px solid #000',
-    borderRadius: 8,
-    padding: 8,
-  },
-  input: {
-    margin: '0 12px 12px',
-    padding: '10px 12px',
-    fontSize: 16,
-    border: '1px solid #ccc',
-    borderRadius: 6,
+  submitHeader: {
+    background: 'none',
+    border: 'none',
+    color: '#4D96FF',
+    fontWeight: 700,
+    fontSize: '16px',
+    cursor: 'pointer',
+    padding: '8px',
   },
   canvas: {
     flex: 1,
     position: 'relative',
-    background: '#000',
     overflow: 'hidden',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    touchAction: 'none',
   },
   image: {
-    width: '100%',
-    height: '100%',
+    maxWidth: '100%',
+    maxHeight: '100%',
     objectFit: 'contain',
     pointerEvents: 'none',
   },
   marker: {
     position: 'absolute',
     transform: 'translate(-50%, -50%)',
+    zIndex: 10,
+    filter: 'drop-shadow(0 0 8px rgba(0,0,0,0.5))',
   },
-  submit: {
-    margin: 12,
-    padding: 12,
-    borderRadius: 8,
-    background: '#111',
+  markerPing: {
+    position: 'absolute',
+    inset: -4,
+    borderRadius: '50%',
+    border: '2px solid #fff',
+    animation: 'ping 1.5s cubic-bezier(0, 0, 0.2, 1) infinite',
+  },
+  controls: {
+    padding: '20px 16px 40px',
+    background: 'linear-gradient(to top, #000 80%, transparent)',
+    borderTop: '1px solid rgba(255,255,255,0.05)',
+  },
+  typeRow: {
+    display: 'flex',
+    justifyContent: 'center',
+    gap: '12px',
+    marginBottom: '20px',
+  },
+  typeButton: {
+    flex: 1,
+    maxWidth: '100px',
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: '6px',
+    padding: '12px 8px',
+    borderRadius: '12px',
+    border: '1px solid',
+    fontSize: '12px',
+    transition: 'all 0.2s ease',
+    cursor: 'pointer',
+  },
+  typeLabel: {
+    fontWeight: 500,
+  },
+  inputWrapper: {
+    maxWidth: '500px',
+    margin: '0 auto',
+  },
+  input: {
+    width: '100%',
+    background: 'rgba(255,255,255,0.08)',
+    border: '1px solid rgba(255,255,255,0.1)',
+    borderRadius: '14px',
+    padding: '14px 18px',
     color: '#fff',
-    fontWeight: 600,
+    fontSize: '16px',
+    outline: 'none',
+    transition: 'border-color 0.2s',
   },
 }
