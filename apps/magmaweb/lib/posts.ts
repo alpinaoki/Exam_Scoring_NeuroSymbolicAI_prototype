@@ -248,7 +248,7 @@ export async function searchProblemsByLabel(label: string) {
       image_url,
       created_at,
       label,
-      profiles (
+      profiles:profiles!posts_user_id_fkey (
         handle
       )
     `)
