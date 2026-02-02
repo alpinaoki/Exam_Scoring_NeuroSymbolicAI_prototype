@@ -11,6 +11,7 @@ type Post = {
   id: string
   image_url: string | null
   created_at: string
+  label: string | null
   profiles: {
     handle: string
   } | null
@@ -33,6 +34,7 @@ export default function ProblemFeed() {
         id,
         image_url,
         created_at,
+        label,
         profiles:profiles!posts_user_id_fkey (
           handle
         )
@@ -81,6 +83,7 @@ export default function ProblemFeed() {
             problemId={p.id}
             username={p.profiles?.handle ?? 'unknown'}
             createdAt={p.created_at}
+            label={p.label}
           />
         ))}
 

@@ -13,6 +13,7 @@ type Props = {
   problemId: string
   username: string
   createdAt: string
+  label?: string | null
 }
 
 export default function ProblemCard({
@@ -20,6 +21,7 @@ export default function ProblemCard({
   problemId,
   username,
   createdAt,
+  label,
 }: Props) {
   const router = useRouter()
   const [answerCount, setAnswerCount] = useState(0)
@@ -52,6 +54,12 @@ export default function ProblemCard({
           style={styles.image}
           onClick={() => router.push(`/threads/${problemId}`)}
         />
+      )}
+
+      {label && (
+        <div style={styles.labelRow}>
+          <span style={styles.label}>#{label}</span>
+        </div>
       )}
 
       <ProblemActionBar
@@ -93,5 +101,18 @@ const styles: { [key: string]: CSSProperties } = {
     objectFit: 'contain',
     border: '1px solid #eee',
     cursor: 'pointer',
+  },
+  labelRow: {
+    display: 'flex',
+    gap: 8,
+  },
+  label: {
+    fontSize: 12,
+    fontWeight: 600,
+    color: '#4D96FF',
+    background: 'rgba(77, 150, 255, 0.12)',
+    padding: '4px 10px',
+    borderRadius: 999,
+    width: 'fit-content',
   },
 }
