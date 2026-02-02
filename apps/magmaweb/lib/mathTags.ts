@@ -33,3 +33,9 @@ export const UNIT_TAGS = [
   '複素数平面',
   '融合問題'
 ] as const
+
+export const OTHER_TAGS = [
+  '難問',
+  '手作り',
+  '新入生向け',
+] as const

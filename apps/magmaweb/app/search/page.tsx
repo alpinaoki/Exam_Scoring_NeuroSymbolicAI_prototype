@@ -1,7 +1,7 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
-import { COURSE_TAGS, UNIT_TAGS } from '../../lib/mathTags'
+import { COURSE_TAGS, OTHER_TAGS, UNIT_TAGS } from '../../lib/mathTags'
 
 export default function SearchPage() {
   const router = useRouter()
@@ -47,6 +47,22 @@ export default function SearchPage() {
           ))}
         </div>
       </section>
+
+      <section style={{ marginTop: 24 }}>
+        <h3 style={styles.sectionTitle}>その他</h3>
+        <div style={styles.tagRow}>
+          {OTHER_TAGS.map((t) => (
+            <button
+              key={t}
+              style={styles.tag}
+              onClick={() => goTag(t)}
+            >
+              #{t}
+            </button>
+          ))}
+        </div>
+      </section>
+
     </div>
   )
 }
