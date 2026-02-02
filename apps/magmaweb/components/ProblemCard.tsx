@@ -37,6 +37,13 @@ export default function ProblemCard({
     router.push(`/profiles/${username}`)
   }
 
+  // ★ 追加：label を配列に分解
+  const labels =
+    label
+      ?.split(',')
+      .map((l) => l.trim())
+      .filter(Boolean) ?? []
+
   return (
     <div style={styles.card}>
       <div style={styles.header}>
@@ -56,9 +63,13 @@ export default function ProblemCard({
         />
       )}
 
-      {label && (
+      {labels.length > 0 && (
         <div style={styles.labelRow}>
-          <span style={styles.label}>#{label}</span>
+          {labels.map((l) => (
+            <span key={l} style={styles.label}>
+              #{l}
+            </span>
+          ))}
         </div>
       )}
 
@@ -105,6 +116,7 @@ const styles: { [key: string]: CSSProperties } = {
   labelRow: {
     display: 'flex',
     gap: 8,
+    flexWrap: 'wrap',
   },
   label: {
     fontSize: 12,
