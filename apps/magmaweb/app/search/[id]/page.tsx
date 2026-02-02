@@ -7,6 +7,7 @@ import LayoutShell from '../../../components/LayoutShell'
 import ProblemCard from '../../../components/ProblemCard'
 import { searchProblemsByLabel } from '../../../lib/posts'
 
+
 type ProblemItem = {
   id: string
   image_url: string | null
@@ -14,7 +15,7 @@ type ProblemItem = {
   label: string | null
   profiles: {
     handle: string
-  }[] | null
+  } | null   // ← 配列やめる
 }
 
 export default function SearchResultPage() {
@@ -77,7 +78,7 @@ export default function SearchResultPage() {
     key={p.id}
     image={p.image_url}
     problemId={p.id}
-    username={p.profiles?.[0]?.handle ?? 'unknown'}
+    username={p.profiles?.handle ?? 'unknown'}
     createdAt={p.created_at}
     label={p.label}
   />
