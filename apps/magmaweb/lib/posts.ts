@@ -236,3 +236,26 @@ export async function getReactionsByPostId(postId: string) {
     username: r.profiles?.handle || 'unknown'
   }))
 }
+
+/**
+ * タグ（label）で問題を検索
+ */
+export async function searchProblemsByLabel(keyword: string) {
+  const { data, error } = await supabase
+    .from('posts')
+    .select(`
+      id,
+      image_url,
+      created_at,
+      label,
+      profiles (
+        handle
+      )
+    `)
+    .eq('type', 'problem')
+    .ilike('label', `%${keyword}%`)
+    .order('created_at', { ascending: false })
+
+  if (error) throw error
+  return data
+}
