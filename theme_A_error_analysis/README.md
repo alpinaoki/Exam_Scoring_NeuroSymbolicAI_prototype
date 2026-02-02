@@ -5,13 +5,17 @@
 - ・誤りの手動での分析
 - ・全体の流れの最後に位置する、評価の基準もアナログで検討する。
 
-<magmatheの現状でのファイル構成>（1/26更新）
+<magmatheの現状でのファイル構成>（2/2更新）
 magmaweb/
 ーapp/
+｜ーanalysis/page.tsx
 ｜ーfeed/page.tsx
 ｜ーlogin/page.tsx
 ｜ーme/page.ts
 ｜ーprofiles/[id]/page.tsx
+｜ーsearch/
+｜｜ーpage.tsx
+｜｜ー[id]/page.tsx
 ｜ーstyles/globals.css
 ｜ーterms/page.tsx
 ｜ーthreads/[id]/page.tsx
