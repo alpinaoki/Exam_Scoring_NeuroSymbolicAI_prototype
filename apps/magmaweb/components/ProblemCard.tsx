@@ -37,7 +37,7 @@ export default function ProblemCard({
     router.push(`/profiles/${username}`)
   }
 
-  // ★ 追加：label を配列に分解
+  // label を配列に分解
   const labels =
     label
       ?.split(',')
@@ -66,7 +66,14 @@ export default function ProblemCard({
       {labels.length > 0 && (
         <div style={styles.labelRow}>
           {labels.map((l) => (
-            <span key={l} style={styles.label}>
+            <span
+              key={l}
+              style={styles.label}
+              onClick={(e) => {
+                e.stopPropagation()
+                router.push(`/search/${encodeURIComponent(l)}`)
+              }}
+            >
               #{l}
             </span>
           ))}
@@ -126,5 +133,6 @@ const styles: { [key: string]: CSSProperties } = {
     padding: '4px 10px',
     borderRadius: 999,
     width: 'fit-content',
+    cursor: 'pointer', // ← UX的に大事
   },
 }
