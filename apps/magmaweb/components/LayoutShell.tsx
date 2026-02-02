@@ -6,7 +6,12 @@ import type { ReactNode, CSSProperties } from 'react'
 import { createPost } from '../lib/posts'
 import { uploadImageToCloudinary } from '../lib/upload'
 import ImageEditorModal from './ImageEditorModal'
-import { UserRound, Sparkles } from 'lucide-react'
+import {
+  UserRound,
+  Sparkles,
+  Search,
+  BarChart3,
+} from 'lucide-react'
 
 type Props = {
   children: ReactNode
@@ -28,7 +33,6 @@ export default function LayoutShell({ children }: Props) {
     return <>{children}</>
   }
 
-
   return (
     <div style={styles.wrapper}>
       {/* Header */}
@@ -41,10 +45,17 @@ export default function LayoutShell({ children }: Props) {
 
       {/* Footer */}
       <footer style={styles.footer}>
+        {/* Feed */}
         <button style={styles.icon} onClick={() => router.push('/feed')}>
-          <Sparkles size={30} />
+          <Sparkles size={28} />
         </button>
 
+        {/* Search */}
+        <button style={styles.icon} onClick={() => router.push('/search')}>
+          <Search size={28} />
+        </button>
+
+        {/* Post */}
         <button
           style={styles.plus}
           onClick={() => cameraInputRef.current?.click()}
@@ -52,46 +63,52 @@ export default function LayoutShell({ children }: Props) {
           ＋
         </button>
 
+        {/* Analysis */}
+        <button style={styles.icon} onClick={() => router.push('/analysis')}>
+          <BarChart3 size={28} />
+        </button>
+
+        {/* Me */}
         <button style={styles.icon} onClick={() => router.push('/me')}>
-          <UserRound size={30} />
+          <UserRound size={28} />
         </button>
       </footer>
 
       {/* Hidden camera input */}
       <input
-  ref={cameraInputRef}
-  type="file"
-  accept="image/*"
-  hidden
-  onChange={(e) => {
-    const f = e.target.files?.[0]
-    if (f) setFile(f)
-  }}
-/>
+        ref={cameraInputRef}
+        type="file"
+        accept="image/*"
+        hidden
+        onChange={(e) => {
+          const f = e.target.files?.[0]
+          if (f) setFile(f)
+        }}
+      />
 
       {/* Image Editor */}
       {file && (
         <ImageEditorModal
-  file={file}
-  uploading={uploading}
-  anonymous={false}
-  showAnonymous={false}   // ← これだけ追加
-  onAnonymousChange={() => {}}
-  onCancel={() => {
-    if (!uploading) setFile(null)
-  }}
-  onPost={async (editedFile) => {
-    if (uploading) return
-    setUploading(true)
+          file={file}
+          uploading={uploading}
+          anonymous={false}
+          showAnonymous={false}
+          onAnonymousChange={() => {}}
+          onCancel={() => {
+            if (!uploading) setFile(null)
+          }}
+          onPost={async (editedFile) => {
+            if (uploading) return
+            setUploading(true)
 
-    const imageUrl = await uploadImageToCloudinary(editedFile)
-    await createPost({ imageUrl })
+            const imageUrl = await uploadImageToCloudinary(editedFile)
+            await createPost({ imageUrl })
 
-    setUploading(false)
-    setFile(null)
-    router.push('/feed')
-  }}
-/>
+            setUploading(false)
+            setFile(null)
+            router.push('/feed')
+          }}
+        />
       )}
     </div>
   )
@@ -141,9 +158,10 @@ const styles: { [key: string]: CSSProperties } = {
     background: 'none',
     border: 'none',
     color: '#eee',
+    cursor: 'pointer',
   },
   plus: {
-    width: 36, // 32だと枠が細くて窮屈に見える場合があるので少し調整
+    width: 36,
     height: 36,
     borderRadius: '50%',
     fontSize: 24,
@@ -151,13 +169,10 @@ const styles: { [key: string]: CSSProperties } = {
     color: '#eee',
     border: '3px solid #444',
     cursor: 'pointer',
-    
-    // --- ここで真ん中に寄せる ---
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 0,         // ボタンのデフォルトパディングを消去
-    lineHeight: 1,      // 行間の影響を排除
-    // -------------------------
-  }
+    padding: 0,
+    lineHeight: 1,
+  },
 }
