@@ -240,7 +240,7 @@ export async function getReactionsByPostId(postId: string) {
 /**
  * タグ（label）で問題を検索
  */
-export async function searchProblemsByLabel(keyword: string) {
+export async function searchProblemsByLabel(label: string) {
   const { data, error } = await supabase
     .from('posts')
     .select(`
@@ -253,9 +253,10 @@ export async function searchProblemsByLabel(keyword: string) {
       )
     `)
     .eq('type', 'problem')
-    .ilike('label', `%${keyword}%`)
+    .ilike('label', `%${label}%`)
     .order('created_at', { ascending: false })
 
   if (error) throw error
   return data
 }
+
