@@ -14,7 +14,7 @@ type ProblemItem = {
   label: string | null
   profiles: {
     handle: string
-  } | null
+  }[] | null
 }
 
 export default function SearchResultPage() {
@@ -73,15 +73,15 @@ export default function SearchResultPage() {
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 24, marginTop: 16 }}>
             {problems.map((p) => (
-              <ProblemCard
-                key={p.id}
-                image={p.image_url}
-                problemId={p.id}
-                username={p.profiles?.handle ?? 'unknown'}
-                createdAt={p.created_at}
-                label={p.label}
-              />
-            ))}
+  <ProblemCard
+    key={p.id}
+    image={p.image_url}
+    problemId={p.id}
+    username={p.profiles?.[0]?.handle ?? 'unknown'}
+    createdAt={p.created_at}
+    label={p.label}
+  />
+))}
           </div>
         )}
       </div>
