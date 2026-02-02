@@ -255,6 +255,15 @@ export async function searchProblemsByLabel(label: string) {
     .eq('type', 'problem')
     .ilike('label', `%${label}%`)
     .order('created_at', { ascending: false })
+    .returns<{
+      id: string
+      image_url: string | null
+      created_at: string
+      label: string | null
+      profiles: {
+        handle: string
+      } | null
+    }[]>()
 
   if (error) throw error
   return data
