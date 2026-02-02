@@ -15,7 +15,7 @@ type ProblemItem = {
   label: string | null
   profiles: {
     handle: string
-  } | null   // ← 配列やめる
+  }[] | null
 }
 
 export default function SearchResultPage() {
@@ -78,7 +78,7 @@ export default function SearchResultPage() {
     key={p.id}
     image={p.image_url}
     problemId={p.id}
-    username={p.profiles?.handle ?? 'unknown'}
+    username={p.profiles?.[0]?.handle ?? 'unknown'}
     createdAt={p.created_at}
     label={p.label}
   />
