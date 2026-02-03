@@ -42,4 +42,6 @@ export const OTHER_TAGS = [
   '手作り',
   '新入生向け',
   '証明',
+  '立体図形',
+  '質問',
 ] as const

@@ -89,6 +89,7 @@ export default function ThreadPage({
           image={problem.image_url}
           problemId={problem.id}
           username={problem.profiles.handle}
+          label={problem.label}
           createdAt={problem.created_at}
         />
       </div>
