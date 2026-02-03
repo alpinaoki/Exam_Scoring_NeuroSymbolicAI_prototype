@@ -269,3 +269,14 @@ export async function searchProblemsByLabel(label: string) {
   return data
 }
 
+export async function updateProblemLabel(
+  problemId: string,
+  label: string
+) {
+  const { error } = await supabase
+    .from('problems')
+    .update({ label })
+    .eq('id', problemId)
+
+  if (error) throw error
+}

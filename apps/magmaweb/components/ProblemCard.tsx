@@ -4,7 +4,7 @@ import type { CSSProperties } from 'react'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import ProblemActionBar from './ProblemActionBar'
-import { getAnswerCount } from '../lib/posts'
+import { getAnswerCount, updateProblemLabel } from '../lib/posts'
 import { formatDateTime } from '../lib/time'
 import UserBadge from './UserBadge'
 
@@ -14,6 +14,7 @@ type Props = {
   username: string
   createdAt: string
   label?: string | null
+  isMine?: boolean // ← 自分の投稿かどうか
 }
 
 export default function ProblemCard({
@@ -22,9 +23,13 @@ export default function ProblemCard({
   username,
   createdAt,
   label,
+  isMine = false,
 }: Props) {
   const router = useRouter()
   const [answerCount, setAnswerCount] = useState(0)
+
+  const [tagOpen, setTagOpen] = useState(false)
+  const [draftLabel, setDraftLabel] = useState(label ?? '')
 
   useEffect(() => {
     getAnswerCount(problemId).then(setAnswerCount)
@@ -43,6 +48,12 @@ export default function ProblemCard({
       ?.split(',')
       .map((l) => l.trim())
       .filter(Boolean) ?? []
+
+  const saveLabel = async () => {
+    await updateProblemLabel(problemId, draftLabel)
+    setTagOpen(false)
+    router.refresh()
+  }
 
   return (
     <div style={styles.card}>
@@ -63,20 +74,50 @@ export default function ProblemCard({
         />
       )}
 
-      {labels.length > 0 && (
-        <div style={styles.labelRow}>
-          {labels.map((l) => (
-            <span
-              key={l}
-              style={styles.label}
-              onClick={(e) => {
-                e.stopPropagation()
-                router.push(`/search/${encodeURIComponent(l)}`)
-              }}
-            >
-              #{l}
-            </span>
-          ))}
+      <div style={styles.labelRow}>
+        {labels.map((l) => (
+          <span
+            key={l}
+            style={styles.label}
+            onClick={(e) => {
+              e.stopPropagation()
+              router.push(`/search/${encodeURIComponent(l)}`)
+            }}
+          >
+            #{l}
+          </span>
+        ))}
+
+        {isMine && (
+          <span
+            style={styles.addLabel}
+            onClick={(e) => {
+              e.stopPropagation()
+              setDraftLabel(label ?? '')
+              setTagOpen(true)
+            }}
+          >
+            ＋タグ
+          </span>
+        )}
+      </div>
+
+      {tagOpen && isMine && (
+        <div style={styles.tagPopover} onClick={(e) => e.stopPropagation()}>
+          <input
+            autoFocus
+            value={draftLabel}
+            onChange={(e) => setDraftLabel(e.target.value)}
+            placeholder="例: 二次関数, 数IA"
+            style={styles.tagInput}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') saveLabel()
+            }}
+          />
+          <div style={styles.actions}>
+            <button onClick={saveLabel}>保存</button>
+            <button onClick={() => setTagOpen(false)}>閉じる</button>
+          </div>
         </div>
       )}
 
@@ -94,6 +135,7 @@ const styles: { [key: string]: CSSProperties } = {
     display: 'flex',
     flexDirection: 'column',
     gap: 12,
+    position: 'relative', // ← popover 用
   },
   header: {
     display: 'flex',
@@ -132,7 +174,37 @@ const styles: { [key: string]: CSSProperties } = {
     background: 'rgba(77, 150, 255, 0.12)',
     padding: '4px 10px',
     borderRadius: 999,
-    width: 'fit-content',
-    cursor: 'pointer', // ← UX的に大事
+    cursor: 'pointer',
+  },
+  addLabel: {
+    fontSize: 12,
+    fontWeight: 600,
+    color: '#888',
+    background: '#f3f3f3',
+    padding: '4px 10px',
+    borderRadius: 999,
+    cursor: 'pointer',
+  },
+  tagPopover: {
+    position: 'absolute',
+    top: '100%',
+    left: 0,
+    marginTop: 6,
+    padding: 12,
+    background: '#fff',
+    border: '1px solid #ddd',
+    borderRadius: 8,
+    boxShadow: '0 4px 16px rgba(0,0,0,0.1)',
+    zIndex: 10,
+  },
+  tagInput: {
+    width: 220,
+    fontSize: 13,
+    padding: 6,
+  },
+  actions: {
+    display: 'flex',
+    gap: 8,
+    marginTop: 8,
   },
 }
