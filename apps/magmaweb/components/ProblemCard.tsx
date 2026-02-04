@@ -33,6 +33,7 @@ export default function ProblemCard({
   const router = useRouter()
   const [answerCount, setAnswerCount] = useState(0)
   const [tagOpen, setTagOpen] = useState(false)
+  const [newTag, setNewTag] = useState('')
 
   const [tags, setTags] = useState<string[]>(
     label
@@ -47,13 +48,25 @@ export default function ProblemCard({
 
   const timeLabel = formatDateTime(createdAt)
 
-  /** タグを押した瞬間に保存 */
+  /** 既存タグ：押した瞬間に保存 */
   const toggleTag = async (tag: string) => {
     const nextTags = tags.includes(tag)
       ? tags.filter((t) => t !== tag)
       : [...tags, tag]
 
     setTags(nextTags)
+    await updateProblemLabel(problemId, nextTags.join(', '))
+    router.refresh()
+  }
+
+  /** 手書きタグ追加 */
+  const addNewTag = async () => {
+    const t = newTag.trim()
+    if (!t || tags.includes(t)) return
+
+    const nextTags = [...tags, t]
+    setTags(nextTags)
+    setNewTag('')
     await updateProblemLabel(problemId, nextTags.join(', '))
     router.refresh()
   }
@@ -137,6 +150,22 @@ export default function ProblemCard({
           {renderTagGroup('科目', COURSE_TAGS)}
           {renderTagGroup('単元', UNIT_TAGS)}
           {renderTagGroup('その他', OTHER_TAGS)}
+
+          {/* 手書き追加 */}
+          <div style={styles.newTagRow}>
+            <input
+              value={newTag}
+              onChange={(e) => setNewTag(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && addNewTag()}
+              placeholder="新しいタグを入力"
+              style={styles.input}
+            />
+            <button onClick={addNewTag}>追加</button>
+          </div>
+
+          <div style={styles.actions}>
+            <button onClick={() => setTagOpen(false)}>閉じる</button>
+          </div>
         </div>
       )}
 
@@ -181,7 +210,6 @@ const styles: { [key: string]: CSSProperties } = {
     border: '1px solid #eee',
     cursor: 'pointer',
   },
-
   labelRow: {
     display: 'flex',
     gap: 8,
@@ -205,7 +233,6 @@ const styles: { [key: string]: CSSProperties } = {
     borderRadius: 999,
     cursor: 'pointer',
   },
-
   tagPopover: {
     position: 'absolute',
     top: '100%',
@@ -244,5 +271,20 @@ const styles: { [key: string]: CSSProperties } = {
     background: 'rgba(77,150,255,0.18)',
     color: '#4D96FF',
     fontWeight: 700,
+  },
+  newTagRow: {
+    display: 'flex',
+    gap: 6,
+    marginTop: 8,
+  },
+  input: {
+    flex: 1,
+    fontSize: 12,
+    padding: '4px 8px',
+  },
+  actions: {
+    display: 'flex',
+    justifyContent: 'flex-end',
+    marginTop: 8,
   },
 }
