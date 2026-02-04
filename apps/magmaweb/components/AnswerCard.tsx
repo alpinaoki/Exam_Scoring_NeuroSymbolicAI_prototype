@@ -37,8 +37,6 @@ export default function AnswerCard({
   const router = useRouter()
   const [reactions, setReactions] = useState<Reaction[]>([])
   const [activeReactionId, setActiveReactionId] = useState<string | null>(null)
-
-  // ★ 追加：表示／非表示トグル（デフォルト表示）
   const [showReactions, setShowReactions] = useState(true)
 
   const displayName = anonymous ? 'Anonymous' : username
@@ -76,7 +74,7 @@ export default function AnswerCard({
             draggable={false}
           />
 
-          {/* ★ 追加：表示／非表示トグル（0件なら出さない） */}
+          {/* 表示 / 非表示トグル */}
           {reactions.length > 0 && (
             <button
               style={styles.toggleButton}
@@ -85,13 +83,14 @@ export default function AnswerCard({
                 setActiveReactionId(null)
               }}
             >
-              {showReactions
-                ? 'リアクションを非表示'
-                : 'リアクションを表示'}
+              <span style={styles.toggleText}>
+                {showReactions
+                  ? 'リアクションを非表示'
+                  : 'リアクションを表示'}
+              </span>
             </button>
           )}
 
-          {/* ★ ここだけガード */}
           {showReactions &&
             reactions.map((r) => (
               <div
@@ -100,7 +99,6 @@ export default function AnswerCard({
                   ...styles.reaction,
                   left: `${r.x_float * 100}%`,
                   top: `${r.y_float * 100}%`,
-                  pointerEvents: 'auto',
                 }}
                 onClick={(e) => {
                   e.stopPropagation()
@@ -198,29 +196,28 @@ const styles: { [key: string]: CSSProperties } = {
     zIndex: 10,
   },
 
-  /* ★ 追加：トグルボタン */
+  /* ★ ここが肝 */
   toggleButton: {
-  position: 'absolute',
-  top: 8,
-  right: 8,
-  padding: '6px 10px',
-  fontSize: 11,
-  borderRadius: 999,
-  border: '1px solid rgba(255,255,255,0.35)',
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    background: 'transparent',
+    border: 'none',
+    padding: 0,
+    cursor: 'pointer',
+    zIndex: 20,
+  },
 
-  /* ★ ここから修正 */
-  background: 'rgba(0,0,0,0.25)',     // かなり薄く
-  backdropFilter: 'blur(8px)',        // 文字可読性の肝
-  WebkitBackdropFilter: 'blur(8px)',  // Safari 対応
-  /* ★ ここまで */
-
-  color: '#fff',
-  fontWeight: 600,
-  textShadow: '0 1px 2px rgba(0,0,0,0.6)',
-
-  cursor: 'pointer',
-  zIndex: 20,
-},
+  toggleText: {
+    color: '#fff',
+    fontSize: 11,
+    fontWeight: 700,
+    padding: '4px 8px',
+    textShadow: `
+      0 1px 2px rgba(0,0,0,0.9),
+      0 0 4px rgba(0,0,0,0.6)
+    `,
+  },
 
   bubble: {
     position: 'absolute',
