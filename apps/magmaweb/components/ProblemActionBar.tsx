@@ -5,6 +5,7 @@ import { uploadImageToCloudinary } from '../lib/upload'
 import { createAnswer } from '../lib/posts'
 import ImageEditorModal from './ImageEditorModal'
 import { Lightbulb } from 'lucide-react'
+import { useRouter } from 'next/navigation'
 
 type Props = {
   problemId: string
@@ -21,7 +22,7 @@ export default function ProblemActionBar({
   const [file, setFile] = useState<File | null>(null)
   const [uploading, setUploading] = useState(false)
   const [anonymous, setAnonymous] = useState(false)
-
+  const router = useRouter()
   return (
     <>
       <div style={styles.bar}>
@@ -62,21 +63,25 @@ export default function ProblemActionBar({
     }
   }}
   onPost={async (editedFile) => {
-    if (uploading) return
-    setUploading(true)
+  if (uploading) return
+  setUploading(true)
 
-    const imageUrl = await uploadImageToCloudinary(editedFile)
-    await createAnswer({
-      imageUrl,
-      problemId,
-      rootId,
-      anonymous,
-    })
+  const imageUrl = await uploadImageToCloudinary(editedFile)
+  await createAnswer({
+    imageUrl,
+    problemId,
+    rootId,
+    anonymous,
+  })
 
-    setUploading(false)
-    setFile(null)
-    setAnonymous(false)
-  }}
+  setUploading(false)
+  setFile(null)
+  setAnonymous(false)
+
+  // ★ ここを追加
+  router.push(`/threads/${rootId}`)
+  router.refresh()
+}}
 />
       )}
     </>
