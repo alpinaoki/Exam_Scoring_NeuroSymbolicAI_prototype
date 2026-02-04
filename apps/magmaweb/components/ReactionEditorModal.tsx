@@ -91,44 +91,45 @@ export default function ReactionEditorModal({
 
         {/* Image Canvas */}
         <div style={styles.canvas}>
-          <img
-            ref={imgRef}
-            src={imageUrl}
-            style={styles.image}
-            alt="Target"
-            onClick={(e) => {
-              if (!imgRef.current) return
-              const rect = imgRef.current.getBoundingClientRect()
+          <div style={styles.imageWrapper}>
+            <img
+              ref={imgRef}
+              src={imageUrl}
+              style={styles.image}
+              alt="Target"
+              onClick={(e) => {
+                if (!imgRef.current) return
+                const rect = imgRef.current.getBoundingClientRect()
 
-              setPos({
-                x: (e.clientX - rect.left) / rect.width,
-                y: (e.clientY - rect.top) / rect.height,
-              })
-            }}
-          />
-
-          {!pos && (
-            <div style={styles.tapHint}>
-              画像をタップして位置を指定
-            </div>
-          )}
-
-          {pos && (
-            <div
-              style={{
-                ...styles.marker,
-                left: `${pos.x * 100}%`,
-                top: `${pos.y * 100}%`,
+                setPos({
+                  x: (e.clientX - rect.left) / rect.width,
+                  y: (e.clientY - rect.top) / rect.height,
+                })
               }}
-            >
-              {iconMap[type]}
-            </div>
-          )}
+            />
+
+            {!pos && (
+              <div style={styles.tapHint}>
+                画像をタップして位置を指定
+              </div>
+            )}
+
+            {pos && (
+              <div
+                style={{
+                  ...styles.marker,
+                  left: `${pos.x * 100}%`,
+                  top: `${pos.y * 100}%`,
+                }}
+              >
+                {iconMap[type]}
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Controls Area */}
         <div style={styles.controls}>
-          {/* Type Selector */}
           <div style={styles.typeRow}>
             {(['star', 'exclamation', 'question'] as const).map((t) => (
               <TypeButton
@@ -157,7 +158,6 @@ export default function ReactionEditorModal({
             ))}
           </div>
 
-          {/* Input Area */}
           <div style={styles.inputWrapper}>
             <input
               placeholder="一言コメントを添える..."
@@ -266,19 +266,20 @@ const styles: { [key: string]: React.CSSProperties } = {
   },
   canvas: {
     flex: 1,
-    position: 'relative',
-    overflow: 'hidden',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    touchAction: 'none',
-    WebkitTapHighlightColor: 'transparent',
+  },
+  imageWrapper: {
+    position: 'relative',
+    maxWidth: '100%',
+    maxHeight: '100%',
   },
   image: {
     maxWidth: '100%',
     maxHeight: '100%',
     objectFit: 'contain',
-    pointerEvents: 'auto',
+    display: 'block',
   },
   tapHint: {
     position: 'absolute',
@@ -335,6 +336,5 @@ const styles: { [key: string]: React.CSSProperties } = {
     color: '#fff',
     fontSize: '16px',
     outline: 'none',
-    transition: 'border-color 0.2s',
   },
 }
