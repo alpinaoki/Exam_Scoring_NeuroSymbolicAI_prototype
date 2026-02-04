@@ -274,7 +274,7 @@ export async function updateProblemLabel(
   label: string
 ) {
   const { error } = await supabase
-    .from('problems')
+    .from('posts')
     .update({ label })
     .eq('id', problemId)
 
