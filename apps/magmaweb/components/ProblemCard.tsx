@@ -48,7 +48,7 @@ export default function ProblemCard({
 
   const timeLabel = formatDateTime(createdAt)
 
-  /** 既存タグ：押した瞬間に保存 */
+  /** 既存タグ */
   const toggleTag = async (tag: string) => {
     const nextTags = tags.includes(tag)
       ? tags.filter((t) => t !== tag)
@@ -59,7 +59,7 @@ export default function ProblemCard({
     router.refresh()
   }
 
-  /** 手書きタグ追加 */
+  /** 手書きタグ */
   const addNewTag = async () => {
     const t = newTag.trim()
     if (!t || tags.includes(t)) return
@@ -116,7 +116,7 @@ export default function ProblemCard({
         />
       )}
 
-      {/* 表示用タグ */}
+      {/* 表示タグ */}
       <div style={styles.labelRow}>
         {tags.map((t) => (
           <span
@@ -144,14 +144,21 @@ export default function ProblemCard({
         )}
       </div>
 
-      {/* タグ選択ポップオーバー */}
+      {/* タグモーダル */}
       {tagOpen && isMine && (
         <div style={styles.tagPopover} onClick={(e) => e.stopPropagation()}>
-          {renderTagGroup('科目', COURSE_TAGS)}
-          {renderTagGroup('単元', UNIT_TAGS)}
-          {renderTagGroup('その他', OTHER_TAGS)}
+          {/* 上部バー */}
+          <div style={styles.popoverHeader}>
+            <span style={styles.popoverTitle}>タグを編集</span>
+            <button
+              style={styles.closeButton}
+              onClick={() => setTagOpen(false)}
+            >
+              ✕
+            </button>
+          </div>
 
-          {/* 手書き追加 */}
+          {/* 新規タグ（最上部） */}
           <div style={styles.newTagRow}>
             <input
               value={newTag}
@@ -160,12 +167,14 @@ export default function ProblemCard({
               placeholder="新しいタグを入力"
               style={styles.input}
             />
-            <button onClick={addNewTag}>追加</button>
+            <button style={styles.addButton} onClick={addNewTag}>
+              追加
+            </button>
           </div>
 
-          <div style={styles.actions}>
-            <button onClick={() => setTagOpen(false)}>閉じる</button>
-          </div>
+          {renderTagGroup('科目', COURSE_TAGS)}
+          {renderTagGroup('単元', UNIT_TAGS)}
+          {renderTagGroup('その他', OTHER_TAGS)}
         </div>
       )}
 
@@ -210,6 +219,7 @@ const styles: { [key: string]: CSSProperties } = {
     border: '1px solid #eee',
     cursor: 'pointer',
   },
+
   labelRow: {
     display: 'flex',
     gap: 8,
@@ -233,19 +243,60 @@ const styles: { [key: string]: CSSProperties } = {
     borderRadius: 999,
     cursor: 'pointer',
   },
+
   tagPopover: {
     position: 'absolute',
     top: '100%',
     left: 0,
     marginTop: 6,
     padding: 12,
-    width: 300,
+    width: 320,
     background: '#fff',
     border: '1px solid #ddd',
-    borderRadius: 10,
-    boxShadow: '0 4px 16px rgba(0,0,0,0.1)',
+    borderRadius: 12,
+    boxShadow: '0 4px 16px rgba(0,0,0,0.12)',
     zIndex: 10,
   },
+
+  popoverHeader: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  popoverTitle: {
+    fontSize: 14,
+    fontWeight: 700,
+  },
+  closeButton: {
+    fontSize: 16,
+    background: 'none',
+    border: 'none',
+    cursor: 'pointer',
+  },
+
+  newTagRow: {
+    display: 'flex',
+    gap: 6,
+    marginBottom: 12,
+  },
+  input: {
+    flex: 1,
+    fontSize: 16,      // ← ズーム防止
+    padding: '8px 10px',
+    borderRadius: 8,
+    border: '1px solid #ccc',
+  },
+  addButton: {
+    fontSize: 16,      // ← ズーム防止
+    padding: '8px 12px',
+    borderRadius: 8,
+    border: 'none',
+    background: '#4D96FF',
+    color: '#fff',
+    cursor: 'pointer',
+  },
+
   group: {
     marginBottom: 12,
   },
@@ -271,20 +322,5 @@ const styles: { [key: string]: CSSProperties } = {
     background: 'rgba(77,150,255,0.18)',
     color: '#4D96FF',
     fontWeight: 700,
-  },
-  newTagRow: {
-    display: 'flex',
-    gap: 6,
-    marginTop: 8,
-  },
-  input: {
-    flex: 1,
-    fontSize: 12,
-    padding: '4px 8px',
-  },
-  actions: {
-    display: 'flex',
-    justifyContent: 'flex-end',
-    marginTop: 8,
   },
 }
