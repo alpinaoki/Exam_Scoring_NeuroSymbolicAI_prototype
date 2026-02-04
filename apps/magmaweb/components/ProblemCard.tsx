@@ -34,7 +34,6 @@ export default function ProblemCard({
   const [answerCount, setAnswerCount] = useState(0)
   const [tagOpen, setTagOpen] = useState(false)
 
-  // 現在のタグ配列
   const [tags, setTags] = useState<string[]>(
     label
       ?.split(',')
@@ -48,17 +47,14 @@ export default function ProblemCard({
 
   const timeLabel = formatDateTime(createdAt)
 
-  const toggleTag = (tag: string) => {
-    setTags((prev) =>
-      prev.includes(tag)
-        ? prev.filter((t) => t !== tag)
-        : [...prev, tag]
-    )
-  }
+  /** タグを押した瞬間に保存 */
+  const toggleTag = async (tag: string) => {
+    const nextTags = tags.includes(tag)
+      ? tags.filter((t) => t !== tag)
+      : [...tags, tag]
 
-  const saveTags = async () => {
-    await updateProblemLabel(problemId, tags.join(', '))
-    setTagOpen(false)
+    setTags(nextTags)
+    await updateProblemLabel(problemId, nextTags.join(', '))
     router.refresh()
   }
 
@@ -141,11 +137,6 @@ export default function ProblemCard({
           {renderTagGroup('科目', COURSE_TAGS)}
           {renderTagGroup('単元', UNIT_TAGS)}
           {renderTagGroup('その他', OTHER_TAGS)}
-
-          <div style={styles.actions}>
-            <button onClick={saveTags}>保存</button>
-            <button onClick={() => setTagOpen(false)}>閉じる</button>
-          </div>
         </div>
       )}
 
@@ -253,11 +244,5 @@ const styles: { [key: string]: CSSProperties } = {
     background: 'rgba(77,150,255,0.18)',
     color: '#4D96FF',
     fontWeight: 700,
-  },
-  actions: {
-    display: 'flex',
-    gap: 8,
-    justifyContent: 'flex-end',
-    marginTop: 8,
   },
 }
