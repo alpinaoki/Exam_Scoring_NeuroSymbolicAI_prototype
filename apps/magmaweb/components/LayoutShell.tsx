@@ -104,9 +104,12 @@ export default function LayoutShell({ children }: Props) {
             const imageUrl = await uploadImageToCloudinary(editedFile)
             await createPost({ imageUrl })
 
-            setUploading(false)
-            setFile(null)
-            router.push('/feed')
+setUploading(false)
+setFile(null)
+
+// push せず refresh だけ
+router.refresh()
+
           }}
         />
       )}
