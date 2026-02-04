@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { Star, AlertCircle, HelpCircle, X, Send } from 'lucide-react'
+import { Star, AlertTriangle, HelpCircle, X, Send } from 'lucide-react'
 import { createReaction } from '../lib/reactions'
 
 type ReactionType = 'star' | 'exclamation' | 'question'
@@ -90,33 +90,21 @@ export default function ReactionEditorModal({
         </div>
 
         {/* Image Canvas */}
-        <div
-          style={styles.canvas}
-          onClick={(e) => {
-            if (!imgRef.current) return
-            const rect = imgRef.current.getBoundingClientRect()
-
-            // 画像外クリックは無視
-            if (
-              e.clientX < rect.left ||
-              e.clientX > rect.right ||
-              e.clientY < rect.top ||
-              e.clientY > rect.bottom
-            ) {
-              return
-            }
-
-            setPos({
-              x: (e.clientX - rect.left) / rect.width,
-              y: (e.clientY - rect.top) / rect.height,
-            })
-          }}
-        >
+        <div style={styles.canvas}>
           <img
             ref={imgRef}
             src={imageUrl}
             style={styles.image}
             alt="Target"
+            onClick={(e) => {
+              if (!imgRef.current) return
+              const rect = imgRef.current.getBoundingClientRect()
+
+              setPos({
+                x: (e.clientX - rect.left) / rect.width,
+                y: (e.clientY - rect.top) / rect.height,
+              })
+            }}
           />
 
           {!pos && (
@@ -153,7 +141,7 @@ export default function ReactionEditorModal({
                   <Star size={20} fill={type === t ? '#FFD700' : 'transparent'} />
                 )}
                 {t === 'exclamation' && (
-                  <AlertCircle
+                  <AlertTriangle
                     size={20}
                     fill={type === t ? '#FF6B6B' : 'transparent'}
                   />
@@ -220,7 +208,7 @@ function TypeButton({
 const iconMap = {
   star: <Star size={28} fill="#FFD700" stroke="#000" strokeWidth={1.5} />,
   exclamation: (
-    <AlertCircle size={28} fill="#FF6B6B" stroke="#000" strokeWidth={1.5} />
+    <AlertTriangle size={28} fill="#FF6B6B" stroke="#000" strokeWidth={1.5} />
   ),
   question: (
     <HelpCircle size={28} fill="#4D96FF" stroke="#000" strokeWidth={1.5} />
@@ -290,7 +278,7 @@ const styles: { [key: string]: React.CSSProperties } = {
     maxWidth: '100%',
     maxHeight: '100%',
     objectFit: 'contain',
-    pointerEvents: 'none',
+    pointerEvents: 'auto',
   },
   tapHint: {
     position: 'absolute',
@@ -305,7 +293,6 @@ const styles: { [key: string]: React.CSSProperties } = {
     position: 'absolute',
     transform: 'translate(-50%, -50%)',
     zIndex: 10,
-    filter: 'drop-shadow(0 0 8px rgba(0,0,0,0.5))',
   },
   controls: {
     padding: '20px 16px 40px',
