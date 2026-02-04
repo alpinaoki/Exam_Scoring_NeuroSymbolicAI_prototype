@@ -200,19 +200,27 @@ const styles: { [key: string]: CSSProperties } = {
 
   /* ★ 追加：トグルボタン */
   toggleButton: {
-    position: 'absolute',
-    top: 8,
-    right: 8,
-    padding: '6px 10px',
-    fontSize: 11,
-    borderRadius: 999,
-    border: '1px solid rgba(255,255,255,0.4)',
-    background: 'rgba(0,0,0,0.45)',
-    color: '#fff',
-    cursor: 'pointer',
-    backdropFilter: 'blur(4px)',
-    zIndex: 20,
-  },
+  position: 'absolute',
+  top: 8,
+  right: 8,
+  padding: '6px 10px',
+  fontSize: 11,
+  borderRadius: 999,
+  border: '1px solid rgba(255,255,255,0.35)',
+
+  /* ★ ここから修正 */
+  background: 'rgba(0,0,0,0.25)',     // かなり薄く
+  backdropFilter: 'blur(8px)',        // 文字可読性の肝
+  WebkitBackdropFilter: 'blur(8px)',  // Safari 対応
+  /* ★ ここまで */
+
+  color: '#fff',
+  fontWeight: 600,
+  textShadow: '0 1px 2px rgba(0,0,0,0.6)',
+
+  cursor: 'pointer',
+  zIndex: 20,
+}
 
   bubble: {
     position: 'absolute',
