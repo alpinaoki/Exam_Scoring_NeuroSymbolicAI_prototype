@@ -7,6 +7,11 @@ import ProblemActionBar from './ProblemActionBar'
 import { getAnswerCount, updateProblemLabel } from '../lib/posts'
 import { formatDateTime } from '../lib/time'
 import UserBadge from './UserBadge'
+import {
+  COURSE_TAGS,
+  UNIT_TAGS,
+  OTHER_TAGS,
+} from '../lib/mathTags'
 
 type Props = {
   image: string | null
@@ -14,7 +19,7 @@ type Props = {
   username: string
   createdAt: string
   label?: string | null
-  isMine?: boolean // ← 自分の投稿かどうか
+  isMine?: boolean
 }
 
 export default function ProblemCard({
@@ -27,9 +32,15 @@ export default function ProblemCard({
 }: Props) {
   const router = useRouter()
   const [answerCount, setAnswerCount] = useState(0)
-
   const [tagOpen, setTagOpen] = useState(false)
-  const [draftLabel, setDraftLabel] = useState(label ?? '')
+
+  // 現在のタグ配列
+  const [tags, setTags] = useState<string[]>(
+    label
+      ?.split(',')
+      .map((l) => l.trim())
+      .filter(Boolean) ?? []
+  )
 
   useEffect(() => {
     getAnswerCount(problemId).then(setAnswerCount)
@@ -37,28 +48,50 @@ export default function ProblemCard({
 
   const timeLabel = formatDateTime(createdAt)
 
-  /** 投稿者プロフィールへ */
-  const goProfile = () => {
-    router.push(`/profiles/${username}`)
+  const toggleTag = (tag: string) => {
+    setTags((prev) =>
+      prev.includes(tag)
+        ? prev.filter((t) => t !== tag)
+        : [...prev, tag]
+    )
   }
 
-  // label を配列に分解
-  const labels =
-    label
-      ?.split(',')
-      .map((l) => l.trim())
-      .filter(Boolean) ?? []
-
-  const saveLabel = async () => {
-    await updateProblemLabel(problemId, draftLabel)
+  const saveTags = async () => {
+    await updateProblemLabel(problemId, tags.join(', '))
     setTagOpen(false)
     router.refresh()
   }
 
+  const renderTagGroup = (title: string, list: readonly string[]) => (
+    <div style={styles.group}>
+      <div style={styles.groupTitle}>{title}</div>
+      <div style={styles.tagGrid}>
+        {list.map((t) => {
+          const active = tags.includes(t)
+          return (
+            <span
+              key={t}
+              style={{
+                ...styles.tagOption,
+                ...(active ? styles.tagActive : {}),
+              }}
+              onClick={() => toggleTag(t)}
+            >
+              {t}
+            </span>
+          )
+        })}
+      </div>
+    </div>
+  )
+
   return (
     <div style={styles.card}>
       <div style={styles.header}>
-        <div style={styles.user} onClick={goProfile}>
+        <div
+          style={styles.user}
+          onClick={() => router.push(`/profiles/${username}`)}
+        >
           <UserBadge username={username} />
           <span>@{username}</span>
         </div>
@@ -74,17 +107,18 @@ export default function ProblemCard({
         />
       )}
 
+      {/* 表示用タグ */}
       <div style={styles.labelRow}>
-        {labels.map((l) => (
+        {tags.map((t) => (
           <span
-            key={l}
+            key={t}
             style={styles.label}
             onClick={(e) => {
               e.stopPropagation()
-              router.push(`/search/${encodeURIComponent(l)}`)
+              router.push(`/search/${encodeURIComponent(t)}`)
             }}
           >
-            #{l}
+            #{t}
           </span>
         ))}
 
@@ -93,29 +127,23 @@ export default function ProblemCard({
             style={styles.addLabel}
             onClick={(e) => {
               e.stopPropagation()
-              setDraftLabel(label ?? '')
               setTagOpen(true)
             }}
           >
-            ＋タグ
+            ＋タグを追加
           </span>
         )}
       </div>
 
+      {/* タグ選択ポップオーバー */}
       {tagOpen && isMine && (
         <div style={styles.tagPopover} onClick={(e) => e.stopPropagation()}>
-          <input
-            autoFocus
-            value={draftLabel}
-            onChange={(e) => setDraftLabel(e.target.value)}
-            placeholder="例: 二次関数, 数IA"
-            style={styles.tagInput}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') saveLabel()
-            }}
-          />
+          {renderTagGroup('科目', COURSE_TAGS)}
+          {renderTagGroup('単元', UNIT_TAGS)}
+          {renderTagGroup('その他', OTHER_TAGS)}
+
           <div style={styles.actions}>
-            <button onClick={saveLabel}>保存</button>
+            <button onClick={saveTags}>保存</button>
             <button onClick={() => setTagOpen(false)}>閉じる</button>
           </div>
         </div>
@@ -135,7 +163,7 @@ const styles: { [key: string]: CSSProperties } = {
     display: 'flex',
     flexDirection: 'column',
     gap: 12,
-    position: 'relative', // ← popover 用
+    position: 'relative',
   },
   header: {
     display: 'flex',
@@ -162,6 +190,7 @@ const styles: { [key: string]: CSSProperties } = {
     border: '1px solid #eee',
     cursor: 'pointer',
   },
+
   labelRow: {
     display: 'flex',
     gap: 8,
@@ -171,7 +200,7 @@ const styles: { [key: string]: CSSProperties } = {
     fontSize: 12,
     fontWeight: 600,
     color: '#4D96FF',
-    background: 'rgba(77, 150, 255, 0.12)',
+    background: 'rgba(77,150,255,0.12)',
     padding: '4px 10px',
     borderRadius: 999,
     cursor: 'pointer',
@@ -185,26 +214,50 @@ const styles: { [key: string]: CSSProperties } = {
     borderRadius: 999,
     cursor: 'pointer',
   },
+
   tagPopover: {
     position: 'absolute',
     top: '100%',
     left: 0,
     marginTop: 6,
     padding: 12,
+    width: 300,
     background: '#fff',
     border: '1px solid #ddd',
-    borderRadius: 8,
+    borderRadius: 10,
     boxShadow: '0 4px 16px rgba(0,0,0,0.1)',
     zIndex: 10,
   },
-  tagInput: {
-    width: 220,
-    fontSize: 13,
-    padding: 6,
+  group: {
+    marginBottom: 12,
+  },
+  groupTitle: {
+    fontSize: 12,
+    fontWeight: 700,
+    color: '#666',
+    marginBottom: 6,
+  },
+  tagGrid: {
+    display: 'flex',
+    flexWrap: 'wrap',
+    gap: 6,
+  },
+  tagOption: {
+    fontSize: 12,
+    padding: '4px 10px',
+    borderRadius: 999,
+    background: '#f2f2f2',
+    cursor: 'pointer',
+  },
+  tagActive: {
+    background: 'rgba(77,150,255,0.18)',
+    color: '#4D96FF',
+    fontWeight: 700,
   },
   actions: {
     display: 'flex',
     gap: 8,
+    justifyContent: 'flex-end',
     marginTop: 8,
   },
 }
