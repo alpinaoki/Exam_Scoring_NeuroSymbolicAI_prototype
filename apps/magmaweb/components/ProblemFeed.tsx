@@ -12,6 +12,7 @@ type Post = {
   image_url: string | null
   created_at: string
   label: string | null
+  user_id: string
   profiles: {
     handle: string
   } | null
@@ -20,14 +21,23 @@ type Post = {
 export default function ProblemFeed() {
   const [posts, setPosts] = useState<Post[]>([])
   const [visible, setVisible] = useState(PAGE_SIZE)
+  const [myUserId, setMyUserId] = useState<string | null>(null)
   const loaderRef = useRef<HTMLDivElement | null>(null)
 
-  useEffect(() => {
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-    )
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  )
 
+  /** 自分の user_id を取得 */
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => {
+      setMyUserId(data.user?.id ?? null)
+    })
+  }, [])
+
+  /** 投稿一覧取得 */
+  useEffect(() => {
     supabase
       .from('posts')
       .select(`
@@ -35,6 +45,7 @@ export default function ProblemFeed() {
         image_url,
         created_at,
         label,
+        user_id,
         profiles:profiles!posts_user_id_fkey (
           handle
         )
@@ -51,6 +62,7 @@ export default function ProblemFeed() {
       })
   }, [])
 
+  /** 無限スクロール */
   useEffect(() => {
     const observer = new IntersectionObserver(
       ([entry]) => {
@@ -84,6 +96,7 @@ export default function ProblemFeed() {
             username={p.profiles?.handle ?? 'unknown'}
             createdAt={p.created_at}
             label={p.label}
+            isMine={myUserId === p.user_id}
           />
         ))}
 
