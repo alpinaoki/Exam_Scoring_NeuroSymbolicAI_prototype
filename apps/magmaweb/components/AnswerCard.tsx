@@ -220,7 +220,7 @@ const styles: { [key: string]: CSSProperties } = {
 
   cursor: 'pointer',
   zIndex: 20,
-}
+},
 
   bubble: {
     position: 'absolute',
