@@ -109,14 +109,14 @@ export default function MePage() {
           style={activeTab === 'post' ? styles.tabActive : styles.tab}
           onClick={() => setActiveTab('post')}
         >
-          投稿
+          投稿した問題
         </span>
 
         <span
           style={activeTab === 'answer' ? styles.tabActive : styles.tab}
           onClick={() => setActiveTab('answer')}
         >
-          返信
+          答案
         </span>
 
         <span
