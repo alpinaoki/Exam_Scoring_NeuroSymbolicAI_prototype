@@ -124,81 +124,90 @@ export default function ImageEditorModal({
 /* -------- 投稿処理 (明るさ・コントラストを確実にピクセルへ反映) -------- */
 
 async function handlePost() {
-    if (!crop || !imgRef.current) return
+  if (!crop || !imgRef.current) return
 
-    const originalImg = imgRef.current
-    
-    // 1. 加工用の新しい画像オブジェクトを作成（CORS解決のため）
-    const processImg = new Image()
-    processImg.crossOrigin = "anonymous" // これが最重要
-    processImg.src = originalImg.src
+  const originalImg = imgRef.current
 
-    // 画像が読み込まれるのを待つ
-    await new Promise((resolve, reject) => {
-      processImg.onload = resolve
-      processImg.onerror = reject
-    })
-
-    // 2. フィルタを適用して「加工済みデータ」を作るための一時Canvas
-    const tempCanvas = document.createElement('canvas')
-    const tempCtx = tempCanvas.getContext('2d')!
-    tempCanvas.width = processImg.naturalWidth
-    tempCanvas.height = processImg.naturalHeight
-    
-    // 💡 ここでフィルタをかける
-    tempCtx.filter = `brightness(${brightness}) contrast(${contrast})`
-    tempCtx.drawImage(processImg, 0, 0)
-
-    // 3. フィルタ適用済みの「新しい画像」として取り出す
-    const filteredImg = new Image()
-    filteredImg.src = tempCanvas.toDataURL('image/jpeg', 1.0)
-    await new Promise((resolve) => { filteredImg.onload = resolve })
-
-    // 4. ここからトリミングと回転の処理（filteredImg を使う）
-    const MAX_SIZE = 1200
-    let scale = originalImg.naturalWidth / originalImg.clientWidth
-    let targetW = crop.w * scale
-    let targetH = crop.h * scale
-
-    if (targetW > MAX_SIZE || targetH > MAX_SIZE) {
-      const ratio = MAX_SIZE / Math.max(targetW, targetH)
-      targetW *= ratio
-      targetH *= ratio
-      scale *= ratio
-    }
-
-    const canvas = document.createElement('canvas')
-    canvas.width = targetW
-    canvas.height = targetH
-    const ctx = canvas.getContext('2d')!
-
-    ctx.translate(canvas.width / 2, canvas.height / 2)
-    ctx.rotate((rotation * Math.PI) / 180)
-
-    const imgCenterX = originalImg.offsetLeft + originalImg.clientWidth / 2
-    const cropCenterX = crop.x + crop.w / 2
-    const imgCenterY = originalImg.offsetTop + originalImg.clientHeight / 2
-    const cropCenterY = crop.y + crop.h / 2
-
-    const dx = (imgCenterX - cropCenterX) * scale
-    const dy = (imgCenterY - cropCenterY) * scale
-
-    // すでに明るさが変わった filteredImg を描画する
-    ctx.drawImage(
-      filteredImg,
-      dx - (originalImg.naturalWidth * (scale / (originalImg.naturalWidth / originalImg.clientWidth))) / 2,
-      dy - (originalImg.naturalHeight * (scale / (originalImg.naturalWidth / originalImg.clientWidth))) / 2,
-      originalImg.naturalWidth * (scale / (originalImg.naturalWidth / originalImg.clientWidth)),
-      originalImg.naturalHeight * (scale / (originalImg.naturalWidth / originalImg.clientWidth))
-    )
-
-    const blob = await new Promise<Blob>((resolve) =>
-      canvas.toBlob((b) => resolve(b!), 'image/jpeg', 0.8)
-    )
-
-    onPost(new File([blob], file.name.replace(/\.[^/.]+$/, "") + ".jpg", { type: 'image/jpeg' }))
-  }
+  // --- 1. 解像度の自動調整 (Cloudinary対策) ---
+  const MAX_SIZE = 1200 // 長辺を最大1200pxに制限
+  let scale = originalImg.naturalWidth / originalImg.clientWidth
   
+  let targetW = crop.w * scale
+  let targetH = crop.h * scale
+
+  // 切り抜き後のサイズが大きすぎる場合はリサイズ
+  if (targetW > MAX_SIZE || targetH > MAX_SIZE) {
+    const resizeRatio = MAX_SIZE / Math.max(targetW, targetH)
+    targetW *= resizeRatio
+    targetH *= resizeRatio
+    scale *= resizeRatio // 全体の計算用スケールも更新
+  }
+
+  const canvas = document.createElement('canvas')
+  canvas.width = targetW
+  canvas.height = targetH
+  const ctx = canvas.getContext('2d', { willReadFrequently: true })!
+
+  // --- 2. 回転・トリミングの描画 ---
+  ctx.save()
+  ctx.translate(canvas.width / 2, canvas.height / 2)
+  ctx.rotate((rotation * Math.PI) / 180)
+
+  // 表示上の中心点とクロップの中心点から、描画位置(dx, dy)を算出
+  const imgCenterX = originalImg.offsetLeft + originalImg.clientWidth / 2
+  const imgCenterY = originalImg.offsetTop + originalImg.clientHeight / 2
+  const cropCenterX = crop.x + crop.w / 2
+  const cropCenterY = crop.y + crop.h / 2
+
+  const dx = (imgCenterX - cropCenterX) * scale
+  const dy = (imgCenterY - cropCenterY) * scale
+
+  // 描画サイズも現在のスケールに合わせる
+  const drawW = originalImg.naturalWidth * (scale / (originalImg.naturalWidth / originalImg.clientWidth))
+  const drawH = originalImg.naturalHeight * (scale / (originalImg.naturalWidth / originalImg.clientWidth))
+
+  ctx.drawImage(originalImg, dx - drawW / 2, dy - drawH / 2, drawW, drawH)
+  ctx.restore()
+
+  // --- 3. 【最重要】ピクセル操作による色の反映 ---
+  // これでブラウザのバグを回避し、確実に明るさ・コントラストを適用します
+  try {
+    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height)
+    const data = imageData.data
+    
+    // コントラスト計算用の係数
+    const intercept = 128 * (1 - contrast)
+
+    for (let i = 0; i < data.length; i += 4) {
+      for (let j = 0; j < 3; j++) { // R, G, B
+        let v = data[i + j]
+        // 明るさ (0.5 - 1.5倍)
+        v = v * brightness
+        // コントラスト
+        v = v * contrast + intercept
+        // 255の範囲にクランプ
+        data[i + j] = Math.max(0, Math.min(255, v))
+      }
+    }
+    ctx.putImageData(imageData, 0, 0)
+  } catch (e) {
+    console.error("ImageDataの取得に失敗しました。CORSの設定を確認してください。", e)
+    // 失敗しても、最低限リサイズ済みの画像は投稿されるように fallback
+  }
+
+  // --- 4. 圧縮設定 (JPEG 0.8) ---
+  const blob = await new Promise<Blob>((resolve) =>
+    canvas.toBlob((b) => resolve(b!), 'image/jpeg', 0.8) // 0.8が容量と画質のベストバランス
+  )
+
+  // ファイル名を.jpgに統一して送信
+  const optimizedFile = new File([blob], file.name.replace(/\.[^/.]+$/, "") + ".jpg", { 
+    type: 'image/jpeg' 
+  })
+
+  onPost(optimizedFile)
+}
+
   return (
     <div style={styles.overlay} onClick={onCancel}>
       <style>{`
