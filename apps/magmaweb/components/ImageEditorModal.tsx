@@ -123,59 +123,78 @@ export default function ImageEditorModal({
 
 /* -------- 投稿処理 (明るさ・コントラストを確実にピクセルへ反映) -------- */
 
-  async function handlePost() {
+async function handlePost() {
     if (!crop || !imgRef.current) return
 
-    const img = imgRef.current
+    const originalImg = imgRef.current
     
-    // 💡 重要: Canvasで外部画像を描画・加工するには crossOrigin が必要
-    // これがないと filter が無視されたり Blob化に失敗したりします
-    img.crossOrigin = "anonymous" 
+    // 1. 加工用の新しいImageオブジェクトを作成（確実な読み込みのため）
+    const processImg = new Image()
+    processImg.crossOrigin = "anonymous" // CORS対策
+    processImg.src = originalImg.src
 
-    const scale = img.naturalWidth / img.clientWidth
+    // 読み込み完了を待つ
+    await new Promise((resolve, reject) => {
+      processImg.onload = resolve
+      processImg.onerror = reject
+    })
+
+    // 2. 容量調整：長辺を最大1200pxにする計算
+    const MAX_SIZE = 1200
+    let scale = processImg.naturalWidth / originalImg.clientWidth
+    let targetW = crop.w * scale
+    let targetH = crop.h * scale
+
+    if (targetW > MAX_SIZE || targetH > MAX_SIZE) {
+      const ratio = MAX_SIZE / Math.max(targetW, targetH)
+      targetW *= ratio
+      targetH *= ratio
+      scale *= ratio
+    }
+
     const canvas = document.createElement('canvas')
-    canvas.width = crop.w * scale
-    canvas.height = crop.h * scale
-    const ctx = canvas.getContext('2d')!
+    canvas.width = targetW
+    canvas.height = targetH
+    const ctx = canvas.getContext('2d', { willReadFrequently: true })!
 
-    // 描画の準備
+    // 3. 描画とフィルタ適用
     ctx.clearRect(0, 0, canvas.width, canvas.height)
     
-    // 💡 描画の「直前」にフィルタを適用する
+    // 💡 Canvas全体にフィルタを適用
     ctx.filter = `brightness(${brightness}) contrast(${contrast})`
 
-    // クロップ座標の計算
+    // 中心移動と回転
     ctx.translate(canvas.width / 2, canvas.height / 2)
     ctx.rotate((rotation * Math.PI) / 180)
 
-    const imgCenterX = img.offsetLeft + img.clientWidth / 2
-    const imgCenterY = img.offsetTop + img.clientHeight / 2
+    // クロップ座標の計算
+    const imgCenterX = originalImg.offsetLeft + originalImg.clientWidth / 2
     const cropCenterX = crop.x + crop.w / 2
+    const imgCenterY = originalImg.offsetTop + originalImg.clientHeight / 2
     const cropCenterY = crop.y + crop.h / 2
 
     const dx = (imgCenterX - cropCenterX) * scale
     const dy = (imgCenterY - cropCenterY) * scale
 
-    // ここで実際にフィルタがかかった状態で描画される
+    // 4. 描画（この瞬間にフィルタが適用されたピクセルデータになる）
     ctx.drawImage(
-      img,
-      dx - img.naturalWidth / 2,
-      dy - img.naturalHeight / 2,
-      img.naturalWidth,
-      img.naturalHeight
+      processImg,
+      dx - (processImg.naturalWidth * (scale / (processImg.naturalWidth / originalImg.clientWidth))) / 2,
+      dy - (processImg.naturalHeight * (scale / (processImg.naturalWidth / originalImg.clientWidth))) / 2,
+      processImg.naturalWidth * (scale / (processImg.naturalWidth / originalImg.clientWidth)),
+      processImg.naturalHeight * (scale / (processImg.naturalWidth / originalImg.clientWidth))
     )
 
-    // 💡 フィルタをリセット（念のため）
-    ctx.filter = 'none'
-
+    // 5. 書き出し（JPEGで圧縮率0.8がCloudinary的に最適）
     const blob = await new Promise<Blob>((resolve, reject) => {
       canvas.toBlob((b) => {
         if (b) resolve(b)
         else reject(new Error('Canvas to Blob failed'))
-      }, 'image/jpeg', 0.95) // 画質を少し上げて 0.95 に
+      }, 'image/jpeg', 0.8)
     })
 
-    onPost(new File([blob], file.name, { type: 'image/jpeg' }))
+    // 完了！
+    onPost(new File([blob], file.name.replace(/\.[^/.]+$/, "") + ".jpg", { type: 'image/jpeg' }))
   }
 
   return (
