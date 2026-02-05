@@ -1,84 +1,91 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useRef, useEffect } from 'react'
 import { COURSE_TAGS, OTHER_TAGS, UNIT_TAGS } from '../../lib/mathTags'
 
 export default function SearchPage() {
   const router = useRouter()
   const [query, setQuery] = useState('')
+  const [showSuggestions, setShowSuggestions] = useState(false)
+  const containerRef = useRef<HTMLDivElement>(null)
 
-  // 全タグを統合してサジェスト用リストを作成
   const allTags = useMemo(() => {
     return Array.from(new Set([...COURSE_TAGS, ...UNIT_TAGS, ...OTHER_TAGS]))
   }, [])
 
+  // 入力にマッチする候補を最大5件だけ抽出
+  const filteredSuggestions = useMemo(() => {
+    if (!query.trim()) return []
+    return allTags
+      .filter(tag => tag.toLowerCase().includes(query.toLowerCase()) && tag !== query)
+      .slice(0, 5) // Googleのように数件に絞る
+  }, [query, allTags])
+
   const goTag = (tag: string) => {
     if (!tag.trim()) return
+    setQuery(tag)
+    setShowSuggestions(false)
     router.push(`/search/${encodeURIComponent(tag.trim())}`)
   }
+
+  // 外側クリックでサジェストを閉じる
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setShowSuggestions(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
 
   return (
     <div style={{ padding: 16, maxWidth: 600, margin: '0 auto' }}>
       <h2 style={{ fontSize: 18, fontWeight: 700, marginBottom: 16 }}>検索</h2>
 
-      {/* ★ 自由入力検索 */}
-      <div style={styles.searchBox}>
-        <input
-          type="text"
-          list="tag-suggestions" // datalistと紐付け
-          placeholder="タグ・キーワードを入力"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') goTag(query)
-          }}
-          style={styles.input}
-        />
-        {/* サジェスト候補のリスト */}
-        <datalist id="tag-suggestions">
-          {allTags.map(tag => (
-            <option key={tag} value={tag} />
-          ))}
-        </datalist>
+      <div ref={containerRef} style={{ position: 'relative' }}>
+        <div style={styles.searchBox}>
+          <input
+            type="text"
+            placeholder="タグ・キーワードを入力"
+            value={query}
+            onChange={(e) => {
+              setQuery(e.target.value)
+              setShowSuggestions(true)
+            }}
+            onFocus={() => setShowSuggestions(true)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') goTag(query)
+            }}
+            style={styles.input}
+          />
+          <button style={styles.searchButton} onClick={() => goTag(query)}>
+            検索
+          </button>
+        </div>
 
-        <button
-          style={styles.searchButton}
-          onClick={() => goTag(query)}
-        >
-          検索
-        </button>
+        {/* Google検索風の予測サジェスト */}
+        {showSuggestions && filteredSuggestions.length > 0 && (
+          <div style={styles.suggestionList}>
+            {filteredSuggestions.map((tag) => (
+              <div
+                key={tag}
+                style={styles.suggestionItem}
+                onMouseDown={() => goTag(tag)} // onClickだとBlurが先に走るのでMouseDown
+              >
+                <span style={{ color: '#888', marginRight: 8 }}>🔍</span>
+                {tag}
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
-      {/* 課程タグ */}
-      <section style={{ marginTop: 24 }}>
-        <h3 style={styles.sectionTitle}>課程</h3>
+      <section style={{ marginTop: 32 }}>
+        <h3 style={styles.sectionTitle}>コース・単元</h3>
         <div style={styles.tagRow}>
-          {COURSE_TAGS.map((t) => (
-            <button key={t} style={styles.tag} onClick={() => goTag(t)}>
-              #{t}
-            </button>
-          ))}
-        </div>
-      </section>
-
-      {/* 単元タグ */}
-      <section style={{ marginTop: 28 }}>
-        <h3 style={styles.sectionTitle}>単元</h3>
-        <div style={styles.tagRow}>
-          {UNIT_TAGS.map((t) => (
-            <button key={t} style={styles.tag} onClick={() => goTag(t)}>
-              #{t}
-            </button>
-          ))}
-        </div>
-      </section>
-
-      {/* その他 */}
-      <section style={{ marginTop: 28 }}>
-        <h3 style={styles.sectionTitle}>その他</h3>
-        <div style={styles.tagRow}>
-          {OTHER_TAGS.map((t) => (
+          {[...COURSE_TAGS, ...UNIT_TAGS.slice(0, 8)].map((t) => (
             <button key={t} style={styles.tag} onClick={() => goTag(t)}>
               #{t}
             </button>
@@ -94,41 +101,51 @@ const styles: { [key: string]: React.CSSProperties } = {
     display: 'flex',
     gap: 8,
     position: 'relative',
+    zIndex: 10,
   },
   input: {
     flex: 1,
-    fontSize: 16,            // ← iOSの勝手なズームを防ぐ最小サイズ
-    padding: '10px 14px',
-    borderRadius: '10px',    // 少し角を丸くしてモダンに
-    border: '2px solid #eee', // 境界線を少し太く
+    fontSize: 16, // iOSズーム防止
+    padding: '12px 16px',
+    borderRadius: '12px',
+    border: '2px solid #4D96FF', // 検索を主役にするために少し強調
     outline: 'none',
-    backgroundColor: '#f8f9fa',
-    transition: 'border-color 0.2s',
+    backgroundColor: '#fff',
   },
   searchButton: {
     fontSize: 14,
-    padding: '0 20px',
-    borderRadius: '10px',
+    padding: '0 18px',
+    borderRadius: '12px',
     border: 'none',
     background: '#4D96FF',
     color: '#fff',
     fontWeight: 600,
+  },
+  suggestionList: {
+    position: 'absolute',
+    top: '100%',
+    left: 0,
+    right: 0,
+    backgroundColor: '#fff',
+    borderRadius: '0 0 12px 12px',
+    boxShadow: '0 8px 16px rgba(0,0,0,0.1)',
+    border: '1px solid #eee',
+    borderTop: 'none',
+    marginTop: -4, // 入力欄と繋がっているように見せる
+    zIndex: 5,
+    overflow: 'hidden',
+  },
+  suggestionItem: {
+    padding: '12px 16px',
+    fontSize: 15,
     cursor: 'pointer',
-    boxShadow: '0 2px 4px rgba(77, 150, 255, 0.2)', // 軽い影で浮かせる
-  },
-  sectionTitle: {
-    fontSize: 13,
-    fontWeight: 700,
-    marginBottom: 10,
-    color: '#888',           // 少し淡くしてタグを引き立てる
-    letterSpacing: '0.05em',
-    textTransform: 'uppercase',
-  },
-  tagRow: {
+    borderBottom: '1px solid #f9f9f9',
     display: 'flex',
-    flexWrap: 'wrap',
-    gap: 10,
+    alignItems: 'center',
+    transition: 'background 0.2s',
   },
+  sectionTitle: { fontSize: 13, fontWeight: 700, marginBottom: 12, color: '#aaa' },
+  tagRow: { display: 'flex', flexWrap: 'wrap', gap: 8 },
   tag: {
     fontSize: 13,
     fontWeight: 600,
@@ -136,8 +153,6 @@ const styles: { [key: string]: React.CSSProperties } = {
     background: '#fff',
     padding: '6px 14px',
     borderRadius: 999,
-    border: '1.5px solid rgba(77, 150, 255, 0.3)', // 塗りより枠線メインでスッキリ
-    cursor: 'pointer',
-    transition: 'all 0.2s',
+    border: '1px solid #4D96FF22',
   },
 }
