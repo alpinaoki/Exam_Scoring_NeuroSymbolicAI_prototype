@@ -2,6 +2,7 @@
 
 import { useRouter } from 'next/navigation'
 import { useState, useMemo, useRef, useEffect } from 'react'
+import { Search } from 'lucide-react' // Lucideをインポート
 import { COURSE_TAGS, OTHER_TAGS, UNIT_TAGS } from '../../lib/mathTags'
 
 export default function SearchPage() {
@@ -14,12 +15,11 @@ export default function SearchPage() {
     return Array.from(new Set([...COURSE_TAGS, ...UNIT_TAGS, ...OTHER_TAGS]))
   }, [])
 
-  // 入力にマッチする候補を最大5件だけ抽出
   const filteredSuggestions = useMemo(() => {
     if (!query.trim()) return []
     return allTags
       .filter(tag => tag.toLowerCase().includes(query.toLowerCase()) && tag !== query)
-      .slice(0, 5) // Googleのように数件に絞る
+      .slice(0, 6) // 最大6件
   }, [query, allTags])
 
   const goTag = (tag: string) => {
@@ -29,7 +29,6 @@ export default function SearchPage() {
     router.push(`/search/${encodeURIComponent(tag.trim())}`)
   }
 
-  // 外側クリックでサジェストを閉じる
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
@@ -41,48 +40,52 @@ export default function SearchPage() {
   }, [])
 
   return (
-    <div style={{ padding: 16, maxWidth: 600, margin: '0 auto' }}>
-      <h2 style={{ fontSize: 18, fontWeight: 700, marginBottom: 16 }}>検索</h2>
+    <div style={{ padding: '24px 16px', maxWidth: 600, margin: '0 auto' }}>
+      <h2 style={{ fontSize: 20, fontWeight: 800, marginBottom: 20, color: '#333' }}>検索</h2>
 
       <div ref={containerRef} style={{ position: 'relative' }}>
         <div style={styles.searchBox}>
-          <input
-            type="text"
-            placeholder="タグ・キーワードを入力"
-            value={query}
-            onChange={(e) => {
-              setQuery(e.target.value)
-              setShowSuggestions(true)
-            }}
-            onFocus={() => setShowSuggestions(true)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') goTag(query)
-            }}
-            style={styles.input}
-          />
+          <div style={styles.inputWrapper}>
+            <Search size={18} style={styles.searchIconLeft} color="#999" />
+            <input
+              type="text"
+              placeholder="タグ・キーワードを入力"
+              value={query}
+              onChange={(e) => {
+                setQuery(e.target.value)
+                setShowSuggestions(true)
+              }}
+              onFocus={() => setShowSuggestions(true)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') goTag(query)
+              }}
+              style={styles.input}
+            />
+          </div>
           <button style={styles.searchButton} onClick={() => goTag(query)}>
             検索
           </button>
         </div>
 
-        {/* Google検索風の予測サジェスト */}
+        {/* 予測変換サジェストUI */}
         {showSuggestions && filteredSuggestions.length > 0 && (
           <div style={styles.suggestionList}>
             {filteredSuggestions.map((tag) => (
               <div
                 key={tag}
                 style={styles.suggestionItem}
-                onMouseDown={() => goTag(tag)} // onClickだとBlurが先に走るのでMouseDown
+                onMouseDown={() => goTag(tag)}
               >
-                <span style={{ color: '#888', marginRight: 8 }}>🔍</span>
-                {tag}
+                <Search size={14} style={{ marginRight: 12 }} color="#bbb" />
+                <span style={{ color: '#444', fontWeight: 500 }}>{tag}</span>
               </div>
             ))}
           </div>
         )}
       </div>
 
-      <section style={{ marginTop: 32 }}>
+      {/* 以下、既存のタグセクション（デザイン微調整） */}
+      <section style={{ marginTop: 40 }}>
         <h3 style={styles.sectionTitle}>コース・単元</h3>
         <div style={styles.tagRow}>
           {[...COURSE_TAGS, ...UNIT_TAGS.slice(0, 8)].map((t) => (
@@ -99,27 +102,42 @@ export default function SearchPage() {
 const styles: { [key: string]: React.CSSProperties } = {
   searchBox: {
     display: 'flex',
-    gap: 8,
+    gap: 10,
     position: 'relative',
     zIndex: 10,
   },
-  input: {
+  inputWrapper: {
+    position: 'relative',
     flex: 1,
-    fontSize: 16, // iOSズーム防止
-    padding: '12px 16px',
-    borderRadius: '12px',
-    border: '2px solid #4D96FF', // 検索を主役にするために少し強調
+    display: 'flex',
+    alignItems: 'center',
+  },
+  searchIconLeft: {
+    position: 'absolute',
+    left: 14,
+    pointerEvents: 'none',
+  },
+  input: {
+    width: '100%',
+    fontSize: 16,
+    padding: '12px 16px 12px 42px', // 左側にアイコン分の余白
+    borderRadius: '14px',
+    border: '1px solid #e0e0e0',
     outline: 'none',
     backgroundColor: '#fff',
+    boxShadow: '0 2px 6px rgba(0,0,0,0.04)',
+    transition: 'all 0.2s ease',
   },
   searchButton: {
     fontSize: 14,
-    padding: '0 18px',
-    borderRadius: '12px',
+    padding: '0 22px',
+    borderRadius: '14px',
     border: 'none',
     background: '#4D96FF',
     color: '#fff',
-    fontWeight: 600,
+    fontWeight: 700,
+    cursor: 'pointer',
+    transition: 'opacity 0.2s',
   },
   suggestionList: {
     position: 'absolute',
@@ -127,32 +145,40 @@ const styles: { [key: string]: React.CSSProperties } = {
     left: 0,
     right: 0,
     backgroundColor: '#fff',
-    borderRadius: '0 0 12px 12px',
-    boxShadow: '0 8px 16px rgba(0,0,0,0.1)',
-    border: '1px solid #eee',
-    borderTop: 'none',
-    marginTop: -4, // 入力欄と繋がっているように見せる
-    zIndex: 5,
+    borderRadius: '14px',
+    boxShadow: '0 10px 25px rgba(0,0,0,0.1)',
+    border: '1px solid #f0f0f0',
+    marginTop: 8,
+    zIndex: 20,
     overflow: 'hidden',
+    padding: '4px 0',
   },
   suggestionItem: {
     padding: '12px 16px',
     fontSize: 15,
     cursor: 'pointer',
-    borderBottom: '1px solid #f9f9f9',
     display: 'flex',
     alignItems: 'center',
-    transition: 'background 0.2s',
+    transition: 'background 0.15s ease',
+    backgroundColor: 'transparent',
   },
-  sectionTitle: { fontSize: 13, fontWeight: 700, marginBottom: 12, color: '#aaa' },
+  sectionTitle: { 
+    fontSize: 12, 
+    fontWeight: 800, 
+    marginBottom: 12, 
+    color: '#aaa', 
+    textTransform: 'uppercase',
+    letterSpacing: '0.1em'
+  },
   tagRow: { display: 'flex', flexWrap: 'wrap', gap: 8 },
   tag: {
     fontSize: 13,
     fontWeight: 600,
     color: '#4D96FF',
-    background: '#fff',
-    padding: '6px 14px',
-    borderRadius: 999,
-    border: '1px solid #4D96FF22',
+    background: '#F0F7FF',
+    padding: '8px 16px',
+    borderRadius: '10px',
+    border: 'none',
+    cursor: 'pointer',
   },
 }

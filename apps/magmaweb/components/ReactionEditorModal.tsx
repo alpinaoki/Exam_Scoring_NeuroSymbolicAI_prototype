@@ -216,9 +216,9 @@ const iconMap = {
 }
 
 const typeLabels = {
-  star: 'いいね',
-  exclamation: '注目',
-  question: '疑問',
+  star: 'いいね！',
+  exclamation: '指摘',
+  question: '疑問・確認',
 }
 
 const styles: { [key: string]: React.CSSProperties } = {
