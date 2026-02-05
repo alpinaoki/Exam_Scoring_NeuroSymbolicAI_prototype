@@ -2,7 +2,7 @@
 
 import { useRouter } from 'next/navigation'
 import { useState, useMemo, useRef, useEffect } from 'react'
-import { Search } from 'lucide-react' // Lucideをインポート
+import { Search } from 'lucide-react'
 import { COURSE_TAGS, OTHER_TAGS, UNIT_TAGS } from '../../lib/mathTags'
 
 export default function SearchPage() {
@@ -11,16 +11,17 @@ export default function SearchPage() {
   const [showSuggestions, setShowSuggestions] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
 
-  const allTags = useMemo(() => {
+  // サジェスト計算用（表示はしないが検索候補として利用）
+  const allTagsForSearch = useMemo(() => {
     return Array.from(new Set([...COURSE_TAGS, ...UNIT_TAGS, ...OTHER_TAGS]))
   }, [])
 
   const filteredSuggestions = useMemo(() => {
     if (!query.trim()) return []
-    return allTags
+    return allTagsForSearch
       .filter(tag => tag.toLowerCase().includes(query.toLowerCase()) && tag !== query)
-      .slice(0, 6) // 最大6件
-  }, [query, allTags])
+      .slice(0, 6)
+  }, [query, allTagsForSearch])
 
   const goTag = (tag: string) => {
     if (!tag.trim()) return
@@ -67,7 +68,6 @@ export default function SearchPage() {
           </button>
         </div>
 
-        {/* 予測変換サジェストUI */}
         {showSuggestions && filteredSuggestions.length > 0 && (
           <div style={styles.suggestionList}>
             {filteredSuggestions.map((tag) => (
@@ -84,11 +84,35 @@ export default function SearchPage() {
         )}
       </div>
 
-      {/* 以下、既存のタグセクション（デザイン微調整） */}
-      <section style={{ marginTop: 40 }}>
-        <h3 style={styles.sectionTitle}>コース・単元</h3>
+      {/* 課程タグ：lib/mathTagsのまま */}
+      <section style={{ marginTop: 32 }}>
+        <h3 style={styles.sectionTitle}>課程</h3>
         <div style={styles.tagRow}>
-          {[...COURSE_TAGS, ...UNIT_TAGS.slice(0, 8)].map((t) => (
+          {COURSE_TAGS.map((t) => (
+            <button key={t} style={styles.tag} onClick={() => goTag(t)}>
+              #{t}
+            </button>
+          ))}
+        </div>
+      </section>
+
+      {/* 単元タグ：lib/mathTagsのまま */}
+      <section style={{ marginTop: 32 }}>
+        <h3 style={styles.sectionTitle}>単元</h3>
+        <div style={styles.tagRow}>
+          {UNIT_TAGS.map((t) => (
+            <button key={t} style={styles.tag} onClick={() => goTag(t)}>
+              #{t}
+            </button>
+          ))}
+        </div>
+      </section>
+
+      {/* その他：lib/mathTagsのまま */}
+      <section style={{ marginTop: 32 }}>
+        <h3 style={styles.sectionTitle}>その他</h3>
+        <div style={styles.tagRow}>
+          {OTHER_TAGS.map((t) => (
             <button key={t} style={styles.tag} onClick={() => goTag(t)}>
               #{t}
             </button>
@@ -120,13 +144,12 @@ const styles: { [key: string]: React.CSSProperties } = {
   input: {
     width: '100%',
     fontSize: 16,
-    padding: '12px 16px 12px 42px', // 左側にアイコン分の余白
+    padding: '12px 16px 12px 42px',
     borderRadius: '14px',
     border: '1px solid #e0e0e0',
     outline: 'none',
     backgroundColor: '#fff',
     boxShadow: '0 2px 6px rgba(0,0,0,0.04)',
-    transition: 'all 0.2s ease',
   },
   searchButton: {
     fontSize: 14,
@@ -137,7 +160,6 @@ const styles: { [key: string]: React.CSSProperties } = {
     color: '#fff',
     fontWeight: 700,
     cursor: 'pointer',
-    transition: 'opacity 0.2s',
   },
   suggestionList: {
     position: 'absolute',
@@ -159,15 +181,12 @@ const styles: { [key: string]: React.CSSProperties } = {
     cursor: 'pointer',
     display: 'flex',
     alignItems: 'center',
-    transition: 'background 0.15s ease',
-    backgroundColor: 'transparent',
   },
   sectionTitle: { 
     fontSize: 12, 
     fontWeight: 800, 
     marginBottom: 12, 
     color: '#aaa', 
-    textTransform: 'uppercase',
     letterSpacing: '0.1em'
   },
   tagRow: { display: 'flex', flexWrap: 'wrap', gap: 8 },
