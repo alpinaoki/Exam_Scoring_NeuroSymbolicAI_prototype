@@ -121,22 +121,32 @@ export default function ImageEditorModal({
 
   /* -------- 投稿処理 (回転・明るさ・コントラスト反映) -------- */
 
+/* -------- 投稿処理 (明るさ・コントラストを確実にピクセルへ反映) -------- */
+
   async function handlePost() {
-    if (!crop || !imgRef.current || !containerRef.current) return
+    if (!crop || !imgRef.current) return
 
     const img = imgRef.current
-    const scale = img.naturalWidth / img.clientWidth
+    
+    // 💡 重要: Canvasで外部画像を描画・加工するには crossOrigin が必要
+    // これがないと filter が無視されたり Blob化に失敗したりします
+    img.crossOrigin = "anonymous" 
 
+    const scale = img.naturalWidth / img.clientWidth
     const canvas = document.createElement('canvas')
     canvas.width = crop.w * scale
     canvas.height = crop.h * scale
     const ctx = canvas.getContext('2d')!
 
+    // 描画の準備
+    ctx.clearRect(0, 0, canvas.width, canvas.height)
+    
+    // 💡 描画の「直前」にフィルタを適用する
+    ctx.filter = `brightness(${brightness}) contrast(${contrast})`
+
+    // クロップ座標の計算
     ctx.translate(canvas.width / 2, canvas.height / 2)
     ctx.rotate((rotation * Math.PI) / 180)
-    
-    // 明るさとコントラストを同時に適用
-    ctx.filter = `brightness(${brightness}) contrast(${contrast})`
 
     const imgCenterX = img.offsetLeft + img.clientWidth / 2
     const imgCenterY = img.offsetTop + img.clientHeight / 2
@@ -146,6 +156,7 @@ export default function ImageEditorModal({
     const dx = (imgCenterX - cropCenterX) * scale
     const dy = (imgCenterY - cropCenterY) * scale
 
+    // ここで実際にフィルタがかかった状態で描画される
     ctx.drawImage(
       img,
       dx - img.naturalWidth / 2,
@@ -154,9 +165,15 @@ export default function ImageEditorModal({
       img.naturalHeight
     )
 
-    const blob = await new Promise<Blob>((resolve) =>
-      canvas.toBlob((b) => resolve(b!), 'image/jpeg', 0.9)
-    )
+    // 💡 フィルタをリセット（念のため）
+    ctx.filter = 'none'
+
+    const blob = await new Promise<Blob>((resolve, reject) => {
+      canvas.toBlob((b) => {
+        if (b) resolve(b)
+        else reject(new Error('Canvas to Blob failed'))
+      }, 'image/jpeg', 0.95) // 画質を少し上げて 0.95 に
+    })
 
     onPost(new File([blob], file.name, { type: 'image/jpeg' }))
   }
