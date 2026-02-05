@@ -128,28 +128,33 @@ async function handlePost() {
 
     const originalImg = imgRef.current
     
-    // 1. 加工用の一時的なCanvasを作成
-    const tempCanvas = document.createElement('canvas')
-    const tempCtx = tempCanvas.getContext('2d')!
-    
-    // 元の画像サイズでCanvasを作成
-    tempCanvas.width = originalImg.naturalWidth
-    tempCanvas.height = originalImg.naturalHeight
-    
-    // 💡 確実にフィルタを効かせるための手法
-    tempCtx.filter = `brightness(${brightness}) contrast(${contrast})`
-    tempCtx.drawImage(originalImg, 0, 0)
+    // 1. 加工用の新しい画像オブジェクトを作成（CORS解決のため）
+    const processImg = new Image()
+    processImg.crossOrigin = "anonymous" // これが最重要
+    processImg.src = originalImg.src
 
-    // 2. フィルタ適用済みの「新しい画像」を生成
-    const filteredImageUrl = tempCanvas.toDataURL('image/jpeg', 0.9)
-    const filteredImg = new Image()
-    filteredImg.src = filteredImageUrl
-    
-    await new Promise((resolve) => {
-      filteredImg.onload = resolve
+    // 画像が読み込まれるのを待つ
+    await new Promise((resolve, reject) => {
+      processImg.onload = resolve
+      processImg.onerror = reject
     })
 
-    // 3. ここからは「既に加工された画像」を切り抜くだけ
+    // 2. フィルタを適用して「加工済みデータ」を作るための一時Canvas
+    const tempCanvas = document.createElement('canvas')
+    const tempCtx = tempCanvas.getContext('2d')!
+    tempCanvas.width = processImg.naturalWidth
+    tempCanvas.height = processImg.naturalHeight
+    
+    // 💡 ここでフィルタをかける
+    tempCtx.filter = `brightness(${brightness}) contrast(${contrast})`
+    tempCtx.drawImage(processImg, 0, 0)
+
+    // 3. フィルタ適用済みの「新しい画像」として取り出す
+    const filteredImg = new Image()
+    filteredImg.src = tempCanvas.toDataURL('image/jpeg', 1.0)
+    await new Promise((resolve) => { filteredImg.onload = resolve })
+
+    // 4. ここからトリミングと回転の処理（filteredImg を使う）
     const MAX_SIZE = 1200
     let scale = originalImg.naturalWidth / originalImg.clientWidth
     let targetW = crop.w * scale
@@ -178,7 +183,7 @@ async function handlePost() {
     const dx = (imgCenterX - cropCenterX) * scale
     const dy = (imgCenterY - cropCenterY) * scale
 
-    // すでにフィルタ反映済みの filteredImg を使うので、ここでは filter 設定不要
+    // すでに明るさが変わった filteredImg を描画する
     ctx.drawImage(
       filteredImg,
       dx - (originalImg.naturalWidth * (scale / (originalImg.naturalWidth / originalImg.clientWidth))) / 2,
@@ -193,6 +198,7 @@ async function handlePost() {
 
     onPost(new File([blob], file.name.replace(/\.[^/.]+$/, "") + ".jpg", { type: 'image/jpeg' }))
   }
+  
   return (
     <div style={styles.overlay} onClick={onCancel}>
       <style>{`
