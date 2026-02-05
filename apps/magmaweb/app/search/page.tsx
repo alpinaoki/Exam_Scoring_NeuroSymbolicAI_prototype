@@ -1,13 +1,16 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
+import { useState } from 'react'
 import { COURSE_TAGS, OTHER_TAGS, UNIT_TAGS } from '../../lib/mathTags'
 
 export default function SearchPage() {
   const router = useRouter()
+  const [query, setQuery] = useState('')
 
   const goTag = (tag: string) => {
-    router.push(`/search/${encodeURIComponent(tag)}`)
+    if (!tag.trim()) return
+    router.push(`/search/${encodeURIComponent(tag.trim())}`)
   }
 
   return (
@@ -16,8 +19,28 @@ export default function SearchPage() {
         検索
       </h2>
 
+      {/* ★ 自由入力検索 */}
+      <div style={styles.searchBox}>
+        <input
+          type="text"
+          placeholder="タグ・キーワードを入力"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') goTag(query)
+          }}
+          style={styles.input}
+        />
+        <button
+          style={styles.searchButton}
+          onClick={() => goTag(query)}
+        >
+          検索
+        </button>
+      </div>
+
       {/* 課程タグ */}
-      <section style={{ marginTop: 16 }}>
+      <section style={{ marginTop: 20 }}>
         <h3 style={styles.sectionTitle}>課程</h3>
         <div style={styles.tagRow}>
           {COURSE_TAGS.map((t) => (
@@ -48,6 +71,7 @@ export default function SearchPage() {
         </div>
       </section>
 
+      {/* その他 */}
       <section style={{ marginTop: 24 }}>
         <h3 style={styles.sectionTitle}>その他</h3>
         <div style={styles.tagRow}>
@@ -62,12 +86,36 @@ export default function SearchPage() {
           ))}
         </div>
       </section>
-
     </div>
   )
 }
 
 const styles: { [key: string]: React.CSSProperties } = {
+  /* ★ 自由検索 */
+  searchBox: {
+    display: 'flex',
+    gap: 8,
+    marginTop: 12,
+  },
+  input: {
+    flex: 1,
+    fontSize: 14,          // ← 拡大されないサイズ
+    padding: '8px 12px',
+    borderRadius: 8,
+    border: '1px solid #ddd',
+    outline: 'none',
+  },
+  searchButton: {
+    fontSize: 14,          // ← input と揃える
+    padding: '8px 14px',
+    borderRadius: 8,
+    border: 'none',
+    background: '#4D96FF',
+    color: '#fff',
+    fontWeight: 600,
+    cursor: 'pointer',
+  },
+
   sectionTitle: {
     fontSize: 14,
     fontWeight: 700,
