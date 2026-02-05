@@ -21,7 +21,7 @@ export default function TermsPage() {
           marginBottom: 24,
           background: 'none',
           border: 'none',
-          color: '#666',
+          color: '#d6d6d6',
           cursor: 'pointer',
           fontSize: 14,
         }}
