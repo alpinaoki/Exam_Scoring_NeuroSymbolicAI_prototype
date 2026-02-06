@@ -153,6 +153,7 @@ export default function AnswerCard({
 
           {reactions.map((r) => {
             const messages = parseQuestion(r)
+            const isActive = activeReactionId === r.id
 
             return (
               <div
@@ -161,21 +162,19 @@ export default function AnswerCard({
                   ...styles.reaction,
                   left: `${r.x_float * 100}%`,
                   top: `${r.y_float * 100}%`,
+                  zIndex: isActive ? 10000 : 10,
                 }}
               >
-                {/* クリック判定はアイコンのみ */}
                 <div
                   onClick={(e) => {
                     e.stopPropagation()
-                    setActiveReactionId(
-                      activeReactionId === r.id ? null : r.id
-                    )
+                    setActiveReactionId(isActive ? null : r.id)
                   }}
                 >
                   {icon(r.type)}
                 </div>
 
-                {activeReactionId === r.id && (
+                {isActive && (
                   <div
                     ref={bubbleRef}
                     onClick={(e) => e.stopPropagation()}
@@ -220,8 +219,9 @@ export default function AnswerCard({
                         </div>
 
                         <div style={styles.replyBox}>
-                          <input
+                          <textarea
                             style={styles.replyInput}
+                            rows={1}
                             value={replyText}
                             onChange={(e) =>
                               setReplyText(e.target.value)
@@ -292,7 +292,6 @@ const styles: { [key: string]: CSSProperties } = {
   reaction: {
     position: 'absolute',
     transform: 'translate(-50%, -50%)',
-    zIndex: 10,
   },
   bubble: {
     position: 'absolute',
@@ -304,7 +303,7 @@ const styles: { [key: string]: CSSProperties } = {
     borderRadius: 12,
     fontSize: 12,
     minWidth: 180,
-    zIndex: 9999, // 最前面
+    zIndex: 20000,
   },
   bubbleHeader: {
     display: 'flex',
@@ -350,13 +349,18 @@ const styles: { [key: string]: CSSProperties } = {
   },
   replyInput: {
     flex: 1,
-    fontSize: 12,
-    padding: '4px 6px',
+    fontSize: 16, // 拡大防止
+    padding: '6px 8px',
     borderRadius: 6,
     border: 'none',
+    resize: 'none',
   },
   replyButton: {
-    padding: '4px 6px',
+    width: 32,
+    height: 32,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
     borderRadius: 6,
     border: 'none',
     cursor: 'pointer',
