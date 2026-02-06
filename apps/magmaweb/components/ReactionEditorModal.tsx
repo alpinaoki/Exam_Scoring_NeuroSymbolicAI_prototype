@@ -173,7 +173,7 @@ export default function ReactionEditorModal({
 
           <div style={styles.inputWrapper}>
             <input
-              placeholder="一言コメントを添える..."
+              placeholder="具体的に説明..."
               value={comment}
               onChange={(e) => setComment(e.target.value)}
               style={styles.input}
