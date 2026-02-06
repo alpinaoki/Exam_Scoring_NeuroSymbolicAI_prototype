@@ -79,32 +79,41 @@ export default function AnswerCard({
       <HelpCircle size={20} fill="#00BFFF" stroke="#000" strokeWidth={1.5} />
     )
   }
-
   const parseComment = (r: Reaction): ParsedComment | null => {
-    if (!r.comment) return null
+  if (!r.comment) return null
 
-    if (r.type === 'question') {
-      try {
-        const json = JSON.parse(r.comment)
-        if (
-          Array.isArray(json) &&
-          json.every(
-            (m) =>
-              typeof m.username === 'string' &&
-              typeof m.content === 'string'
-          )
-        ) {
-          return { kind: 'question', messages: json }
+  // ❓だけ JSON 会話
+  if (r.type === 'question') {
+    try {
+      const json = JSON.parse(r.comment)
+
+      if (
+        Array.isArray(json) &&
+        json.every(
+          (m) =>
+            typeof m.username === 'string' &&
+            typeof m.content === 'string'
+        )
+      ) {
+        return {
+          kind: 'question',
+          messages: json,
         }
-        return null
-      } catch {
-        return null
       }
-    }
 
-    return { kind: 'plain', text: r.comment }
+      // ❓で壊れたJSON → 表示しない
+      return null
+    } catch {
+      return null
+    }
   }
 
+  // ⭐️❗️は「必ず」プレーンテキスト
+  return {
+    kind: 'plain',
+    text: r.comment,
+  }
+}
   const sendReply = async (r: Reaction, messages: QuestionMessage[]) => {
     if (!replyText.trim()) return
 
