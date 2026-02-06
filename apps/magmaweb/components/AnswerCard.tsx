@@ -23,8 +23,9 @@ type QuestionMessage = {
   content: string
 }
 
-type ParsedComment =
-  | { kind: 'question'; messages: QuestionMessage[] }
+type ParsedQuestion = {
+  messages: QuestionMessage[]
+}
 
 type Props = {
   image: string | null
@@ -88,11 +89,8 @@ export default function AnswerCard({
     )
   }
 
-  // ❓専用パース
-  const parseComment = (r: Reaction): ParsedComment | null => {
-    if (r.type !== 'question') return null
-    if (!r.comment) return null
-
+  const parseQuestion = (r: Reaction): ParsedQuestion | null => {
+    if (r.type !== 'question' || !r.comment) return null
     try {
       const json = JSON.parse(r.comment)
       if (
@@ -103,7 +101,7 @@ export default function AnswerCard({
             typeof m.content === 'string'
         )
       ) {
-        return { kind: 'question', messages: json }
+        return { messages: json }
       }
       return null
     } catch {
@@ -114,12 +112,11 @@ export default function AnswerCard({
   const sendReply = async (r: Reaction, messages: QuestionMessage[]) => {
     if (!replyText.trim()) return
 
-    const nextMessages = [
+    const next = [
       ...messages,
       { username: displayName, content: replyText },
     ]
-
-    const json = JSON.stringify(nextMessages)
+    const json = JSON.stringify(next)
 
     setReactions((prev) =>
       prev.map((rx) =>
@@ -149,7 +146,7 @@ export default function AnswerCard({
           <img src={image} alt="answer" style={styles.image} draggable={false} />
 
           {reactions.map((r) => {
-            const parsed = parseComment(r)
+            const question = parseQuestion(r)
 
             return (
               <div
@@ -176,6 +173,14 @@ export default function AnswerCard({
                       transform: `translateX(calc(-50% + ${bubbleShift}px))`,
                     }}
                   >
+                    {/* 投稿者表示（共通） */}
+                    <div style={styles.bubbleHeader}>
+                      <UserBadge username={r.username ?? ''} size={14} />
+                      <span style={styles.reactorName}>
+                        @{r.username ?? 'unknown'}
+                      </span>
+                    </div>
+
                     {/* ⭐ */}
                     {r.type === 'star' && (
                       <div style={styles.bubbleComment}>
@@ -191,43 +196,42 @@ export default function AnswerCard({
                     )}
 
                     {/* ❓ */}
-                    {r.type === 'question' &&
-                      parsed?.kind === 'question' && (
-                        <>
-                          <div style={styles.questionThread}>
-                            {parsed.messages.map((m, i) => (
-                              <div key={i} style={styles.questionRow}>
-                                <UserBadge username={m.username} size={14} />
-                                <div style={styles.questionBubble}>
-                                  <div style={styles.questionName}>
-                                    @{m.username}
-                                  </div>
-                                  <div>{m.content}</div>
+                    {r.type === 'question' && question && (
+                      <>
+                        <div style={styles.questionThread}>
+                          {question.messages.map((m, i) => (
+                            <div key={i} style={styles.questionRow}>
+                              <UserBadge username={m.username} size={14} />
+                              <div style={styles.questionBubble}>
+                                <div style={styles.questionName}>
+                                  @{m.username}
                                 </div>
+                                <div>{m.content}</div>
                               </div>
-                            ))}
-                          </div>
+                            </div>
+                          ))}
+                        </div>
 
-                          <div style={styles.replyBox}>
-                            <input
-                              style={styles.replyInput}
-                              value={replyText}
-                              onChange={(e) =>
-                                setReplyText(e.target.value)
-                              }
-                              placeholder="返信を書く"
-                            />
-                            <button
-                              style={styles.replyButton}
-                              onClick={() =>
-                                sendReply(r, parsed.messages)
-                              }
-                            >
-                              送信
-                            </button>
-                          </div>
-                        </>
-                      )}
+                        <div style={styles.replyBox}>
+                          <input
+                            style={styles.replyInput}
+                            value={replyText}
+                            onChange={(e) =>
+                              setReplyText(e.target.value)
+                            }
+                            placeholder="返信を書く"
+                          />
+                          <button
+                            style={styles.replyButton}
+                            onClick={() =>
+                              sendReply(r, question.messages)
+                            }
+                          >
+                            送信
+                          </button>
+                        </div>
+                      </>
+                    )}
 
                     <div style={styles.bubbleArrow} />
                   </div>
@@ -298,6 +302,19 @@ const styles: { [key: string]: CSSProperties } = {
     fontSize: 12,
     minWidth: 180,
     zIndex: 2000,
+  },
+  bubbleHeader: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 6,
+    borderBottom: '1px solid rgba(255,255,255,0.2)',
+    paddingBottom: 4,
+  },
+  reactorName: {
+    fontSize: 11,
+    fontWeight: 700,
+    color: '#ccc',
   },
   bubbleComment: {
     lineHeight: 1.4,
