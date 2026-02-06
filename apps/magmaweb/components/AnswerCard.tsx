@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { CSSProperties } from 'react'
 import { useRouter } from 'next/navigation'
 import AnswerActionBar from './AnswerActionBar'
@@ -47,6 +47,8 @@ export default function AnswerCard({
   const [reactions, setReactions] = useState<Reaction[]>([])
   const [activeReactionId, setActiveReactionId] = useState<string | null>(null)
   const [showReactions, setShowReactions] = useState(true)
+  const bubbleRef = useRef<HTMLDivElement | null>(null)
+  const [bubbleShift, setBubbleShift] = useState(0)
 
   const displayName = anonymous ? 'Anonymous' : username
 
@@ -54,25 +56,39 @@ export default function AnswerCard({
     getReactionsByPostId(answerId).then(setReactions)
   }, [answerId])
 
-  // ===== アイコン：塗りつぶさず、黒枠線 =====
+  useEffect(() => {
+    if (!bubbleRef.current) return
+
+    const rect = bubbleRef.current.getBoundingClientRect()
+    const margin = 8
+
+    if (rect.left < margin) {
+      setBubbleShift(margin - rect.left)
+    } else if (rect.right > window.innerWidth - margin) {
+      setBubbleShift(window.innerWidth - margin - rect.right)
+    } else {
+      setBubbleShift(0)
+    }
+  }, [activeReactionId])
+
   const icon = (type: Reaction['type']) => {
     if (type === 'star')
-      return <Star size={20} stroke="#000" fill="none" strokeWidth={2} />
+      return <Star size={20} fill="#FFD700" stroke="#000" strokeWidth={1.5} />
     if (type === 'exclamation')
       return (
         <AlertTriangle
           size={20}
+          fill="#FF4500"
           stroke="#000"
-          fill="none"
-          strokeWidth={2}
+          strokeWidth={1.5}
         />
       )
     return (
       <HelpCircle
         size={20}
+        fill="#00BFFF"
         stroke="#000"
-        fill="none"
-        strokeWidth={2}
+        strokeWidth={1.5}
       />
     )
   }
@@ -83,7 +99,6 @@ export default function AnswerCard({
     if (r.type === 'question') {
       try {
         const json = JSON.parse(r.comment)
-
         if (
           Array.isArray(json) &&
           json.every(
@@ -94,7 +109,6 @@ export default function AnswerCard({
         ) {
           return { kind: 'question', messages: json }
         }
-
         return null
       } catch {
         return null
@@ -119,28 +133,7 @@ export default function AnswerCard({
 
       {image && (
         <div style={styles.imageWrapper}>
-          <img
-            src={image}
-            alt="answer"
-            style={styles.image}
-            draggable={false}
-          />
-
-          {reactions.length > 0 && (
-            <button
-              style={styles.toggleButton}
-              onClick={() => {
-                setShowReactions(!showReactions)
-                setActiveReactionId(null)
-              }}
-            >
-              <span style={styles.toggleText}>
-                {showReactions
-                  ? 'リアクションを非表示'
-                  : 'リアクションを表示'}
-              </span>
-            </button>
-          )}
+          <img src={image} alt="answer" style={styles.image} draggable={false} />
 
           {showReactions &&
             reactions.map((r) => {
@@ -161,23 +154,16 @@ export default function AnswerCard({
                     )
                   }}
                 >
-                  <div
-                    style={{
-                      transform:
-                        activeReactionId === r.id
-                          ? 'scale(1.4)'
-                          : 'scale(1)',
-                      transition:
-                        'transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
-                      filter:
-                        'drop-shadow(0 2px 4px rgba(0,0,0,0.3))',
-                    }}
-                  >
-                    {icon(r.type)}
-                  </div>
+                  {icon(r.type)}
 
                   {activeReactionId === r.id && (
-                    <div style={styles.bubble}>
+                    <div
+                      ref={bubbleRef}
+                      style={{
+                        ...styles.bubble,
+                        transform: `translateX(calc(-50% + ${bubbleShift}px))`,
+                      }}
+                    >
                       <div style={styles.bubbleHeader}>
                         <UserBadge username={r.username ?? ''} size={14} />
                         <span style={styles.reactorName}>
@@ -193,9 +179,7 @@ export default function AnswerCard({
                       )}
 
                       {parsed?.kind === 'plain' && (
-                        <div style={styles.bubbleComment}>
-                          {parsed.text}
-                        </div>
+                        <div style={styles.bubbleComment}>{parsed.text}</div>
                       )}
 
                       {parsed?.kind === 'question' && (
@@ -272,42 +256,18 @@ const styles: { [key: string]: CSSProperties } = {
     cursor: 'pointer',
     zIndex: 10,
   },
-  toggleButton: {
-    position: 'absolute',
-    top: 8,
-    right: 8,
-    background: 'transparent',
-    border: 'none',
-    cursor: 'pointer',
-    zIndex: 20,
-  },
-  toggleText: {
-    color: '#fff',
-    fontSize: 11,
-    fontWeight: 700,
-    padding: '4px 8px',
-    textShadow: `
-      0 1px 2px rgba(0,0,0,0.9),
-      0 0 4px rgba(0,0,0,0.6)
-    `,
-  },
-
-  // ===== 画面端はみ出し対策 =====
   bubble: {
     position: 'absolute',
     bottom: '140%',
     left: '50%',
-    transform: 'translateX(-50%)',
     background: 'rgba(0,0,0,0.85)',
     color: '#fff',
     padding: '8px 12px',
     borderRadius: 12,
     fontSize: 12,
     minWidth: 180,
-    maxWidth: '90vw',
     zIndex: 2000,
   },
-
   bubbleHeader: {
     display: 'flex',
     alignItems: 'center',
