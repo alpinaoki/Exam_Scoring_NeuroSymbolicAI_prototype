@@ -228,7 +228,104 @@ export default function AnswerCard({
 }
 
 const styles: { [key: string]: CSSProperties } = {
-  /* 既存 styles はそのまま */
+  card: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 8,
+    padding: '0 16px',
+  },
+  header: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 6,
+    fontSize: 13,
+    color: '#555',
+  },
+  user: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 6,
+  },
+  date: {
+    marginLeft: 4,
+    color: '#aaa',
+    fontSize: 11,
+  },
+  imageWrapper: {
+    position: 'relative',
+    width: '100%',
+  },
+  image: {
+    width: '100%',
+    borderRadius: 8,
+    border: '1px solid #eee',
+    userSelect: 'none',
+  },
+  reaction: {
+    position: 'absolute',
+    transform: 'translate(-50%, -50%)',
+    cursor: 'pointer',
+    zIndex: 10,
+  },
+  bubble: {
+    position: 'absolute',
+    bottom: '140%',
+    left: '50%',
+    background: 'rgba(0,0,0,0.85)',
+    color: '#fff',
+    padding: '8px 12px',
+    borderRadius: 12,
+    fontSize: 12,
+    minWidth: 180,
+    zIndex: 2000,
+  },
+  bubbleHeader: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 6,
+    borderBottom: '1px solid rgba(255,255,255,0.2)',
+    paddingBottom: 4,
+  },
+  reactorName: {
+    fontSize: 11,
+    fontWeight: 700,
+    color: '#ccc',
+  },
+  bubbleComment: {
+    lineHeight: 1.4,
+  },
+  questionThread: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 6,
+  },
+  questionRow: {
+    display: 'flex',
+    alignItems: 'flex-start',
+    gap: 6,
+  },
+  questionBubble: {
+    background: 'rgba(255,255,255,0.12)',
+    padding: '6px 8px',
+    borderRadius: 8,
+  },
+  questionName: {
+    fontSize: 10,
+    fontWeight: 700,
+    opacity: 0.7,
+    marginBottom: 2,
+  },
+  bubbleArrow: {
+    position: 'absolute',
+    top: '100%',
+    left: '50%',
+    transform: 'translateX(-50%)',
+    borderWidth: 6,
+    borderStyle: 'solid',
+    borderColor:
+      'rgba(0,0,0,0.85) transparent transparent transparent',
+  },
   replyBox: {
     display: 'flex',
     gap: 6,

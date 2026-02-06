@@ -280,3 +280,19 @@ export async function updateProblemLabel(
 
   if (error) throw error
 }
+
+export async function updateReactionComment(
+  reactionId: string,
+  comment: string
+) {
+  const { error } = await supabase
+    .from('reactions')
+    .update({ comment })
+    .eq('id', reactionId)
+
+  if (error) {
+    console.error('updateReactionComment error:', error)
+    throw error
+  }
+}
+
