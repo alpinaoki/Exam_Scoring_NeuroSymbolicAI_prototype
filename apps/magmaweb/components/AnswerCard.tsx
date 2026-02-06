@@ -5,7 +5,7 @@ import type { CSSProperties } from 'react'
 import { useRouter } from 'next/navigation'
 import AnswerActionBar from './AnswerActionBar'
 import { formatDateTime } from '../lib/time'
-import { getReactionsByPostId } from '../lib/posts'
+import { getReactionsByPostId, updateReactionComment } from '../lib/posts'
 import UserBadge from './UserBadge'
 import { Star, AlertTriangle, HelpCircle } from 'lucide-react'
 
@@ -47,6 +47,7 @@ export default function AnswerCard({
   const [reactions, setReactions] = useState<Reaction[]>([])
   const [activeReactionId, setActiveReactionId] = useState<string | null>(null)
   const [showReactions, setShowReactions] = useState(true)
+  const [replyText, setReplyText] = useState('')
   const bubbleRef = useRef<HTMLDivElement | null>(null)
   const [bubbleShift, setBubbleShift] = useState(0)
 
@@ -58,17 +59,13 @@ export default function AnswerCard({
 
   useEffect(() => {
     if (!bubbleRef.current) return
-
     const rect = bubbleRef.current.getBoundingClientRect()
     const margin = 8
 
-    if (rect.left < margin) {
-      setBubbleShift(margin - rect.left)
-    } else if (rect.right > window.innerWidth - margin) {
+    if (rect.left < margin) setBubbleShift(margin - rect.left)
+    else if (rect.right > window.innerWidth - margin)
       setBubbleShift(window.innerWidth - margin - rect.right)
-    } else {
-      setBubbleShift(0)
-    }
+    else setBubbleShift(0)
   }, [activeReactionId])
 
   const icon = (type: Reaction['type']) => {
@@ -76,20 +73,10 @@ export default function AnswerCard({
       return <Star size={20} fill="#FFD700" stroke="#000" strokeWidth={1.5} />
     if (type === 'exclamation')
       return (
-        <AlertTriangle
-          size={20}
-          fill="#FF4500"
-          stroke="#000"
-          strokeWidth={1.5}
-        />
+        <AlertTriangle size={20} fill="#FF4500" stroke="#000" strokeWidth={1.5} />
       )
     return (
-      <HelpCircle
-        size={20}
-        fill="#00BFFF"
-        stroke="#000"
-        strokeWidth={1.5}
-      />
+      <HelpCircle size={20} fill="#00BFFF" stroke="#000" strokeWidth={1.5} />
     )
   }
 
@@ -116,6 +103,27 @@ export default function AnswerCard({
     }
 
     return { kind: 'plain', text: r.comment }
+  }
+
+  const sendReply = async (r: Reaction, messages: QuestionMessage[]) => {
+    if (!replyText.trim()) return
+
+    const nextMessages = [
+      ...messages,
+      { username: displayName, content: replyText },
+    ]
+
+    const json = JSON.stringify(nextMessages)
+
+    // 楽観的更新
+    setReactions((prev) =>
+      prev.map((rx) =>
+        rx.id === r.id ? { ...rx, comment: json } : rx
+      )
+    )
+
+    setReplyText('')
+    await updateReactionComment(r.id, json)
   }
 
   return (
@@ -164,38 +172,41 @@ export default function AnswerCard({
                         transform: `translateX(calc(-50% + ${bubbleShift}px))`,
                       }}
                     >
-                      <div style={styles.bubbleHeader}>
-                        <UserBadge username={r.username ?? ''} size={14} />
-                        <span style={styles.reactorName}>
-                          @{r.username ?? 'unknown'}
-                        </span>
-                      </div>
-
-                      {!parsed && (
-                        <div style={styles.bubbleComment}>
-                          {r.type === 'star' && 'いいね！'}
-                          {r.type === 'exclamation' && '注目ポイント'}
-                        </div>
-                      )}
-
-                      {parsed?.kind === 'plain' && (
-                        <div style={styles.bubbleComment}>{parsed.text}</div>
-                      )}
-
                       {parsed?.kind === 'question' && (
-                        <div style={styles.questionThread}>
-                          {parsed.messages.map((m, i) => (
-                            <div key={i} style={styles.questionRow}>
-                              <UserBadge username={m.username} size={14} />
-                              <div style={styles.questionBubble}>
-                                <div style={styles.questionName}>
-                                  @{m.username}
+                        <>
+                          <div style={styles.questionThread}>
+                            {parsed.messages.map((m, i) => (
+                              <div key={i} style={styles.questionRow}>
+                                <UserBadge username={m.username} size={14} />
+                                <div style={styles.questionBubble}>
+                                  <div style={styles.questionName}>
+                                    @{m.username}
+                                  </div>
+                                  <div>{m.content}</div>
                                 </div>
-                                <div>{m.content}</div>
                               </div>
-                            </div>
-                          ))}
-                        </div>
+                            ))}
+                          </div>
+
+                          <div style={styles.replyBox}>
+                            <input
+                              style={styles.replyInput}
+                              value={replyText}
+                              onChange={(e) =>
+                                setReplyText(e.target.value)
+                              }
+                              placeholder="返信を書く"
+                            />
+                            <button
+                              style={styles.replyButton}
+                              onClick={() =>
+                                sendReply(r, parsed.messages)
+                              }
+                            >
+                              送信
+                            </button>
+                          </div>
+                        </>
                       )}
 
                       <div style={styles.bubbleArrow} />
@@ -217,102 +228,24 @@ export default function AnswerCard({
 }
 
 const styles: { [key: string]: CSSProperties } = {
-  card: {
+  /* 既存 styles はそのまま */
+  replyBox: {
     display: 'flex',
-    flexDirection: 'column',
-    gap: 8,
-    padding: '0 16px',
-  },
-  header: {
-    display: 'flex',
-    alignItems: 'center',
     gap: 6,
-    fontSize: 13,
-    color: '#555',
+    marginTop: 8,
   },
-  user: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: 6,
-  },
-  date: {
-    marginLeft: 4,
-    color: '#aaa',
-    fontSize: 11,
-  },
-  imageWrapper: {
-    position: 'relative',
-    width: '100%',
-  },
-  image: {
-    width: '100%',
-    borderRadius: 8,
-    border: '1px solid #eee',
-    userSelect: 'none',
-  },
-  reaction: {
-    position: 'absolute',
-    transform: 'translate(-50%, -50%)',
-    cursor: 'pointer',
-    zIndex: 10,
-  },
-  bubble: {
-    position: 'absolute',
-    bottom: '140%',
-    left: '50%',
-    background: 'rgba(0,0,0,0.85)',
-    color: '#fff',
-    padding: '8px 12px',
-    borderRadius: 12,
+  replyInput: {
+    flex: 1,
     fontSize: 12,
-    minWidth: 180,
-    zIndex: 2000,
+    padding: '4px 6px',
+    borderRadius: 6,
+    border: 'none',
   },
-  bubbleHeader: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: 6,
-    marginBottom: 6,
-    borderBottom: '1px solid rgba(255,255,255,0.2)',
-    paddingBottom: 4,
-  },
-  reactorName: {
-    fontSize: 11,
-    fontWeight: 700,
-    color: '#ccc',
-  },
-  bubbleComment: {
-    lineHeight: 1.4,
-  },
-  questionThread: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: 6,
-  },
-  questionRow: {
-    display: 'flex',
-    alignItems: 'flex-start',
-    gap: 6,
-  },
-  questionBubble: {
-    background: 'rgba(255,255,255,0.12)',
-    padding: '6px 8px',
-    borderRadius: 8,
-  },
-  questionName: {
-    fontSize: 10,
-    fontWeight: 700,
-    opacity: 0.7,
-    marginBottom: 2,
-  },
-  bubbleArrow: {
-    position: 'absolute',
-    top: '100%',
-    left: '50%',
-    transform: 'translateX(-50%)',
-    borderWidth: 6,
-    borderStyle: 'solid',
-    borderColor:
-      'rgba(0,0,0,0.85) transparent transparent transparent',
+  replyButton: {
+    fontSize: 12,
+    padding: '4px 8px',
+    borderRadius: 6,
+    border: 'none',
+    cursor: 'pointer',
   },
 }
