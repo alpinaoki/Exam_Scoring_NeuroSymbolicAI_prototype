@@ -18,6 +18,10 @@ type Reaction = {
   username?: string | null
 }
 
+type ParsedComment =
+  | { kind: 'plain'; text: string }
+  | { kind: 'question'; question: string; reply?: string }
+
 type Props = {
   image: string | null
   answerId: string
@@ -50,6 +54,28 @@ export default function AnswerCard({
     if (type === 'exclamation')
       return <AlertTriangle size={20} fill="#FF4500" />
     return <HelpCircle size={20} fill="#00BFFF" />
+  }
+
+  const parseComment = (r: Reaction): ParsedComment | null => {
+    if (!r.comment) return null
+
+    if (r.type === 'question') {
+      try {
+        const json = JSON.parse(r.comment)
+        if (json.question) {
+          return {
+            kind: 'question',
+            question: json.question,
+            reply: json.reply,
+          }
+        }
+      } catch {
+        // フォールバック（旧データ救済）
+        return { kind: 'plain', text: r.comment }
+      }
+    }
+
+    return { kind: 'plain', text: r.comment }
   }
 
   return (
@@ -91,58 +117,73 @@ export default function AnswerCard({
           )}
 
           {showReactions &&
-            reactions.map((r) => (
-              <div
-                key={r.id}
-                style={{
-                  ...styles.reaction,
-                  left: `${r.x_float * 100}%`,
-                  top: `${r.y_float * 100}%`,
-                }}
-                onClick={(e) => {
-                  e.stopPropagation()
-                  setActiveReactionId(
-                    activeReactionId === r.id ? null : r.id
-                  )
-                }}
-              >
+            reactions.map((r) => {
+              const parsed = parseComment(r)
+
+              return (
                 <div
+                  key={r.id}
                   style={{
-                    transform:
-                      activeReactionId === r.id
-                        ? 'scale(1.4)'
-                        : 'scale(1)',
-                    transition:
-                      'transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
-                    filter:
-                      'drop-shadow(0 2px 4px rgba(0,0,0,0.3))',
+                    ...styles.reaction,
+                    left: `${r.x_float * 100}%`,
+                    top: `${r.y_float * 100}%`,
+                  }}
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setActiveReactionId(
+                      activeReactionId === r.id ? null : r.id
+                    )
                   }}
                 >
-                  {icon(r.type)}
-                </div>
-
-                {/* ★ 吹き出しは全タイプ共通 */}
-                {activeReactionId === r.id && (
-                  <div style={styles.bubble}>
-                    <div style={styles.bubbleHeader}>
-                      <UserBadge username={r.username ?? ''} size={14} />
-                      <span style={styles.reactorName}>
-                        @{r.username ?? 'unknown'}
-                      </span>
-                    </div>
-
-                    {/* ★ 中身だけを question で分岐 */}
-                    {r.type === 'question' && r.comment && (
-                      <div style={styles.bubbleComment}>
-                        {r.comment}
-                      </div>
-                    )}
-
-                    <div style={styles.bubbleArrow} />
+                  <div
+                    style={{
+                      transform:
+                        activeReactionId === r.id
+                          ? 'scale(1.4)'
+                          : 'scale(1)',
+                      transition:
+                        'transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
+                      filter:
+                        'drop-shadow(0 2px 4px rgba(0,0,0,0.3))',
+                    }}
+                  >
+                    {icon(r.type)}
                   </div>
-                )}
-              </div>
-            ))}
+
+                  {activeReactionId === r.id && parsed && (
+                    <div style={styles.bubble}>
+                      <div style={styles.bubbleHeader}>
+                        <UserBadge username={r.username ?? ''} size={14} />
+                        <span style={styles.reactorName}>
+                          @{r.username ?? 'unknown'}
+                        </span>
+                      </div>
+
+                      {parsed.kind === 'plain' && (
+                        <div style={styles.bubbleComment}>
+                          {parsed.text}
+                        </div>
+                      )}
+
+                      {parsed.kind === 'question' && (
+                        <>
+                          <div style={styles.questionText}>
+                            Q. {parsed.question}
+                          </div>
+                          {parsed.reply && (
+                            <div style={styles.replyText}>
+                              A. {parsed.reply}
+                            </div>
+                          )}
+                        </>
+                      )}
+
+                      <div style={styles.bubbleArrow} />
+                    </div>
+                  )}
+                </div>
+              )
+            })}
         </div>
       )}
 
@@ -154,7 +195,6 @@ export default function AnswerCard({
     </div>
   )
 }
-
 
 const styles: { [key: string]: CSSProperties } = {
   card: {
@@ -196,14 +236,12 @@ const styles: { [key: string]: CSSProperties } = {
     cursor: 'pointer',
     zIndex: 10,
   },
-
   toggleButton: {
     position: 'absolute',
     top: 8,
     right: 8,
     background: 'transparent',
     border: 'none',
-    padding: 0,
     cursor: 'pointer',
     zIndex: 20,
   },
@@ -217,7 +255,6 @@ const styles: { [key: string]: CSSProperties } = {
       0 0 4px rgba(0,0,0,0.6)
     `,
   },
-
   bubble: {
     position: 'absolute',
     bottom: '140%',
@@ -226,11 +263,10 @@ const styles: { [key: string]: CSSProperties } = {
     background: 'rgba(0,0,0,0.85)',
     color: '#fff',
     padding: '8px 12px',
-    borderRadius: '12px',
-    fontSize: '12px',
-    minWidth: '120px',
+    borderRadius: 12,
+    fontSize: 12,
+    minWidth: 160,
     zIndex: 2000,
-    boxShadow: '0 8px 24px rgba(0,0,0,0.3)',
   },
   bubbleHeader: {
     display: 'flex',
@@ -241,22 +277,26 @@ const styles: { [key: string]: CSSProperties } = {
     paddingBottom: 4,
   },
   reactorName: {
-    fontSize: '11px',
+    fontSize: 11,
     fontWeight: 700,
     color: '#ccc',
   },
   bubbleComment: {
-    fontWeight: 500,
-    lineHeight: '1.4',
-    whiteSpace: 'normal',
-    wordBreak: 'break-word',
+    lineHeight: 1.4,
+  },
+  questionText: {
+    fontWeight: 700,
+    marginBottom: 4,
+  },
+  replyText: {
+    opacity: 0.85,
   },
   bubbleArrow: {
     position: 'absolute',
     top: '100%',
     left: '50%',
     transform: 'translateX(-50%)',
-    borderWidth: '6px',
+    borderWidth: 6,
     borderStyle: 'solid',
     borderColor:
       'rgba(0,0,0,0.85) transparent transparent transparent',
