@@ -18,9 +18,14 @@ type Reaction = {
   username?: string | null
 }
 
+type QuestionMessage = {
+  username: string
+  content: string
+}
+
 type ParsedComment =
   | { kind: 'plain'; text: string }
-  | { kind: 'question'; question: string; reply?: string }
+  | { kind: 'question'; messages: QuestionMessage[] }
 
 type Props = {
   image: string | null
@@ -50,31 +55,36 @@ export default function AnswerCard({
   }, [answerId])
 
   const icon = (type: Reaction['type']) => {
-    if (type === 'star') return <Star size={20} fill="#FFD700" />
+    if (type === 'star') return <Star size={20} fill="FFD700_1" />
     if (type === 'exclamation')
-      return <AlertTriangle size={20} fill="#FF4500" />
-    return <HelpCircle size={20} fill="#00BFFF" />
+      return <AlertTriangle size={20} fill="FF4500_1" />
+    return <HelpCircle size={20} fill="00BFFF_1" />
   }
 
   const parseComment = (r: Reaction): ParsedComment | null => {
     if (!r.comment) return null
 
+    // ❓だけ会話JSON
     if (r.type === 'question') {
       try {
         const json = JSON.parse(r.comment)
-        if (json.question) {
+        if (Array.isArray(json)) {
           return {
             kind: 'question',
-            question: json.question,
-            reply: json.reply,
+            messages: json.filter(
+              (m) =>
+                typeof m.username === 'string' &&
+                typeof m.content === 'string'
+            ),
           }
         }
       } catch {
-        // フォールバック（旧データ救済）
+        // 旧データ救済
         return { kind: 'plain', text: r.comment }
       }
     }
 
+    // ⭐❗は今まで通り
     return { kind: 'plain', text: r.comment }
   }
 
@@ -150,47 +160,50 @@ export default function AnswerCard({
                     {icon(r.type)}
                   </div>
 
-{activeReactionId === r.id && (
-  <div style={styles.bubble}>
-    <div style={styles.bubbleHeader}>
-      <UserBadge username={r.username ?? ''} size={14} />
-      <span style={styles.reactorName}>
-        @{r.username ?? 'unknown'}
-      </span>
-    </div>
+                  {activeReactionId === r.id && (
+                    <div style={styles.bubble}>
+                      <div style={styles.bubbleHeader}>
+                        <UserBadge username={r.username ?? ''} size={14} />
+                        <span style={styles.reactorName}>
+                          @{r.username ?? 'unknown'}
+                        </span>
+                      </div>
 
-    {/* comment がない場合（⭐ / ❗） */}
-    {!parsed && (
-      <div style={styles.bubbleComment}>
-        {r.type === 'star' && 'いいね！'}
-        {r.type === 'exclamation' && '注目ポイント'}
-      </div>
-    )}
+                      {/* ⭐❗ commentなし */}
+                      {!parsed && (
+                        <div style={styles.bubbleComment}>
+                          {r.type === 'star' && 'いいね！'}
+                          {r.type === 'exclamation' && '注目ポイント'}
+                        </div>
+                      )}
 
-    {/* 通常コメント */}
-    {parsed?.kind === 'plain' && (
-      <div style={styles.bubbleComment}>
-        {parsed.text}
-      </div>
-    )}
+                      {/* ⭐❗ 通常コメント */}
+                      {parsed?.kind === 'plain' && (
+                        <div style={styles.bubbleComment}>
+                          {parsed.text}
+                        </div>
+                      )}
 
-    {/* 質問 */}
-    {parsed?.kind === 'question' && (
-      <>
-        <div style={styles.questionText}>
-          Q. {parsed.question}
-        </div>
-        {parsed.reply && (
-          <div style={styles.replyText}>
-            A. {parsed.reply}
-          </div>
-        )}
-      </>
-    )}
+                      {/* ❓ 会話 */}
+                      {parsed?.kind === 'question' && (
+                        <div style={styles.questionThread}>
+                          {parsed.messages.map((m, i) => (
+                            <div key={i} style={styles.questionRow}>
+                              <UserBadge username={m.username} size={14} />
+                              <div style={styles.questionBubble}>
+                                <div style={styles.questionName}>
+                                  @{m.username}
+                                </div>
+                                <div>{m.content}</div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
 
-    <div style={styles.bubbleArrow} />
-  </div>
-)}
+                      <div style={styles.bubbleArrow} />
+                    </div>
+                  )}
                 </div>
               )
             })}
@@ -275,7 +288,7 @@ const styles: { [key: string]: CSSProperties } = {
     padding: '8px 12px',
     borderRadius: 12,
     fontSize: 12,
-    minWidth: 160,
+    minWidth: 180,
     zIndex: 2000,
   },
   bubbleHeader: {
@@ -294,12 +307,26 @@ const styles: { [key: string]: CSSProperties } = {
   bubbleComment: {
     lineHeight: 1.4,
   },
-  questionText: {
-    fontWeight: 700,
-    marginBottom: 4,
+  questionThread: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 6,
   },
-  replyText: {
-    opacity: 0.85,
+  questionRow: {
+    display: 'flex',
+    alignItems: 'flex-start',
+    gap: 6,
+  },
+  questionBubble: {
+    background: 'rgba(255,255,255,0.12)',
+    padding: '6px 8px',
+    borderRadius: 8,
+  },
+  questionName: {
+    fontSize: 10,
+    fontWeight: 700,
+    opacity: 0.7,
+    marginBottom: 2,
   },
   bubbleArrow: {
     position: 'absolute',
