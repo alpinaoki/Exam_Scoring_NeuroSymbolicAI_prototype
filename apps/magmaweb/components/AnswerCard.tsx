@@ -6,7 +6,6 @@ import { useRouter } from 'next/navigation'
 import AnswerActionBar from './AnswerActionBar'
 import { formatDateTime } from '../lib/time'
 import { getReactionsByPostId } from '../lib/posts'
-import { supabase } from '../lib/supabase'
 import UserBadge from './UserBadge'
 import { Star, AlertTriangle, HelpCircle } from 'lucide-react'
 
@@ -17,11 +16,6 @@ type Reaction = {
   y_float: number
   comment?: string | null
   username?: string | null
-}
-
-type ChatMessage = {
-  username: string
-  content: string
 }
 
 type Props = {
@@ -44,7 +38,6 @@ export default function AnswerCard({
   const [reactions, setReactions] = useState<Reaction[]>([])
   const [activeReactionId, setActiveReactionId] = useState<string | null>(null)
   const [showReactions, setShowReactions] = useState(true)
-  const [replyText, setReplyText] = useState('')
 
   const displayName = anonymous ? 'Anonymous' : username
 
@@ -59,48 +52,9 @@ export default function AnswerCard({
     return <HelpCircle size={20} fill="#00BFFF" />
   }
 
-  const parseChat = (comment?: string | null): ChatMessage[] => {
-    if (!comment) return []
-    try {
-      return JSON.parse(comment)
-    } catch {
-      return []
-    }
-  }
-
-  const sendReply = async (reaction: Reaction) => {
-    if (!replyText.trim()) return
-
-    const chats = parseChat(reaction.comment)
-
-    const next = [
-      ...chats,
-      {
-        username: displayName,
-        content: replyText.trim(),
-      },
-    ]
-
-    await supabase
-      .from('reactions')
-      .update({
-        comment: JSON.stringify(next),
-      })
-      .eq('id', reaction.id)
-
-    setReactions((prev) =>
-      prev.map((r) =>
-        r.id === reaction.id
-          ? { ...r, comment: JSON.stringify(next) }
-          : r
-      )
-    )
-
-    setReplyText('')
-  }
-
   return (
     <div style={styles.card}>
+      {/* 投稿者表示（★ここは一切変更しない） */}
       <div style={styles.header}>
         <div
           style={{ ...styles.user, cursor: anonymous ? 'default' : 'pointer' }}
@@ -121,6 +75,7 @@ export default function AnswerCard({
             draggable={false}
           />
 
+          {/* 表示 / 非表示トグル */}
           {reactions.length > 0 && (
             <button
               style={styles.toggleButton}
@@ -138,85 +93,62 @@ export default function AnswerCard({
           )}
 
           {showReactions &&
-            reactions.map((r) => (
-              <div
-                key={r.id}
-                style={{
-                  ...styles.reaction,
-                  left: `${r.x_float * 100}%`,
-                  top: `${r.y_float * 100}%`,
-                }}
-                onClick={(e) => {
-                  e.stopPropagation()
-                  setActiveReactionId(
-                    activeReactionId === r.id ? null : r.id
-                  )
-                }}
-              >
+            reactions.map((r) => {
+              const isQuestion = r.type === 'question'
+
+              return (
                 <div
+                  key={r.id}
                   style={{
-                    transform:
-                      activeReactionId === r.id
-                        ? 'scale(1.4)'
-                        : 'scale(1)',
-                    transition:
-                      'transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
-                    filter:
-                      'drop-shadow(0 2px 4px rgba(0,0,0,0.3))',
+                    ...styles.reaction,
+                    left: `${r.x_float * 100}%`,
+                    top: `${r.y_float * 100}%`,
+                  }}
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setActiveReactionId(
+                      activeReactionId === r.id ? null : r.id
+                    )
                   }}
                 >
-                  {icon(r.type)}
-                </div>
+                  <div
+                    style={{
+                      transform:
+                        activeReactionId === r.id
+                          ? 'scale(1.4)'
+                          : 'scale(1)',
+                      transition:
+                        'transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
+                      filter:
+                        'drop-shadow(0 2px 4px rgba(0,0,0,0.3))',
+                    }}
+                  >
+                    {icon(r.type)}
+                  </div>
 
-                {activeReactionId === r.id && (
-                  <div style={styles.bubble}>
-                    {r.type === 'question' ? (
-                      <>
-                        <div style={styles.chatList}>
-                          {parseChat(r.comment).map((c, i) => (
-                            <div key={i} style={styles.chatItem}>
-                              <UserBadge username={c.username} size={14} />
-                              <div>
-                                <div style={styles.chatName}>
-                                  @{c.username}
-                                </div>
-                                <div style={styles.chatContent}>
-                                  {c.content}
-                                </div>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-
-                        <div style={styles.replyBox}>
-                          <input
-                            value={replyText}
-                            onChange={(e) =>
-                              setReplyText(e.target.value)
-                            }
-                            placeholder="返信を書く…"
-                            style={styles.replyInput}
-                          />
-                          <button
-                            style={styles.replyButton}
-                            onClick={() => sendReply(r)}
-                          >
-                            送信
-                          </button>
-                        </div>
-                      </>
-                    ) : (
-                      r.comment && (
+                  {/* ★ 吹き出しは question のときだけ出す */}
+                  {isQuestion && activeReactionId === r.id && (
+                    <div style={styles.bubble}>
+                      <div style={styles.bubbleHeader}>
+                        <UserBadge
+                          username={r.username ?? ''}
+                          size={14}
+                        />
+                        <span style={styles.reactorName}>
+                          @{r.username ?? 'unknown'}
+                        </span>
+                      </div>
+                      {r.comment && (
                         <div style={styles.bubbleComment}>
                           {r.comment}
                         </div>
-                      )
-                    )}
-                    <div style={styles.bubbleArrow} />
-                  </div>
-                )}
-              </div>
-            ))}
+                      )}
+                      <div style={styles.bubbleArrow} />
+                    </div>
+                  )}
+                </div>
+              )
+            })}
         </div>
       )}
 
@@ -269,6 +201,7 @@ const styles: { [key: string]: CSSProperties } = {
     cursor: 'pointer',
     zIndex: 10,
   },
+
   toggleButton: {
     position: 'absolute',
     top: 8,
@@ -289,6 +222,7 @@ const styles: { [key: string]: CSSProperties } = {
       0 0 4px rgba(0,0,0,0.6)
     `,
   },
+
   bubble: {
     position: 'absolute',
     bottom: '140%',
@@ -299,13 +233,28 @@ const styles: { [key: string]: CSSProperties } = {
     padding: '8px 12px',
     borderRadius: '12px',
     fontSize: '12px',
-    minWidth: '160px',
+    minWidth: '120px',
     zIndex: 2000,
     boxShadow: '0 8px 24px rgba(0,0,0,0.3)',
+  },
+  bubbleHeader: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 6,
+    borderBottom: '1px solid rgba(255,255,255,0.2)',
+    paddingBottom: 4,
+  },
+  reactorName: {
+    fontSize: '11px',
+    fontWeight: 700,
+    color: '#ccc',
   },
   bubbleComment: {
     fontWeight: 500,
     lineHeight: '1.4',
+    whiteSpace: 'normal',
+    wordBreak: 'break-word',
   },
   bubbleArrow: {
     position: 'absolute',
@@ -316,49 +265,5 @@ const styles: { [key: string]: CSSProperties } = {
     borderStyle: 'solid',
     borderColor:
       'rgba(0,0,0,0.85) transparent transparent transparent',
-  },
-
-  /* question専用 */
-  chatList: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: 8,
-    marginBottom: 8,
-  },
-  chatItem: {
-    display: 'flex',
-    alignItems: 'flex-start',
-    gap: 6,
-  },
-  chatName: {
-    fontSize: 11,
-    fontWeight: 700,
-    color: '#ccc',
-  },
-  chatContent: {
-    fontSize: 12,
-    lineHeight: '1.4',
-  },
-  replyBox: {
-    display: 'flex',
-    gap: 6,
-  },
-  replyInput: {
-    flex: 1,
-    fontSize: 12,
-    padding: '4px 8px',
-    borderRadius: 6,
-    border: 'none',
-    outline: 'none',
-  },
-  replyButton: {
-    fontSize: 11,
-    padding: '4px 8px',
-    borderRadius: 6,
-    border: 'none',
-    cursor: 'pointer',
-    background: '#4D96FF',
-    color: '#fff',
-    fontWeight: 700,
   },
 }
