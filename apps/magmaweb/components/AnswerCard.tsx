@@ -7,7 +7,12 @@ import AnswerActionBar from './AnswerActionBar'
 import { formatDateTime } from '../lib/time'
 import { getReactionsByPostId, updateReactionComment } from '../lib/posts'
 import UserBadge from './UserBadge'
-import { Star, AlertTriangle, HelpCircle } from 'lucide-react'
+import {
+  Star,
+  AlertTriangle,
+  HelpCircle,
+  Send,
+} from 'lucide-react'
 
 type Reaction = {
   id: string
@@ -21,10 +26,6 @@ type Reaction = {
 type QuestionMessage = {
   username: string
   content: string
-}
-
-type ParsedQuestion = {
-  messages: QuestionMessage[]
 }
 
 type Props = {
@@ -45,7 +46,8 @@ export default function AnswerCard({
 }: Props) {
   const router = useRouter()
   const [reactions, setReactions] = useState<Reaction[]>([])
-  const [activeReactionId, setActiveReactionId] = useState<string | null>(null)
+  const [activeReactionId, setActiveReactionId] =
+    useState<string | null>(null)
   const [replyText, setReplyText] = useState('')
   const bubbleRef = useRef<HTMLDivElement | null>(null)
   const [bubbleShift, setBubbleShift] = useState(0)
@@ -69,7 +71,9 @@ export default function AnswerCard({
 
   const icon = (type: Reaction['type']) => {
     if (type === 'star')
-      return <Star size={20} fill="#FFD700" stroke="#000" strokeWidth={1.5} />
+      return (
+        <Star size={20} fill="#FFD700" stroke="#000" strokeWidth={1.5} />
+      )
     if (type === 'exclamation')
       return (
         <AlertTriangle
@@ -89,7 +93,7 @@ export default function AnswerCard({
     )
   }
 
-  const parseQuestion = (r: Reaction): ParsedQuestion | null => {
+  const parseQuestion = (r: Reaction): QuestionMessage[] | null => {
     if (r.type !== 'question' || !r.comment) return null
     try {
       const json = JSON.parse(r.comment)
@@ -100,16 +104,18 @@ export default function AnswerCard({
             typeof m.username === 'string' &&
             typeof m.content === 'string'
         )
-      ) {
-        return { messages: json }
-      }
+      )
+        return json
       return null
     } catch {
       return null
     }
   }
 
-  const sendReply = async (r: Reaction, messages: QuestionMessage[]) => {
+  const sendReply = async (
+    r: Reaction,
+    messages: QuestionMessage[]
+  ) => {
     if (!replyText.trim()) return
 
     const next = [
@@ -146,7 +152,7 @@ export default function AnswerCard({
           <img src={image} alt="answer" style={styles.image} draggable={false} />
 
           {reactions.map((r) => {
-            const question = parseQuestion(r)
+            const messages = parseQuestion(r)
 
             return (
               <div
@@ -156,24 +162,28 @@ export default function AnswerCard({
                   left: `${r.x_float * 100}%`,
                   top: `${r.y_float * 100}%`,
                 }}
-                onClick={(e) => {
-                  e.stopPropagation()
-                  setActiveReactionId(
-                    activeReactionId === r.id ? null : r.id
-                  )
-                }}
               >
-                {icon(r.type)}
+                {/* クリック判定はアイコンのみ */}
+                <div
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setActiveReactionId(
+                      activeReactionId === r.id ? null : r.id
+                    )
+                  }}
+                >
+                  {icon(r.type)}
+                </div>
 
                 {activeReactionId === r.id && (
                   <div
                     ref={bubbleRef}
+                    onClick={(e) => e.stopPropagation()}
                     style={{
                       ...styles.bubble,
                       transform: `translateX(calc(-50% + ${bubbleShift}px))`,
                     }}
                   >
-                    {/* 投稿者表示（共通） */}
                     <div style={styles.bubbleHeader}>
                       <UserBadge username={r.username ?? ''} size={14} />
                       <span style={styles.reactorName}>
@@ -181,25 +191,22 @@ export default function AnswerCard({
                       </span>
                     </div>
 
-                    {/* ⭐ */}
                     {r.type === 'star' && (
                       <div style={styles.bubbleComment}>
                         {r.comment ?? 'いいね！'}
                       </div>
                     )}
 
-                    {/* ❗ */}
                     {r.type === 'exclamation' && (
                       <div style={styles.bubbleComment}>
                         {r.comment ?? '注目ポイント'}
                       </div>
                     )}
 
-                    {/* ❓ */}
-                    {r.type === 'question' && question && (
+                    {r.type === 'question' && messages && (
                       <>
                         <div style={styles.questionThread}>
-                          {question.messages.map((m, i) => (
+                          {messages.map((m, i) => (
                             <div key={i} style={styles.questionRow}>
                               <UserBadge username={m.username} size={14} />
                               <div style={styles.questionBubble}>
@@ -223,11 +230,9 @@ export default function AnswerCard({
                           />
                           <button
                             style={styles.replyButton}
-                            onClick={() =>
-                              sendReply(r, question.messages)
-                            }
+                            onClick={() => sendReply(r, messages)}
                           >
-                            送信
+                            <Send size={14} />
                           </button>
                         </div>
                       </>
@@ -283,12 +288,10 @@ const styles: { [key: string]: CSSProperties } = {
     width: '100%',
     borderRadius: 8,
     border: '1px solid #eee',
-    userSelect: 'none',
   },
   reaction: {
     position: 'absolute',
     transform: 'translate(-50%, -50%)',
-    cursor: 'pointer',
     zIndex: 10,
   },
   bubble: {
@@ -301,7 +304,7 @@ const styles: { [key: string]: CSSProperties } = {
     borderRadius: 12,
     fontSize: 12,
     minWidth: 180,
-    zIndex: 2000,
+    zIndex: 9999, // 最前面
   },
   bubbleHeader: {
     display: 'flex',
@@ -353,8 +356,7 @@ const styles: { [key: string]: CSSProperties } = {
     border: 'none',
   },
   replyButton: {
-    fontSize: 12,
-    padding: '4px 8px',
+    padding: '4px 6px',
     borderRadius: 6,
     border: 'none',
     cursor: 'pointer',
