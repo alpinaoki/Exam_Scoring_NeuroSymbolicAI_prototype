@@ -150,37 +150,47 @@ export default function AnswerCard({
                     {icon(r.type)}
                   </div>
 
-                  {activeReactionId === r.id && parsed && (
-                    <div style={styles.bubble}>
-                      <div style={styles.bubbleHeader}>
-                        <UserBadge username={r.username ?? ''} size={14} />
-                        <span style={styles.reactorName}>
-                          @{r.username ?? 'unknown'}
-                        </span>
-                      </div>
+{activeReactionId === r.id && (
+  <div style={styles.bubble}>
+    <div style={styles.bubbleHeader}>
+      <UserBadge username={r.username ?? ''} size={14} />
+      <span style={styles.reactorName}>
+        @{r.username ?? 'unknown'}
+      </span>
+    </div>
 
-                      {parsed.kind === 'plain' && (
-                        <div style={styles.bubbleComment}>
-                          {parsed.text}
-                        </div>
-                      )}
+    {/* comment がない場合（⭐ / ❗） */}
+    {!parsed && (
+      <div style={styles.bubbleComment}>
+        {r.type === 'star' && 'いいね！'}
+        {r.type === 'exclamation' && '注目ポイント'}
+      </div>
+    )}
 
-                      {parsed.kind === 'question' && (
-                        <>
-                          <div style={styles.questionText}>
-                            Q. {parsed.question}
-                          </div>
-                          {parsed.reply && (
-                            <div style={styles.replyText}>
-                              A. {parsed.reply}
-                            </div>
-                          )}
-                        </>
-                      )}
+    {/* 通常コメント */}
+    {parsed?.kind === 'plain' && (
+      <div style={styles.bubbleComment}>
+        {parsed.text}
+      </div>
+    )}
 
-                      <div style={styles.bubbleArrow} />
-                    </div>
-                  )}
+    {/* 質問 */}
+    {parsed?.kind === 'question' && (
+      <>
+        <div style={styles.questionText}>
+          Q. {parsed.question}
+        </div>
+        {parsed.reply && (
+          <div style={styles.replyText}>
+            A. {parsed.reply}
+          </div>
+        )}
+      </>
+    )}
+
+    <div style={styles.bubbleArrow} />
+  </div>
+)}
                 </div>
               )
             })}
