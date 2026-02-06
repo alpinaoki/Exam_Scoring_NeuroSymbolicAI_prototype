@@ -54,37 +54,44 @@ export default function AnswerCard({
     getReactionsByPostId(answerId).then(setReactions)
   }, [answerId])
 
-  /* ✅ アイコン色を完全に元に戻す */
   const icon = (type: Reaction['type']) => {
     if (type === 'star')
-      return <Star size={20} color="#FFD700" fill="#FFD700" />
+      return <Star size={20} fill="#FFD700" stroke="#FFD700" />
     if (type === 'exclamation')
-      return (
-        <AlertTriangle size={20} color="#FF4500" fill="#FF4500" />
-      )
-    return <HelpCircle size={20} color="#00BFFF" />
+      return <AlertTriangle size={20} fill="#FF4500" stroke="#FF4500" />
+    return <HelpCircle size={20} fill="#00BFFF" stroke="#00BFFF" />
   }
 
-  /* ✅ typeに依存せず JSON配列なら会話扱い */
   const parseComment = (r: Reaction): ParsedComment | null => {
     if (!r.comment) return null
 
-    try {
-      const json = JSON.parse(r.comment)
-      if (
-        Array.isArray(json) &&
-        json.every(
-          (m) =>
-            typeof m.username === 'string' &&
-            typeof m.content === 'string'
-        )
-      ) {
-        return { kind: 'question', messages: json }
+    // ❓だけ会話JSON
+    if (r.type === 'question') {
+      try {
+        const json = JSON.parse(r.comment)
+
+        if (
+          Array.isArray(json) &&
+          json.every(
+            (m) =>
+              typeof m.username === 'string' &&
+              typeof m.content === 'string'
+          )
+        ) {
+          return {
+            kind: 'question',
+            messages: json,
+          }
+        }
+
+        // ❓で想定外フォーマットは表示しない
+        return null
+      } catch {
+        return null
       }
-    } catch {
-      // JSONじゃない → plain
     }
 
+    // ⭐❗は今まで通り
     return { kind: 'plain', text: r.comment }
   }
 
@@ -103,7 +110,12 @@ export default function AnswerCard({
 
       {image && (
         <div style={styles.imageWrapper}>
-          <img src={image} alt="answer" style={styles.image} />
+          <img
+            src={image}
+            alt="answer"
+            style={styles.image}
+            draggable={false}
+          />
 
           {reactions.length > 0 && (
             <button
@@ -146,7 +158,10 @@ export default function AnswerCard({
                         activeReactionId === r.id
                           ? 'scale(1.4)'
                           : 'scale(1)',
-                      transition: 'transform 0.2s ease',
+                      transition:
+                        'transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
+                      filter:
+                        'drop-shadow(0 2px 4px rgba(0,0,0,0.3))',
                     }}
                   >
                     {icon(r.type)}
@@ -161,14 +176,19 @@ export default function AnswerCard({
                         </span>
                       </div>
 
-                      {/* ⭐❗ */}
+                      {!parsed && (
+                        <div style={styles.bubbleComment}>
+                          {r.type === 'star' && 'いいね！'}
+                          {r.type === 'exclamation' && '注目ポイント'}
+                        </div>
+                      )}
+
                       {parsed?.kind === 'plain' && (
                         <div style={styles.bubbleComment}>
                           {parsed.text}
                         </div>
                       )}
 
-                      {/* ❓ 会話 */}
                       {parsed?.kind === 'question' && (
                         <div style={styles.questionThread}>
                           {parsed.messages.map((m, i) => (
@@ -203,17 +223,65 @@ export default function AnswerCard({
   )
 }
 
-/* styles はそのまま */
 const styles: { [key: string]: CSSProperties } = {
-  card: { display: 'flex', flexDirection: 'column', gap: 8, padding: '0 16px' },
-  header: { display: 'flex', alignItems: 'center', gap: 6, fontSize: 13 },
-  user: { display: 'flex', alignItems: 'center', gap: 6 },
-  date: { marginLeft: 4, fontSize: 11, color: '#aaa' },
-  imageWrapper: { position: 'relative', width: '100%' },
-  image: { width: '100%', borderRadius: 8, border: '1px solid #eee' },
-  reaction: { position: 'absolute', transform: 'translate(-50%, -50%)' },
-  toggleButton: { position: 'absolute', top: 8, right: 8, border: 'none' },
-  toggleText: { color: '#fff', fontSize: 11, fontWeight: 700 },
+  card: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 8,
+    padding: '0 16px',
+  },
+  header: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 6,
+    fontSize: 13,
+    color: '#555',
+  },
+  user: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 6,
+  },
+  date: {
+    marginLeft: 4,
+    color: '#aaa',
+    fontSize: 11,
+  },
+  imageWrapper: {
+    position: 'relative',
+    width: '100%',
+  },
+  image: {
+    width: '100%',
+    borderRadius: 8,
+    border: '1px solid #eee',
+    userSelect: 'none',
+  },
+  reaction: {
+    position: 'absolute',
+    transform: 'translate(-50%, -50%)',
+    cursor: 'pointer',
+    zIndex: 10,
+  },
+  toggleButton: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    background: 'transparent',
+    border: 'none',
+    cursor: 'pointer',
+    zIndex: 20,
+  },
+  toggleText: {
+    color: '#fff',
+    fontSize: 11,
+    fontWeight: 700,
+    padding: '4px 8px',
+    textShadow: `
+      0 1px 2px rgba(0,0,0,0.9),
+      0 0 4px rgba(0,0,0,0.6)
+    `,
+  },
   bubble: {
     position: 'absolute',
     bottom: '140%',
@@ -223,6 +291,7 @@ const styles: { [key: string]: CSSProperties } = {
     color: '#fff',
     padding: '8px 12px',
     borderRadius: 12,
+    fontSize: 12,
     minWidth: 180,
     zIndex: 2000,
   },
@@ -234,16 +303,35 @@ const styles: { [key: string]: CSSProperties } = {
     borderBottom: '1px solid rgba(255,255,255,0.2)',
     paddingBottom: 4,
   },
-  reactorName: { fontSize: 11, fontWeight: 700, color: '#ccc' },
-  bubbleComment: { lineHeight: 1.4 },
-  questionThread: { display: 'flex', flexDirection: 'column', gap: 6 },
-  questionRow: { display: 'flex', gap: 6 },
+  reactorName: {
+    fontSize: 11,
+    fontWeight: 700,
+    color: '#ccc',
+  },
+  bubbleComment: {
+    lineHeight: 1.4,
+  },
+  questionThread: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 6,
+  },
+  questionRow: {
+    display: 'flex',
+    alignItems: 'flex-start',
+    gap: 6,
+  },
   questionBubble: {
     background: 'rgba(255,255,255,0.12)',
     padding: '6px 8px',
     borderRadius: 8,
   },
-  questionName: { fontSize: 10, fontWeight: 700, opacity: 0.7 },
+  questionName: {
+    fontSize: 10,
+    fontWeight: 700,
+    opacity: 0.7,
+    marginBottom: 2,
+  },
   bubbleArrow: {
     position: 'absolute',
     top: '100%',
