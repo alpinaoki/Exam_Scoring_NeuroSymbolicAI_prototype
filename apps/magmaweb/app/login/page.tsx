@@ -66,7 +66,7 @@ export default function LoginPage() {
         <div style={styles.form}>
           <div style={styles.inputGroup}>
             <input
-              placeholder="ユーザー名"
+              placeholder="ユーザー名(半角英数字のみ)"
               value={username}
               onChange={e => setUsername(e.target.value)}
               style={styles.input}
