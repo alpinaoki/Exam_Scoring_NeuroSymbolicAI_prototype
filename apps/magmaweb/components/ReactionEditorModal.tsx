@@ -11,6 +11,7 @@ interface Props {
   open: boolean
   imageUrl: string
   postId: string
+  username: string   // ← 追加
   onClose: () => void
 }
 
@@ -18,6 +19,7 @@ export default function ReactionEditorModal({
   open,
   imageUrl,
   postId,
+  username,          // ← 追加
   onClose,
 }: Props) {
   const [mounted, setMounted] = useState(false)
@@ -51,13 +53,24 @@ export default function ReactionEditorModal({
     setSaving(true)
 
     try {
+      const finalComment =
+        type === 'question'
+          ? JSON.stringify([
+              {
+                username,       // ← 投稿者名をそのまま入れる
+                content: comment,
+              },
+            ])
+          : comment
+
       await createReaction({
         postId,
         type,
-        comment,
+        comment: finalComment,
         x: pos.x,
         y: pos.y,
       })
+
       onClose()
     } catch (e) {
       console.error(e)
@@ -82,7 +95,7 @@ export default function ReactionEditorModal({
             style={{
               ...styles.submitHeader,
               opacity: !pos || saving ? 0.4 : 1,
-              color: pos ? '#4D96FF' : '#666',
+              color: pos ? '4D96FF_1' : '#666',
             }}
           >
             {saving ? '保存中...' : <Send size={22} />}
@@ -139,18 +152,18 @@ export default function ReactionEditorModal({
                 type={t}
               >
                 {t === 'star' && (
-                  <Star size={20} fill={type === t ? '#FFD700' : 'transparent'} />
+                  <Star size={20} fill={type === t ? 'FFD700_1' : 'transparent'} />
                 )}
                 {t === 'exclamation' && (
                   <AlertTriangle
                     size={20}
-                    fill={type === t ? '#FF6B6B' : 'transparent'}
+                    fill={type === t ? 'FF6B6B_1' : 'transparent'}
                   />
                 )}
                 {t === 'question' && (
                   <HelpCircle
                     size={20}
-                    fill={type === t ? '#4D96FF' : 'transparent'}
+                    fill={type === t ? '4D96FF_1' : 'transparent'}
                   />
                 )}
                 <span style={styles.typeLabel}>{typeLabels[t]}</span>
@@ -206,12 +219,12 @@ function TypeButton({
 }
 
 const iconMap = {
-  star: <Star size={28} fill="#FFD700" stroke="#000" strokeWidth={1.5} />,
+  star: <Star size={28} fill="FFD700_1" stroke="#000" strokeWidth={1.5} />,
   exclamation: (
-    <AlertTriangle size={28} fill="#FF6B6B" stroke="#000" strokeWidth={1.5} />
+    <AlertTriangle size={28} fill="FF6B6B_1" stroke="#000" strokeWidth={1.5} />
   ),
   question: (
-    <HelpCircle size={28} fill="#4D96FF" stroke="#000" strokeWidth={1.5} />
+    <HelpCircle size={28} fill="4D96FF_1" stroke="#000" strokeWidth={1.5} />
   ),
 }
 
