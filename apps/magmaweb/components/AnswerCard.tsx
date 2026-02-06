@@ -251,6 +251,7 @@ export default function AnswerCard({
         answerId={answerId}
         imageUrl={image}
         reactionCount={reactions.length}
+        username={username}
       />
     </div>
   )

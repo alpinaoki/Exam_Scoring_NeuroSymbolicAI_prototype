@@ -8,12 +8,14 @@ type Props = {
   answerId: string
   imageUrl: string | null
   reactionCount: number
+  username: string
 }
 
 export default function AnswerActionBar({
   answerId,
   imageUrl,
   reactionCount,
+  username,
 }: Props) {
   const [open, setOpen] = useState(false)
 
@@ -36,6 +38,7 @@ export default function AnswerActionBar({
         open={open}
         imageUrl={imageUrl}
         postId={answerId}
+        username={username}
         onClose={() => setOpen(false)}
       />
     </>
