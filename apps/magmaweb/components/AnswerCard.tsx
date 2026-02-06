@@ -54,18 +54,32 @@ export default function AnswerCard({
     getReactionsByPostId(answerId).then(setReactions)
   }, [answerId])
 
+  // ===== アイコン：塗りつぶさず、黒枠線 =====
   const icon = (type: Reaction['type']) => {
     if (type === 'star')
-      return <Star size={20} fill="#FFD700" stroke="#FFD700" />
+      return <Star size={20} stroke="#000" fill="none" strokeWidth={2} />
     if (type === 'exclamation')
-      return <AlertTriangle size={20} fill="#FF4500" stroke="#FF4500" />
-    return <HelpCircle size={20} fill="#00BFFF" stroke="#00BFFF" />
+      return (
+        <AlertTriangle
+          size={20}
+          stroke="#000"
+          fill="none"
+          strokeWidth={2}
+        />
+      )
+    return (
+      <HelpCircle
+        size={20}
+        stroke="#000"
+        fill="none"
+        strokeWidth={2}
+      />
+    )
   }
 
   const parseComment = (r: Reaction): ParsedComment | null => {
     if (!r.comment) return null
 
-    // ❓だけ会話JSON
     if (r.type === 'question') {
       try {
         const json = JSON.parse(r.comment)
@@ -78,20 +92,15 @@ export default function AnswerCard({
               typeof m.content === 'string'
           )
         ) {
-          return {
-            kind: 'question',
-            messages: json,
-          }
+          return { kind: 'question', messages: json }
         }
 
-        // ❓で想定外フォーマットは表示しない
         return null
       } catch {
         return null
       }
     }
 
-    // ⭐❗は今まで通り
     return { kind: 'plain', text: r.comment }
   }
 
@@ -282,6 +291,8 @@ const styles: { [key: string]: CSSProperties } = {
       0 0 4px rgba(0,0,0,0.6)
     `,
   },
+
+  // ===== 画面端はみ出し対策 =====
   bubble: {
     position: 'absolute',
     bottom: '140%',
@@ -293,8 +304,10 @@ const styles: { [key: string]: CSSProperties } = {
     borderRadius: 12,
     fontSize: 12,
     minWidth: 180,
+    maxWidth: '90vw',
     zIndex: 2000,
   },
+
   bubbleHeader: {
     display: 'flex',
     alignItems: 'center',
