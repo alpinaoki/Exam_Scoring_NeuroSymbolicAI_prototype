@@ -154,3 +154,111 @@ export default function AnswerCard({
     </div>
   )
 }
+
+
+const styles: { [key: string]: CSSProperties } = {
+  card: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 8,
+    padding: '0 16px',
+  },
+  header: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 6,
+    fontSize: 13,
+    color: '#555',
+  },
+  user: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 6,
+  },
+  date: {
+    marginLeft: 4,
+    color: '#aaa',
+    fontSize: 11,
+  },
+  imageWrapper: {
+    position: 'relative',
+    width: '100%',
+  },
+  image: {
+    width: '100%',
+    borderRadius: 8,
+    border: '1px solid #eee',
+    userSelect: 'none',
+  },
+  reaction: {
+    position: 'absolute',
+    transform: 'translate(-50%, -50%)',
+    cursor: 'pointer',
+    zIndex: 10,
+  },
+
+  toggleButton: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    background: 'transparent',
+    border: 'none',
+    padding: 0,
+    cursor: 'pointer',
+    zIndex: 20,
+  },
+  toggleText: {
+    color: '#fff',
+    fontSize: 11,
+    fontWeight: 700,
+    padding: '4px 8px',
+    textShadow: `
+      0 1px 2px rgba(0,0,0,0.9),
+      0 0 4px rgba(0,0,0,0.6)
+    `,
+  },
+
+  bubble: {
+    position: 'absolute',
+    bottom: '140%',
+    left: '50%',
+    transform: 'translateX(-50%)',
+    background: 'rgba(0,0,0,0.85)',
+    color: '#fff',
+    padding: '8px 12px',
+    borderRadius: '12px',
+    fontSize: '12px',
+    minWidth: '120px',
+    zIndex: 2000,
+    boxShadow: '0 8px 24px rgba(0,0,0,0.3)',
+  },
+  bubbleHeader: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 6,
+    borderBottom: '1px solid rgba(255,255,255,0.2)',
+    paddingBottom: 4,
+  },
+  reactorName: {
+    fontSize: '11px',
+    fontWeight: 700,
+    color: '#ccc',
+  },
+  bubbleComment: {
+    fontWeight: 500,
+    lineHeight: '1.4',
+    whiteSpace: 'normal',
+    wordBreak: 'break-word',
+  },
+  bubbleArrow: {
+    position: 'absolute',
+    top: '100%',
+    left: '50%',
+    transform: 'translateX(-50%)',
+    borderWidth: '6px',
+    borderStyle: 'solid',
+    borderColor:
+      'rgba(0,0,0,0.85) transparent transparent transparent',
+  },
+}
