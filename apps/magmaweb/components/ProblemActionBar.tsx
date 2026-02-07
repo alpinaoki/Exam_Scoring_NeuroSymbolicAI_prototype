@@ -4,7 +4,7 @@ import type { CSSProperties } from 'react'
 import { uploadImageToCloudinary } from '../lib/upload'
 import { createAnswer } from '../lib/posts'
 import ImageEditorModal from './ImageEditorModal'
-import { Lightbulb, Camera } from 'lucide-react' // Cameraアイコン追加
+import { Lightbulb, Plus } from 'lucide-react' // Plusアイコンで「追加」を表現
 import { useRouter } from 'next/navigation'
 
 type Props = {
@@ -31,14 +31,15 @@ export default function ProblemActionBar({
           style={styles.actionButton}
           onClick={() => cameraInputRef.current?.click()}
         >
-          <div style={styles.iconContainer}>
-            <Lightbulb size={22} style={styles.filledLightbulb} />
+          <div style={styles.leftPart}>
+            <Lightbulb size={16} style={styles.filledLightbulb} />
+            <span style={styles.countText}>{answerCount}件の解答</span>
           </div>
-          <div style={styles.textContainer}>
-            <span style={styles.countText}>{answerCount}件のひらめき</span>
-            <span style={styles.promptText}>解答・アイデアを投稿する</span>
+          <div style={styles.divider} />
+          <div style={styles.rightPart}>
+            <Plus size={16} />
+            <span>解答を投稿</span>
           </div>
-          <Camera size={20} style={styles.cameraIcon} />
         </button>
       </div>
 
@@ -54,6 +55,7 @@ export default function ProblemActionBar({
         }}
       />
 
+      {/* モダール部分は変更なし */}
       {file && (
         <ImageEditorModal
           file={file}
@@ -69,19 +71,11 @@ export default function ProblemActionBar({
           onPost={async (editedFile) => {
             if (uploading) return
             setUploading(true)
-
             const imageUrl = await uploadImageToCloudinary(editedFile)
-            await createAnswer({
-              imageUrl,
-              problemId,
-              rootId,
-              anonymous,
-            })
-
+            await createAnswer({ imageUrl, problemId, rootId, anonymous })
             setUploading(false)
             setFile(null)
             setAnonymous(false)
-
             router.push(`/threads/${rootId}`)
             router.refresh()
           }}
@@ -93,55 +87,47 @@ export default function ProblemActionBar({
 
 const styles: { [key: string]: CSSProperties } = {
   bar: {
-    padding: '12px 0',
     display: 'flex',
-    justifyContent: 'center',
+    justifyContent: 'flex-start', // 左寄せで「カードの続き」感を出す
+    padding: '8px 0',
   },
   actionButton: {
     display: 'flex',
     alignItems: 'center',
-    gap: 12,
-    background: '#ffffff',
-    border: '2px solid #fad646',
-    borderRadius: '16px',
-    padding: '10px 20px',
+    background: '#fff',
+    border: '1.5px solid #eee',
+    borderRadius: '20px',
+    padding: '0 4px 0 12px', // 右側のボタン感を出すため
+    height: '36px',
     cursor: 'pointer',
-    boxShadow: '0 4px 12px rgba(250, 214, 70, 0.2)',
-    transition: 'transform 0.1s ease',
-    width: '100%',
-    maxWidth: '400px',
-    textAlign: 'left',
+    fontSize: '13px',
+    fontWeight: 600,
+    color: '#555',
+    boxShadow: '0 2px 4px rgba(0,0,0,0.02)',
   },
-  iconContainer: {
+  leftPart: {
     display: 'flex',
     alignItems: 'center',
-    justifyContent: 'center',
-    background: '#fff9e6',
-    borderRadius: '12px',
-    width: '44px',
-    height: '44px',
+    gap: 6,
+    paddingRight: 10,
   },
   filledLightbulb: {
     fill: '#fad646',
     color: '#e6be00',
   },
-  textContainer: {
+  divider: {
+    width: '1px',
+    height: '16px',
+    background: '#eee',
+  },
+  rightPart: {
     display: 'flex',
-    flexDirection: 'column',
-    flex: 1,
+    alignItems: 'center',
+    gap: 4,
+    padding: '0 12px',
+    color: '#4D96FF', // アクション部分は青色で目立たせる
   },
   countText: {
-    fontSize: '12px',
-    fontWeight: 700,
     color: '#888',
-    marginBottom: '2px',
-  },
-  promptText: {
-    fontSize: '15px',
-    fontWeight: 800,
-    color: '#333',
-  },
-  cameraIcon: {
-    color: '#bbb',
-  },
+  }
 }
