@@ -149,7 +149,7 @@ export default function ProblemCard({
           )}
         </div>
 
-        {/* 修正：画面全体を覆う fixed モーダル */}
+        {/* 修正：下端の重なりを防ぐ fixed モーダル */}
         {tagOpen && isMine && (
           <div 
             style={styles.modalOverlay} 
@@ -250,9 +250,9 @@ const styles: { [key: string]: CSSProperties } = {
   label: {
     fontSize: '12px',
     fontWeight: 700,
-    color: '#777',
-    background: '#f0f0f0',
-    padding: '5px 12px',
+    color: '#4D96FF',
+    background: '#F0F7FF',
+    padding: '5px 14px',
     borderRadius: '999px',
     cursor: 'pointer',
   },
@@ -267,51 +267,52 @@ const styles: { [key: string]: CSSProperties } = {
     display: 'flex',
     alignItems: 'center',
   },
-  // 画面全体を暗くするレイヤー
   modalOverlay: {
     position: 'fixed',
     top: 0,
     left: 0,
     width: '100vw',
     height: '100vh',
-    backgroundColor: 'rgba(0,0,0,0.4)',
+    backgroundColor: 'rgba(0,0,0,0.6)', // 少し暗めにして集中させる
     display: 'flex',
-    alignItems: 'center',
+    alignItems: 'flex-start', // 中央ではなく上寄りに配置
     justifyContent: 'center',
-    zIndex: 1000,
-    padding: '20px',
+    zIndex: 2000, // ナビバーより確実に上に
+    padding: '60px 20px 100px 20px', // 上下の余白を広めにとる
   },
   tagPopover: {
     width: '100%',
     maxWidth: '500px',
-    maxHeight: '80vh', // 画面の高さ8割までに制限
+    maxHeight: '75vh', // 下端が被らないよう少し短めに
     padding: '24px',
     background: '#fff',
-    borderRadius: '24px',
-    boxShadow: '0 20px 60px rgba(0,0,0,0.2)',
+    borderRadius: '28px',
+    boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
     display: 'flex',
     flexDirection: 'column',
+    overflow: 'hidden',
   },
-  // モーダル内をスクロール可能にする
   scrollContent: {
     overflowY: 'auto',
     flex: 1,
     paddingRight: '4px',
+    WebkitOverflowScrolling: 'touch', // iOSのスクロールを滑らかに
   },
   popoverHeader: { 
     display: 'flex', 
     justifyContent: 'space-between', 
+    alignItems: 'center',
     marginBottom: 20,
     flexShrink: 0 
   },
-  popoverTitle: { fontSize: '16px', fontWeight: 800 },
-  closeButton: { background: 'none', border: 'none', fontSize: '20px', cursor: 'pointer', color: '#ccc' },
-  newTagRow: { display: 'flex', gap: 8, marginBottom: 20 },
-  input: { flex: 1, fontSize: '16px', padding: '12px', borderRadius: '12px', border: '1px solid #eee', outline: 'none' },
-  addButton: { padding: '0 20px', borderRadius: '12px', border: 'none', background: '#4D96FF', color: '#fff', fontWeight: 700 },
-  group: { marginBottom: 20 },
-  groupTitle: { fontSize: '11px', fontWeight: 800, color: '#aaa', marginBottom: 10, letterSpacing: '0.05em' },
-  tagGrid: { display: 'flex', flexWrap: 'wrap', gap: 8 },
-  tagOption: { fontSize: '12px', padding: '8px 16px', borderRadius: '999px', background: '#f5f5f5', color: '#666', cursor: 'pointer', fontWeight: 600 },
-  tagActive: { background: '#4D96FF', color: '#fff' },
+  popoverTitle: { fontSize: '18px', fontWeight: 800, color: '#333' },
+  closeButton: { background: '#f5f5f5', border: 'none', width: '32px', height: '32px', borderRadius: '50%', fontSize: '16px', cursor: 'pointer', color: '#999', display: 'flex', alignItems: 'center', justifyContent: 'center' },
+  newTagRow: { display: 'flex', gap: 10, marginBottom: 24 },
+  input: { flex: 1, fontSize: '16px', padding: '14px', borderRadius: '16px', border: '2px solid #f0f0f0', outline: 'none', background: '#fafafa' },
+  addButton: { padding: '0 20px', borderRadius: '16px', border: 'none', background: '#4D96FF', color: '#fff', fontWeight: 800, cursor: 'pointer' },
+  group: { marginBottom: 24 },
+  groupTitle: { fontSize: '12px', fontWeight: 800, color: '#bbb', marginBottom: 12, letterSpacing: '0.05em', paddingLeft: '4px' },
+  tagGrid: { display: 'flex', flexWrap: 'wrap', gap: 10 },
+  tagOption: { fontSize: '13px', padding: '10px 18px', borderRadius: '999px', background: '#f5f5f5', color: '#555', cursor: 'pointer', fontWeight: 600, transition: 'all 0.1s' },
+  tagActive: { background: '#4D96FF', color: '#fff', boxShadow: '0 4px 12px rgba(77, 150, 255, 0.3)' },
 }
