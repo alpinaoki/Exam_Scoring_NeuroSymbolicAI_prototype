@@ -107,19 +107,6 @@ export default function ProblemCard({
         <span style={styles.date}>· {timeLabel}</span>
       </div>
 
-      {image && (
-        <img
-          src={image}
-          alt="problem"
-          style={styles.image}
-          onClick={() => router.push(`/threads/${problemId}`)}
-        />
-      )}
-      <ProblemActionBar
-        problemId={problemId}
-        rootId={problemId}
-        answerCount={answerCount}
-      />
       {/* 表示タグ */}
       <div style={styles.labelRow}>
         {tags.map((t) => (
@@ -181,6 +168,19 @@ export default function ProblemCard({
           {renderTagGroup('その他', OTHER_TAGS)}
         </div>
       )}
+            {image && (
+        <img
+          src={image}
+          alt="problem"
+          style={styles.image}
+          onClick={() => router.push(`/threads/${problemId}`)}
+        />
+      )}
+      <ProblemActionBar
+        problemId={problemId}
+        rootId={problemId}
+        answerCount={answerCount}
+      />
     </div>
   )
 }
