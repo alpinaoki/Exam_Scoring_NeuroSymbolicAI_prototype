@@ -23,8 +23,25 @@ export default function FeedPage() {
   }, [router])
 
   return (
-    <LayoutShell>
-      <ProblemFeed />
-    </LayoutShell>
+    // 全体の背景色をほんのりグレー (#fcfcfc ~ #f8f9fa) に設定
+    <div style={styles.pageWrapper}>
+      <LayoutShell>
+        <div style={styles.feedContainer}>
+          <ProblemFeed />
+        </div>
+      </LayoutShell>
+    </div>
   )
+}
+
+const styles = {
+  pageWrapper: {
+    backgroundColor: '#f9fafb', // 真っ白ではなく、少しだけ色を落とす
+    minHeight: '100vh',
+  },
+  feedContainer: {
+    maxWidth: '600px', // モバイルで見やすい幅に固定
+    margin: '0 auto',
+    padding: '0 12px 100px 12px', // 下部にナビバーとの重なりを防ぐ余白
+  }
 }

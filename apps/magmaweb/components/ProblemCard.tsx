@@ -191,17 +191,19 @@ const styles: { [key: string]: CSSProperties } = {
   cardContainer: {
     padding: '12px 0',
   },
-  card: {
-    display: 'flex',
-    flexDirection: 'column',
-    position: 'relative',
-    background: '#fff',
-    borderRadius: '24px',
-    padding: '16px',
-    border: '1px solid #f0f0f0',
-    boxShadow: '0 8px 24px rgba(0,0,0,0.04)',
-    gap: '14px',
-  },
+  // ProblemCard.tsx 内の styles.card を以下のように更新
+card: {
+  display: 'flex',
+  flexDirection: 'column',
+  position: 'relative',
+  background: '#fff',
+  borderRadius: '24px',
+  padding: '16px',
+  border: '1px solid rgba(0,0,0,0.05)', // 線をより繊細に
+  boxShadow: '0 4px 20px rgba(0,0,0,0.03)', // 柔らかい影
+  gap: '14px',
+  marginBottom: '16px', // カード同士の隙間をしっかり取る
+},
   header: {
     display: 'flex',
     alignItems: 'center',
