@@ -48,22 +48,18 @@ export default function ProblemCard({
 
   const timeLabel = formatDateTime(createdAt)
 
-  /** 既存タグ */
   const toggleTag = async (tag: string) => {
     const nextTags = tags.includes(tag)
       ? tags.filter((t) => t !== tag)
       : [...tags, tag]
-
     setTags(nextTags)
     await updateProblemLabel(problemId, nextTags.join(', '))
     router.refresh()
   }
 
-  /** 手書きタグ */
   const addNewTag = async () => {
     const t = newTag.trim()
     if (!t || tags.includes(t)) return
-
     const nextTags = [...tags, t]
     setTags(nextTags)
     setNewTag('')
@@ -95,230 +91,193 @@ export default function ProblemCard({
   )
 
   return (
-    <div style={styles.card}>
-      <div style={styles.header}>
-        <div
-          style={styles.user}
-          onClick={() => router.push(`/profiles/${username}`)}
-        >
-          <UserBadge username={username} />
-          <span>@{username}</span>
+    <div style={styles.cardContainer}>
+      <div style={styles.card}>
+        {/* ヘッダー */}
+        <div style={styles.header}>
+          <div
+            style={styles.user}
+            onClick={() => router.push(`/profiles/${username}`)}
+          >
+            <UserBadge username={username} />
+            <span style={styles.usernameText}>@{username}</span>
+          </div>
+          <span style={styles.date}>· {timeLabel}</span>
         </div>
-        <span style={styles.date}>· {timeLabel}</span>
-      </div>
 
-      {/* 表示タグ */}
-      <div style={styles.labelRow}>
-        {tags.map((t) => (
-          <span
-            key={t}
-            style={styles.label}
-            onClick={(e) => {
-              e.stopPropagation()
-              router.push(`/search/${encodeURIComponent(t)}`)
-            }}
-          >
-            #{t}
-          </span>
-        ))}
+        {/* 画像 */}
+        {image && (
+          <div style={styles.imageWrapper}>
+            <img
+              src={image}
+              alt="problem"
+              style={styles.image}
+              onClick={() => router.push(`/threads/${problemId}`)}
+            />
+          </div>
+        )}
 
-        {isMine && (
-          <span
-            style={styles.addLabel}
-            onClick={(e) => {
-              e.stopPropagation()
-              setTagOpen(true)
-            }}
-          >
-            ＋タグを追加
-          </span>
+        {/* 解答アクション（画像とタグの間に配置） */}
+        <div style={styles.actionArea}>
+          <ProblemActionBar
+            problemId={problemId}
+            rootId={problemId}
+            answerCount={answerCount}
+          />
+        </div>
+
+        {/* 表示タグ */}
+        <div style={styles.labelRow}>
+          {tags.map((t) => (
+            <span
+              key={t}
+              style={styles.label}
+              onClick={(e) => {
+                e.stopPropagation()
+                router.push(`/search/${encodeURIComponent(t)}`)
+              }}
+            >
+              #{t}
+            </span>
+          ))}
+          {isMine && (
+            <span
+              style={styles.addLabel}
+              onClick={(e) => {
+                e.stopPropagation()
+                setTagOpen(true)
+              }}
+            >
+              ＋タグを編集
+            </span>
+          )}
+        </div>
+
+        {/* タグモーダル */}
+        {tagOpen && isMine && (
+          <div style={styles.tagPopover} onClick={(e) => e.stopPropagation()}>
+            <div style={styles.popoverHeader}>
+              <span style={styles.popoverTitle}>タグを編集</span>
+              <button style={styles.closeButton} onClick={() => setTagOpen(false)}>✕</button>
+            </div>
+            <div style={styles.newTagRow}>
+              <input
+                value={newTag}
+                onChange={(e) => setNewTag(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && addNewTag()}
+                placeholder="新しいタグを入力"
+                style={styles.input}
+              />
+              <button style={styles.addButton} onClick={addNewTag}>追加</button>
+            </div>
+            {renderTagGroup('科目', COURSE_TAGS)}
+            {renderTagGroup('単元', UNIT_TAGS)}
+            {renderTagGroup('その他', OTHER_TAGS)}
+          </div>
         )}
       </div>
-
-      {/* タグモーダル */}
-      {tagOpen && isMine && (
-        <div style={styles.tagPopover} onClick={(e) => e.stopPropagation()}>
-          {/* 上部バー */}
-          <div style={styles.popoverHeader}>
-            <span style={styles.popoverTitle}>タグを編集</span>
-            <button
-              style={styles.closeButton}
-              onClick={() => setTagOpen(false)}
-            >
-              ✕
-            </button>
-          </div>
-
-          {/* 新規タグ（最上部） */}
-          <div style={styles.newTagRow}>
-            <input
-              value={newTag}
-              onChange={(e) => setNewTag(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && addNewTag()}
-              placeholder="新しいタグを入力"
-              style={styles.input}
-            />
-            <button style={styles.addButton} onClick={addNewTag}>
-              追加
-            </button>
-          </div>
-
-          {renderTagGroup('科目', COURSE_TAGS)}
-          {renderTagGroup('単元', UNIT_TAGS)}
-          {renderTagGroup('その他', OTHER_TAGS)}
-        </div>
-      )}
-            {image && (
-        <img
-          src={image}
-          alt="problem"
-          style={styles.image}
-          onClick={() => router.push(`/threads/${problemId}`)}
-        />
-      )}
-      <ProblemActionBar
-        problemId={problemId}
-        rootId={problemId}
-        answerCount={answerCount}
-      />
     </div>
   )
 }
 
 const styles: { [key: string]: CSSProperties } = {
+  cardContainer: {
+    padding: '8px 0',
+  },
   card: {
     display: 'flex',
     flexDirection: 'column',
     gap: 12,
     position: 'relative',
+    background: '#fff',
+    borderRadius: '16px',
+    padding: '16px',
+    border: '1px solid #f0f0f0',
+    boxShadow: '0 4px 12px rgba(0,0,0,0.03)',
   },
   header: {
     display: 'flex',
     alignItems: 'center',
     gap: 6,
-    fontSize: 13,
-    color: '#555',
   },
   user: {
     display: 'flex',
     alignItems: 'center',
-    gap: 6,
+    gap: 8,
     cursor: 'pointer',
   },
+  usernameText: {
+    fontSize: '14px',
+    fontWeight: 700,
+    color: '#333',
+  },
   date: {
-    marginLeft: 4,
     color: '#999',
-    fontSize: 12,
+    fontSize: '12px',
+  },
+  imageWrapper: {
+    width: '100%',
+    borderRadius: '12px',
+    overflow: 'hidden',
+    border: '1px solid #f5f5f5',
   },
   image: {
     width: '100%',
-    borderRadius: 8,
+    display: 'block',
     objectFit: 'contain',
-    border: '1px solid #eee',
     cursor: 'pointer',
   },
-
+  actionArea: {
+    background: '#fcfcfc',
+    borderRadius: '12px',
+    padding: '4px 8px',
+  },
   labelRow: {
     display: 'flex',
-    gap: 8,
+    gap: 6,
     flexWrap: 'wrap',
+    marginTop: '4px',
   },
   label: {
-    fontSize: 12,
+    fontSize: '12px',
     fontWeight: 600,
     color: '#4D96FF',
-    background: 'rgba(77,150,255,0.12)',
-    padding: '4px 10px',
-    borderRadius: 999,
+    background: '#F0F7FF',
+    padding: '4px 12px',
+    borderRadius: '999px',
     cursor: 'pointer',
   },
   addLabel: {
-    fontSize: 12,
-    fontWeight: 600,
-    color: '#888',
-    background: '#f3f3f3',
+    fontSize: '11px',
+    fontWeight: 700,
+    color: '#bbb',
     padding: '4px 10px',
-    borderRadius: 999,
+    borderRadius: '999px',
+    border: '1px dashed #ddd',
     cursor: 'pointer',
   },
-
   tagPopover: {
     position: 'absolute',
     top: '100%',
-    left: 0,
-    marginTop: 6,
-    padding: 12,
-    width: 320,
+    left: '5%',
+    right: '5%',
+    marginTop: 8,
+    padding: 16,
     background: '#fff',
-    border: '1px solid #ddd',
-    borderRadius: 12,
-    boxShadow: '0 4px 16px rgba(0,0,0,0.12)',
-    zIndex: 10,
+    border: '1px solid #eee',
+    borderRadius: 16,
+    boxShadow: '0 10px 30px rgba(0,0,0,0.15)',
+    zIndex: 100,
   },
-
-  popoverHeader: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 10,
-  },
-  popoverTitle: {
-    fontSize: 14,
-    fontWeight: 700,
-  },
-  closeButton: {
-    fontSize: 16,
-    background: 'none',
-    border: 'none',
-    cursor: 'pointer',
-  },
-
-  newTagRow: {
-    display: 'flex',
-    gap: 6,
-    marginBottom: 12,
-  },
-  input: {
-    flex: 1,
-    fontSize: 16,      // ← ズーム防止
-    padding: '8px 10px',
-    borderRadius: 8,
-    border: '1px solid #ccc',
-  },
-  addButton: {
-    fontSize: 16,      // ← ズーム防止
-    padding: '8px 12px',
-    borderRadius: 8,
-    border: 'none',
-    background: '#4D96FF',
-    color: '#fff',
-    cursor: 'pointer',
-  },
-
-  group: {
-    marginBottom: 12,
-  },
-  groupTitle: {
-    fontSize: 12,
-    fontWeight: 700,
-    color: '#666',
-    marginBottom: 6,
-  },
-  tagGrid: {
-    display: 'flex',
-    flexWrap: 'wrap',
-    gap: 6,
-  },
-  tagOption: {
-    fontSize: 12,
-    padding: '4px 10px',
-    borderRadius: 999,
-    background: '#f2f2f2',
-    cursor: 'pointer',
-  },
-  tagActive: {
-    background: 'rgba(77,150,255,0.18)',
-    color: '#4D96FF',
-    fontWeight: 700,
-  },
+  popoverHeader: { display: 'flex', justifyContent: 'space-between', marginBottom: 12 },
+  popoverTitle: { fontSize: '14px', fontWeight: 800 },
+  closeButton: { background: 'none', border: 'none', fontSize: '18px', cursor: 'pointer' },
+  newTagRow: { display: 'flex', gap: 6, marginBottom: 16 },
+  input: { flex: 1, fontSize: '16px', padding: '10px', borderRadius: '8px', border: '1px solid #ddd' },
+  addButton: { padding: '0 16px', borderRadius: '8px', border: 'none', background: '#4D96FF', color: '#fff', fontWeight: 700 },
+  group: { marginBottom: 12 },
+  groupTitle: { fontSize: '11px', fontWeight: 800, color: '#999', marginBottom: 6, textTransform: 'uppercase' },
+  tagGrid: { display: 'flex', flexWrap: 'wrap', gap: 6 },
+  tagOption: { fontSize: '12px', padding: '5px 12px', borderRadius: '999px', background: '#f5f5f5', cursor: 'pointer' },
+  tagActive: { background: '#4D96FF', color: '#fff' },
 }
