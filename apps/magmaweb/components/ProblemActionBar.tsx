@@ -32,7 +32,7 @@ export default function ProblemActionBar({
           onClick={() => cameraInputRef.current?.click()}
         >
           <Lightbulb size={20} style={styles.filledLightbulb} />
-          <span>解答 {answerCount}</span>
+          <span>{answerCount}件の解答  ータップして投稿</span>
         </button>
       </div>
 

@@ -19,10 +19,24 @@ export default function ThreadPage({
   const [problem, setProblem] = useState<any>(null)
   const [answers, setAnswers] = useState<any[]>([])
   const [canViewAnswers, setCanViewAnswers] = useState(false)
+  const [randomMessage, setRandomMessage] = useState('') // メッセージ用ステート
   const router = useRouter()
+
+  const promptMessages = [
+    "答えにたどり着いていなくても大丈夫！「解答」ボタンからアイデアを投稿して、他の人の考え方も見てみよう！",
+    "「ここまでは分かった」という途中経過も大歓迎！みんなの知恵を借りる一歩を踏み出してみませんか？",
+    "正解することより、考える過程が宝物。あなたのユニークな発想をぜひシェアしてください！",
+    "まだ誰も気づいていないヒントがあなたの手元にあるかも。匿名でも投稿できるので、気軽にどうぞ！",
+    "あなたの「分からない」が、他の誰かの「分かった！」につながるかもしれません。まずは一言、送ってみませんか？",
+    "完璧な答案じゃなくていいんです。数学のパズルをみんなで解くように、自由な発想を待っています！"
+  ]
 
   useEffect(() => {
     async function load() {
+      // 読み込み時にメッセージをランダム選択
+      const msg = promptMessages[Math.floor(Math.random() * promptMessages.length)]
+      setRandomMessage(msg)
+
       const [p, a, user] = await Promise.all([
         getProblemById(params.id),
         getAnswersByProblemId(params.id),
@@ -141,9 +155,10 @@ export default function ThreadPage({
                 background: 'rgba(255,255,255,0.6)',
                 borderRadius: 12,
                 fontSize: 15,
+                lineHeight: 1.6, // 読みやすさのため少し追加
               }}
             >
-              「解答」ボタンから投稿して、他の人の解き方も見てみよう！
+              {randomMessage}
             </div>
           )}
         </div>
