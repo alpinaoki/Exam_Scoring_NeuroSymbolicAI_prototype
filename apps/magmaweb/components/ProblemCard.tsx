@@ -93,7 +93,7 @@ export default function ProblemCard({
   return (
     <div style={styles.cardContainer}>
       <div style={styles.card}>
-        {/* ヘッダー */}
+        {/* ヘッダー：ユーザー情報 */}
         <div style={styles.header}>
           <div
             style={styles.user}
@@ -105,7 +105,7 @@ export default function ProblemCard({
           <span style={styles.date}>· {timeLabel}</span>
         </div>
 
-        {/* 画像 */}
+        {/* メイン：問題画像 */}
         {image && (
           <div style={styles.imageWrapper}>
             <img
@@ -117,7 +117,7 @@ export default function ProblemCard({
           </div>
         )}
 
-        {/* 解答アクション（画像とタグの間に配置） */}
+        {/* 重要アクション：解答バー（背景をつけて独立性を高める） */}
         <div style={styles.actionArea}>
           <ProblemActionBar
             problemId={problemId}
@@ -126,7 +126,7 @@ export default function ProblemCard({
           />
         </div>
 
-        {/* 表示タグ */}
+        {/* フッター：タグ（少し控えめにして情報を整理） */}
         <div style={styles.labelRow}>
           {tags.map((t) => (
             <span
@@ -182,23 +182,24 @@ export default function ProblemCard({
 
 const styles: { [key: string]: CSSProperties } = {
   cardContainer: {
-    padding: '8px 0',
+    padding: '12px 0',
   },
   card: {
     display: 'flex',
     flexDirection: 'column',
-    gap: 12,
     position: 'relative',
     background: '#fff',
-    borderRadius: '16px',
+    borderRadius: '24px',
     padding: '16px',
     border: '1px solid #f0f0f0',
-    boxShadow: '0 4px 12px rgba(0,0,0,0.03)',
+    boxShadow: '0 8px 24px rgba(0,0,0,0.04)',
+    gap: '14px',
   },
   header: {
     display: 'flex',
     alignItems: 'center',
     gap: 6,
+    padding: '0 4px',
   },
   user: {
     display: 'flex',
@@ -212,14 +213,15 @@ const styles: { [key: string]: CSSProperties } = {
     color: '#333',
   },
   date: {
-    color: '#999',
+    color: '#bbb',
     fontSize: '12px',
   },
   imageWrapper: {
     width: '100%',
-    borderRadius: '12px',
+    borderRadius: '16px',
     overflow: 'hidden',
-    border: '1px solid #f5f5f5',
+    border: '1px solid #f8f8f8',
+    backgroundColor: '#fafafa',
   },
   image: {
     width: '100%',
@@ -228,56 +230,58 @@ const styles: { [key: string]: CSSProperties } = {
     cursor: 'pointer',
   },
   actionArea: {
-    background: '#fcfcfc',
-    borderRadius: '12px',
-    padding: '4px 8px',
+    background: '#f8f9fa', // ほんのりグレーで区切る
+    borderRadius: '16px',
+    padding: '4px', // ProblemActionBar側のpaddingと合わせて調整
   },
   labelRow: {
     display: 'flex',
-    gap: 6,
+    gap: '8px',
     flexWrap: 'wrap',
-    marginTop: '4px',
+    padding: '0 4px',
   },
   label: {
     fontSize: '12px',
-    fontWeight: 600,
-    color: '#4D96FF',
-    background: '#F0F7FF',
-    padding: '4px 12px',
+    fontWeight: 700,
+    color: '#777', // タグは少し控えめな色にして、アクションを優先させる
+    background: '#f0f0f0',
+    padding: '5px 12px',
     borderRadius: '999px',
     cursor: 'pointer',
+    transition: 'all 0.2s',
   },
   addLabel: {
     fontSize: '11px',
     fontWeight: 700,
     color: '#bbb',
-    padding: '4px 10px',
+    padding: '4px 12px',
     borderRadius: '999px',
     border: '1px dashed #ddd',
     cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
   },
   tagPopover: {
     position: 'absolute',
-    top: '100%',
-    left: '5%',
-    right: '5%',
-    marginTop: 8,
-    padding: 16,
+    bottom: '20px', // 下に表示されると隠れる場合があるため、状況により調整
+    left: '12px',
+    right: '12px',
+    padding: '20px',
     background: '#fff',
     border: '1px solid #eee',
-    borderRadius: 16,
-    boxShadow: '0 10px 30px rgba(0,0,0,0.15)',
+    borderRadius: '20px',
+    boxShadow: '0 15px 40px rgba(0,0,0,0.2)',
     zIndex: 100,
   },
-  popoverHeader: { display: 'flex', justifyContent: 'space-between', marginBottom: 12 },
-  popoverTitle: { fontSize: '14px', fontWeight: 800 },
-  closeButton: { background: 'none', border: 'none', fontSize: '18px', cursor: 'pointer' },
-  newTagRow: { display: 'flex', gap: 6, marginBottom: 16 },
-  input: { flex: 1, fontSize: '16px', padding: '10px', borderRadius: '8px', border: '1px solid #ddd' },
-  addButton: { padding: '0 16px', borderRadius: '8px', border: 'none', background: '#4D96FF', color: '#fff', fontWeight: 700 },
-  group: { marginBottom: 12 },
-  groupTitle: { fontSize: '11px', fontWeight: 800, color: '#999', marginBottom: 6, textTransform: 'uppercase' },
-  tagGrid: { display: 'flex', flexWrap: 'wrap', gap: 6 },
-  tagOption: { fontSize: '12px', padding: '5px 12px', borderRadius: '999px', background: '#f5f5f5', cursor: 'pointer' },
+  popoverHeader: { display: 'flex', justifyContent: 'space-between', marginBottom: 16 },
+  popoverTitle: { fontSize: '15px', fontWeight: 800 },
+  closeButton: { background: 'none', border: 'none', fontSize: '18px', cursor: 'pointer', color: '#ccc' },
+  newTagRow: { display: 'flex', gap: 8, marginBottom: 20 },
+  input: { flex: 1, fontSize: '16px', padding: '12px', borderRadius: '12px', border: '1px solid #eee', outline: 'none' },
+  addButton: { padding: '0 20px', borderRadius: '12px', border: 'none', background: '#4D96FF', color: '#fff', fontWeight: 700 },
+  group: { marginBottom: 16 },
+  groupTitle: { fontSize: '11px', fontWeight: 800, color: '#aaa', marginBottom: 8, letterSpacing: '0.05em' },
+  tagGrid: { display: 'flex', flexWrap: 'wrap', gap: 8 },
+  tagOption: { fontSize: '12px', padding: '6px 14px', borderRadius: '999px', background: '#f5f5f5', color: '#666', cursor: 'pointer', fontWeight: 600 },
   tagActive: { background: '#4D96FF', color: '#fff' },
 }
