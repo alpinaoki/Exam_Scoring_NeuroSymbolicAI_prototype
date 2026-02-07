@@ -115,7 +115,11 @@ export default function ProblemCard({
           onClick={() => router.push(`/threads/${problemId}`)}
         />
       )}
-
+      <ProblemActionBar
+        problemId={problemId}
+        rootId={problemId}
+        answerCount={answerCount}
+      />
       {/* 表示タグ */}
       <div style={styles.labelRow}>
         {tags.map((t) => (
@@ -177,12 +181,6 @@ export default function ProblemCard({
           {renderTagGroup('その他', OTHER_TAGS)}
         </div>
       )}
-
-      <ProblemActionBar
-        problemId={problemId}
-        rootId={problemId}
-        answerCount={answerCount}
-      />
     </div>
   )
 }
