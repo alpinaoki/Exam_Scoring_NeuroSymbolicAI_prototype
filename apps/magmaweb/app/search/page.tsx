@@ -3,7 +3,7 @@
 import { useRouter } from 'next/navigation'
 import { useState, useMemo, useRef, useEffect } from 'react'
 import { Search } from 'lucide-react'
-import { COURSE_TAGS, OTHER_TAGS, UNIT_TAGS } from '../../lib/mathTags'
+import { COURSE_TAGS, SEASONAL_TAGS, OTHER_TAGS, UNIT_TAGS } from '../../lib/mathTags'
 
 export default function SearchPage() {
   const router = useRouter()
@@ -13,7 +13,7 @@ export default function SearchPage() {
 
   // サジェスト計算用（表示はしないが検索候補として利用）
   const allTagsForSearch = useMemo(() => {
-    return Array.from(new Set([...COURSE_TAGS, ...UNIT_TAGS, ...OTHER_TAGS]))
+    return Array.from(new Set([...COURSE_TAGS, ...SEASONAL_TAGS, ...UNIT_TAGS, ...OTHER_TAGS]))
   }, [])
 
   const filteredSuggestions = useMemo(() => {
@@ -107,6 +107,17 @@ export default function SearchPage() {
           ))}
         </div>
       </section>
+
+{/* 期間限定：lib/mathTagsのまま */}
+      <section style={{ marginTop: 32 }}>
+        <h3 style={styles.sectionTitle}>その他</h3>
+        <div style={styles.tagRow}>
+          {SEASONAL_TAGS.map((t) => (
+            <button key={t} style={styles.tag} onClick={() => goTag(t)}>
+              #{t}
+            </button>
+          ))}
+        </div>
 
       {/* その他：lib/mathTagsのまま */}
       <section style={{ marginTop: 32 }}>

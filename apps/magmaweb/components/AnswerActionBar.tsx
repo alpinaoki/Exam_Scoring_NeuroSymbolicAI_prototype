@@ -30,7 +30,7 @@ export default function AnswerActionBar({
           onClick={() => setOpen(true)}
         >
           <Heart size={18} />
-          <span>{reactionCount} リアクションを追加</span>
+          <span>{reactionCount}  タップしてリアクションを追加</span>
         </button>
       </div>
 

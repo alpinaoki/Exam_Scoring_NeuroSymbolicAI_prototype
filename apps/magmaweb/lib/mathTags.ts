@@ -36,6 +36,10 @@ export const UNIT_TAGS = [
   '融合問題'
 ] as const
 
+export const SEASONAL_TAGS = [
+  '0210予測問題',
+] as const
+
 export const OTHER_TAGS = [
   '難問',
   '手作り',

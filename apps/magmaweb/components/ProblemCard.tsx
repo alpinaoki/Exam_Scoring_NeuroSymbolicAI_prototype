@@ -10,6 +10,7 @@ import UserBadge from './UserBadge'
 import {
   COURSE_TAGS,
   UNIT_TAGS,
+  SEASONAL_TAGS,
   OTHER_TAGS,
 } from '../lib/mathTags'
 
@@ -177,6 +178,7 @@ export default function ProblemCard({
                 </div>
                 {renderTagGroup('科目', COURSE_TAGS)}
                 {renderTagGroup('単元', UNIT_TAGS)}
+                {renderTagGroup('期間限定', SEASONAL_TAGS)}
                 {renderTagGroup('その他', OTHER_TAGS)}
               </div>
             </div>
