@@ -118,6 +118,7 @@ export default function SearchPage() {
             </button>
           ))}
         </div>
+      </section>
 
       {/* その他：lib/mathTagsのまま */}
       <section style={{ marginTop: 32 }}>
