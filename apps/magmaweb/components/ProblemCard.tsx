@@ -13,6 +13,7 @@ import {
   SEASONAL_TAGS,
   OTHER_TAGS,
 } from '../lib/mathTags'
+import { Maximize2, X } from 'lucide-react' // ← 追加
 
 type Props = {
   image: string | null
@@ -42,6 +43,8 @@ export default function ProblemCard({
       .map((l) => l.trim())
       .filter(Boolean) ?? []
   )
+
+  const [viewerOpen, setViewerOpen] = useState(false) // ← 追加
 
   useEffect(() => {
     getAnswerCount(problemId).then(setAnswerCount)
@@ -107,6 +110,17 @@ export default function ProblemCard({
 
         {image && (
           <div style={styles.imageWrapper}>
+            {/* 拡大ボタン */}
+            <button
+              style={styles.expandButton}
+              onClick={(e) => {
+                e.stopPropagation()
+                setViewerOpen(true)
+              }}
+            >
+              <Maximize2 size={18} />
+            </button>
+
             <img
               src={image}
               alt="problem"
@@ -150,7 +164,7 @@ export default function ProblemCard({
           )}
         </div>
 
-        {/* 修正：下端の重なりを防ぐ fixed モーダル */}
+        {/* タグモーダル（既存） */}
         {tagOpen && isMine && (
           <div 
             style={styles.modalOverlay} 
@@ -185,6 +199,23 @@ export default function ProblemCard({
           </div>
         )}
       </div>
+
+      {/* 画像ビューア（追加） */}
+      {viewerOpen && image && (
+        <div style={styles.viewerOverlay} onClick={() => setViewerOpen(false)}>
+          <button
+            style={styles.viewerClose}
+            onClick={() => setViewerOpen(false)}
+          >
+            <X size={28} />
+          </button>
+          <img
+            src={image}
+            style={styles.viewerImage}
+            onClick={(e) => e.stopPropagation()}
+          />
+        </div>
+      )}
     </div>
   )
 }
@@ -319,4 +350,46 @@ card: {
   tagGrid: { display: 'flex', flexWrap: 'wrap', gap: 10 },
   tagOption: { fontSize: '13px', padding: '10px 18px', borderRadius: '999px', background: '#f5f5f5', color: '#555', cursor: 'pointer', fontWeight: 600, transition: 'all 0.1s' },
   tagActive: { background: '#4D96FF', color: '#fff', boxShadow: '0 4px 12px rgba(77, 150, 255, 0.3)' },
+  expandButton: {
+  position: 'absolute',
+  top: 8,
+  right: 8,
+  background: 'rgba(0,0,0,0.4)',
+  border: 'none',
+  borderRadius: '50%',
+  width: 32,
+  height: 32,
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  color: '#fff',
+  cursor: 'pointer',
+  zIndex: 5,
+},
+
+viewerOverlay: {
+  position: 'fixed',
+  inset: 0,
+  background: 'rgba(0,0,0,0.95)',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  zIndex: 999999,
+},
+
+viewerImage: {
+  maxWidth: '95%',
+  maxHeight: '95%',
+  objectFit: 'contain',
+},
+
+viewerClose: {
+  position: 'absolute',
+  top: 16,
+  right: 16,
+  background: 'none',
+  border: 'none',
+  color: '#fff',
+  cursor: 'pointer',
+},
 }
