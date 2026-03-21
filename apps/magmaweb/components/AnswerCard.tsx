@@ -52,6 +52,9 @@ export default function AnswerCard({
   const bubbleRef = useRef<HTMLDivElement | null>(null)
   const [bubbleShift, setBubbleShift] = useState(0)
 
+  // ★追加：表示ON/OFF
+  const [showReactions, setShowReactions] = useState(true)
+
   const displayName = anonymous ? 'Anonymous' : username
 
   useEffect(() => {
@@ -151,99 +154,109 @@ export default function AnswerCard({
         <div style={styles.imageWrapper}>
           <img src={image} alt="answer" style={styles.image} draggable={false} />
 
-          {reactions.map((r) => {
-            const messages = parseQuestion(r)
-            const isActive = activeReactionId === r.id
+          {/* ★追加：透明トグルボタン */}
+          <button
+            style={styles.toggleButton}
+            onClick={() => setShowReactions((prev) => !prev)}
+          >
+            👁
+          </button>
 
-            return (
-              <div
-                key={r.id}
-                style={{
-                  ...styles.reaction,
-                  left: `${r.x_float * 100}%`,
-                  top: `${r.y_float * 100}%`,
-                  zIndex: isActive ? 10000 : 10,
-                }}
-              >
+          {/* ★ここだけ条件追加 */}
+          {showReactions &&
+            reactions.map((r) => {
+              const messages = parseQuestion(r)
+              const isActive = activeReactionId === r.id
+
+              return (
                 <div
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    setActiveReactionId(isActive ? null : r.id)
+                  key={r.id}
+                  style={{
+                    ...styles.reaction,
+                    left: `${r.x_float * 100}%`,
+                    top: `${r.y_float * 100}%`,
+                    zIndex: isActive ? 10000 : 10,
                   }}
                 >
-                  {icon(r.type)}
-                </div>
-
-                {isActive && (
                   <div
-                    ref={bubbleRef}
-                    onClick={(e) => e.stopPropagation()}
-                    style={{
-                      ...styles.bubble,
-                      transform: `translateX(calc(-50% + ${bubbleShift}px))`,
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      setActiveReactionId(isActive ? null : r.id)
                     }}
                   >
-                    <div style={styles.bubbleHeader}>
-                      <UserBadge username={r.username ?? ''} size={14} />
-                      <span style={styles.reactorName}>
-                        @{r.username ?? 'unknown'}
-                      </span>
-                    </div>
-
-                    {r.type === 'star' && (
-                      <div style={styles.bubbleComment}>
-                        {r.comment ?? 'いいね！'}
-                      </div>
-                    )}
-
-                    {r.type === 'exclamation' && (
-                      <div style={styles.bubbleComment}>
-                        {r.comment ?? '注目ポイント'}
-                      </div>
-                    )}
-
-                    {r.type === 'question' && messages && (
-                      <>
-                        <div style={styles.questionThread}>
-                          {messages.map((m, i) => (
-                            <div key={i} style={styles.questionRow}>
-                              <UserBadge username={m.username} size={14} />
-                              <div style={styles.questionBubble}>
-                                <div style={styles.questionName}>
-                                  @{m.username}
-                                </div>
-                                <div>{m.content}</div>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-
-                        <div style={styles.replyBox}>
-                          <textarea
-                            style={styles.replyInput}
-                            rows={1}
-                            value={replyText}
-                            onChange={(e) =>
-                              setReplyText(e.target.value)
-                            }
-                            placeholder="返信を書く"
-                          />
-                          <button
-                            style={styles.replyButton}
-                            onClick={() => sendReply(r, messages)}
-                          >
-                            <Send size={14} />
-                          </button>
-                        </div>
-                      </>
-                    )}
-
-                    <div style={styles.bubbleArrow} />
+                    {icon(r.type)}
                   </div>
-                )}
-              </div>
-            )
-          })}
+
+                  {isActive && (
+                    <div
+                      ref={bubbleRef}
+                      onClick={(e) => e.stopPropagation()}
+                      style={{
+                        ...styles.bubble,
+                        transform: `translateX(calc(-50% + ${bubbleShift}px))`,
+                      }}
+                    >
+                      <div style={styles.bubbleHeader}>
+                        <UserBadge username={r.username ?? ''} size={14} />
+                        <span style={styles.reactorName}>
+                          @{r.username ?? 'unknown'}
+                        </span>
+                      </div>
+
+                      {r.type === 'star' && (
+                        <div style={styles.bubbleComment}>
+                          {r.comment ?? 'いいね！'}
+                        </div>
+                      )}
+
+                      {r.type === 'exclamation' && (
+                        <div style={styles.bubbleComment}>
+                          {r.comment ?? '注目ポイント'}
+                        </div>
+                      )}
+
+                      {r.type === 'question' && messages && (
+                        <>
+                          <div style={styles.questionThread}>
+                            {messages.map((m, i) => (
+                              <div key={i} style={styles.questionRow}>
+                                <UserBadge username={m.username} size={14} />
+                                <div style={styles.questionBubble}>
+                                  <div style={styles.questionName}>
+                                    @{m.username}
+                                  </div>
+                                  <div>{m.content}</div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+
+                          <div style={styles.replyBox}>
+                            <textarea
+                              style={styles.replyInput}
+                              rows={1}
+                              value={replyText}
+                              onChange={(e) =>
+                                setReplyText(e.target.value)
+                              }
+                              placeholder="返信を書く"
+                            />
+                            <button
+                              style={styles.replyButton}
+                              onClick={() => sendReply(r, messages)}
+                            >
+                              <Send size={14} />
+                            </button>
+                          </div>
+                        </>
+                      )}
+
+                      <div style={styles.bubbleArrow} />
+                    </div>
+                  )}
+                </div>
+              )
+            })}
         </div>
       )}
 
@@ -290,6 +303,22 @@ const styles: { [key: string]: CSSProperties } = {
     borderRadius: 8,
     border: '1px solid #eee',
   },
+
+  // ★追加
+  toggleButton: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    background: 'rgba(0,0,0,0.3)',
+    color: '#fff',
+    border: 'none',
+    borderRadius: 6,
+    padding: '4px 6px',
+    cursor: 'pointer',
+    fontSize: 12,
+    zIndex: 1000,
+  },
+
   reaction: {
     position: 'absolute',
     transform: 'translate(-50%, -50%)',
@@ -350,7 +379,7 @@ const styles: { [key: string]: CSSProperties } = {
   },
   replyInput: {
     flex: 1,
-    fontSize: 16, // 拡大防止
+    fontSize: 16,
     padding: '6px 8px',
     borderRadius: 6,
     border: 'none',
