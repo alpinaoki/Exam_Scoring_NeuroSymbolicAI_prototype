@@ -12,6 +12,8 @@ import {
   AlertTriangle,
   HelpCircle,
   Send,
+  Eye,
+  EyeOff,
 } from 'lucide-react'
 
 type Reaction = {
@@ -52,7 +54,6 @@ export default function AnswerCard({
   const bubbleRef = useRef<HTMLDivElement | null>(null)
   const [bubbleShift, setBubbleShift] = useState(0)
 
-  // ★追加：表示ON/OFF
   const [showReactions, setShowReactions] = useState(true)
 
   const displayName = anonymous ? 'Anonymous' : username
@@ -154,15 +155,13 @@ export default function AnswerCard({
         <div style={styles.imageWrapper}>
           <img src={image} alt="answer" style={styles.image} draggable={false} />
 
-          {/* ★追加：透明トグルボタン */}
           <button
             style={styles.toggleButton}
             onClick={() => setShowReactions((prev) => !prev)}
           >
-            👁
+            {showReactions ? <Eye size={16} /> : <EyeOff size={16} />}
           </button>
 
-          {/* ★ここだけ条件追加 */}
           {showReactions &&
             reactions.map((r) => {
               const messages = parseQuestion(r)
@@ -303,8 +302,6 @@ const styles: { [key: string]: CSSProperties } = {
     borderRadius: 8,
     border: '1px solid #eee',
   },
-
-  // ★追加
   toggleButton: {
     position: 'absolute',
     top: 8,
@@ -318,7 +315,6 @@ const styles: { [key: string]: CSSProperties } = {
     fontSize: 12,
     zIndex: 1000,
   },
-
   reaction: {
     position: 'absolute',
     transform: 'translate(-50%, -50%)',
