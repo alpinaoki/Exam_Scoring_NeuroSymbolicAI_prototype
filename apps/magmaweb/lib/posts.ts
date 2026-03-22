@@ -199,10 +199,10 @@ export async function getProblemsByHandle(handle: string) {
 
   // ② user_id → posts
   const { data, error } = await supabase
-    .from('posts')
-    .select('id, image_url, created_at')
-    .eq('user_id', profile.user_id)
-    .order('created_at', { ascending: false })
+  .from('posts')
+  .select('id, image_url, parent_id, created_at') // ★ここ
+  .eq('user_id', profile.user_id)
+  .order('created_at', { ascending: false })
 
   if (error) throw error
   return data

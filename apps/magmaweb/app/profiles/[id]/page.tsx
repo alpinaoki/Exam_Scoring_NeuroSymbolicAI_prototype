@@ -12,7 +12,6 @@ type Profile = {
 type PostItem = {
   id: string
   image_url: string | null
-  parent_id?: string // ★追加
   created_at: string
 }
 
@@ -20,12 +19,14 @@ export default function ProfilePage() {
   const router = useRouter()
   const params = useParams()
 
+  // 🔑 URL の id は handle として扱う
   const handle = params.id as string
 
   const [profile, setProfile] = useState<Profile | null>(null)
   const [posts, setPosts] = useState<PostItem[]>([])
   const [loading, setLoading] = useState(true)
 
+  /** プロフィール取得（handle ベース） */
   useEffect(() => {
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -50,6 +51,7 @@ export default function ProfilePage() {
     loadProfile()
   }, [handle])
 
+  /** その人の投稿取得（handle → user_id → posts） */
   useEffect(() => {
     async function loadPosts() {
       try {
@@ -97,9 +99,7 @@ export default function ProfilePage() {
               src={p.image_url ?? ''}
               alt="post"
               style={styles.thumb}
-              onClick={() =>
-                router.push(`/threads/${p.parent_id ?? p.id}`) // ★ここだけ修正
-              }
+              onClick={() => router.push(`/threads/${p.id}`)}
             />
           ))
         )}
