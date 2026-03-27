@@ -55,7 +55,7 @@ magmaweb/
 <magmathe用データベースの現状の構造(1/26現在)>
 {"tables":[{"table_name":"reactions","columns":[{"column_name":"id","data_type":"uuid"},{"column_name":"post_id","data_type":"uuid"},{"column_name":"user_id","data_type":"uuid"},{"column_name":"x_float","data_type":"double precision"},{"column_name":"y_float","data_type":"double precision"},{"column_name":"created_at","data_type":"timestamp with time zone"},{"column_name":"comment","data_type":"text"},{"column_name":"type","data_type":"text"}]},{"table_name":"posts","columns":[{"column_name":"anonymous","data_type":"boolean"},{"column_name":"user_id","data_type":"uuid"},{"column_name":"created_at","data_type":"timestamp with time zone"},{"column_name":"root_id","data_type":"uuid"},{"column_name":"id","data_type":"uuid"},{"column_name":"parent_id","data_type":"uuid"},{"column_name":"image_url","data_type":"text"},{"column_name":"type","data_type":"text"},{"column_name":"label","data_type":"text"}]},{"table_name":"profiles","columns":[{"column_name":"user_id","data_type":"uuid"},{"column_name":"created_at","data_type":"timestamp with time zone"},{"column_name":"username","data_type":"text"},{"column_name":"handle","data_type":"text"}]}]}
 
-＜タスク整理（1/10現在）＞
+＜タスク整理（3/27現在）＞
 ・magmatheを使える状態にする。
 　・使いながら改善する。
 　☆大規模な公開（ユーザーが20人を超えるイメージ）前に必要になること
@@ -68,6 +68,10 @@ magmaweb/
 　・解答の送信を匿名で行うかどうかを、解答送信時に選択可能にする。
 　・アイコンを設定できるようにする。
 　・いいねがちゃんと動くようにする。
+　(3/27以降追加)
+　・フォトライブラリから投稿できるようにする。
+　・問題文保存機能（仮名称「気になる」、ブックマークの役割）を実装する。
+　・プラスマークが投稿という意味だとわかりにくい。
 ・利用規約（データ収集の有無など）をつくる。
 ・利用上の簡単なルールを作る。（トラブル防止のため）
 ・欲しいデータの規模と、内容（単元、解答者のレベルなど）を具体化し、ターゲットを選定する。
