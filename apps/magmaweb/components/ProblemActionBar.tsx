@@ -4,7 +4,7 @@ import type { CSSProperties } from 'react'
 import { uploadImageToCloudinary } from '../lib/upload'
 import { createAnswer } from '../lib/posts'
 import ImageEditorModal from './ImageEditorModal'
-import { Lightbulb, Plus } from 'lucide-react' // Plusアイコンで「追加」を表現
+import { Lightbulb, Plus, Image as ImageIcon } from 'lucide-react' // ★追加
 import { useRouter } from 'next/navigation'
 
 type Props = {
@@ -19,6 +19,7 @@ export default function ProblemActionBar({
   answerCount,
 }: Props) {
   const cameraInputRef = useRef<HTMLInputElement>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null) // ★追加
   const [file, setFile] = useState<File | null>(null)
   const [uploading, setUploading] = useState(false)
   const [anonymous, setAnonymous] = useState(false)
@@ -35,14 +36,25 @@ export default function ProblemActionBar({
             <Lightbulb size={16} style={styles.filledLightbulb} />
             <span style={styles.countText}>{answerCount}件の解答</span>
           </div>
+
           <div style={styles.divider} />
+
           <div style={styles.rightPart}>
             <Plus size={16} />
             <span>解答を投稿</span>
           </div>
         </button>
+
+        {/* ★追加：フォトライブラリアイコン */}
+        <button
+          style={styles.galleryButton}
+          onClick={() => fileInputRef.current?.click()}
+        >
+          <ImageIcon size={16} />
+        </button>
       </div>
 
+      {/* カメラ */}
       <input
         ref={cameraInputRef}
         type="file"
@@ -55,7 +67,19 @@ export default function ProblemActionBar({
         }}
       />
 
-      {/* モダール部分は変更なし */}
+      {/* ★追加：フォトライブラリ */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        hidden
+        onChange={(e) => {
+          const f = e.target.files?.[0]
+          if (f) setFile(f)
+        }}
+      />
+
+      {/* モダール */}
       {file && (
         <ImageEditorModal
           file={file}
@@ -88,7 +112,8 @@ export default function ProblemActionBar({
 const styles: { [key: string]: CSSProperties } = {
   bar: {
     display: 'flex',
-    justifyContent: 'flex-start', // 左寄せで「カードの続き」感を出す
+    alignItems: 'center', // ★追加（横並び調整）
+    gap: 8, // ★追加（ボタン間の余白）
     padding: '8px 0',
   },
   actionButton: {
@@ -97,7 +122,7 @@ const styles: { [key: string]: CSSProperties } = {
     background: '#fff',
     border: '1.5px solid #eee',
     borderRadius: '20px',
-    padding: '0 4px 0 12px', // 右側のボタン感を出すため
+    padding: '0 4px 0 12px',
     height: '36px',
     cursor: 'pointer',
     fontSize: '13px',
@@ -125,9 +150,23 @@ const styles: { [key: string]: CSSProperties } = {
     alignItems: 'center',
     gap: 4,
     padding: '0 12px',
-    color: '#4D96FF', // アクション部分は青色で目立たせる
+    color: '#4D96FF',
   },
   countText: {
     color: '#888',
-  }
+  },
+
+  // ★追加：ギャラリーボタン
+  galleryButton: {
+    width: 36,
+    height: 36,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: '50%',
+    border: '1.5px solid #eee',
+    background: '#fff',
+    cursor: 'pointer',
+    color: '#555',
+  },
 }
