@@ -69,15 +69,15 @@ export default function ProblemActionBar({
 
       {/* ファイル選択（即ギャラリー） */}
       <input
-        ref={fileInputRef}
-        type="file"
-        accept="image/*"
-        hidden
-        onChange={(e) => {
-          const f = e.target.files?.[0]
-          if (f) setFile(f)
-        }}
-      />
+  ref={fileInputRef}
+  type="file"
+  accept="image/png,image/jpeg" // ★ここ変更
+  hidden
+  onChange={(e) => {
+    const f = e.target.files?.[0]
+    if (f) setFile(f)
+  }}
+/>
 
       {/* モダール */}
       {file && (
