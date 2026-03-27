@@ -11,6 +11,7 @@ import {
   Sparkles,
   Search,
   BarChart3,
+  Send, // ★追加
 } from 'lucide-react'
 
 type Props = {
@@ -60,7 +61,7 @@ export default function LayoutShell({ children }: Props) {
           style={styles.plus}
           onClick={() => cameraInputRef.current?.click()}
         >
-          ＋
+          <Send size={20} /> {/* ★変更 */}
         </button>
 
         {/* Analysis */}
@@ -104,12 +105,10 @@ export default function LayoutShell({ children }: Props) {
             const imageUrl = await uploadImageToCloudinary(editedFile)
             await createPost({ imageUrl })
 
-setUploading(false)
-setFile(null)
+            setUploading(false)
+            setFile(null)
 
-// push せず refresh だけ
-router.refresh()
-
+            router.refresh()
           }}
         />
       )}
@@ -167,7 +166,6 @@ const styles: { [key: string]: CSSProperties } = {
     width: 36,
     height: 36,
     borderRadius: '50%',
-    fontSize: 24,
     background: 'none',
     color: '#eee',
     border: '3px solid #444',
@@ -175,7 +173,5 @@ const styles: { [key: string]: CSSProperties } = {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 0,
-    lineHeight: 1,
   },
 }
