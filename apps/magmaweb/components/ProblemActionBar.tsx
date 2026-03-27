@@ -4,7 +4,7 @@ import type { CSSProperties } from 'react'
 import { uploadImageToCloudinary } from '../lib/upload'
 import { createAnswer } from '../lib/posts'
 import ImageEditorModal from './ImageEditorModal'
-import { Lightbulb, Plus, Image as ImageIcon } from 'lucide-react' // ★追加
+import { Lightbulb, Camera, Image as ImageIcon } from 'lucide-react' // ★変更
 import { useRouter } from 'next/navigation'
 
 type Props = {
@@ -19,7 +19,7 @@ export default function ProblemActionBar({
   answerCount,
 }: Props) {
   const cameraInputRef = useRef<HTMLInputElement>(null)
-  const fileInputRef = useRef<HTMLInputElement>(null) // ★追加
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const [file, setFile] = useState<File | null>(null)
   const [uploading, setUploading] = useState(false)
   const [anonymous, setAnonymous] = useState(false)
@@ -40,12 +40,12 @@ export default function ProblemActionBar({
           <div style={styles.divider} />
 
           <div style={styles.rightPart}>
-            <Plus size={16} />
+            <Camera size={16} /> {/* ★ここ変更 */}
             <span>解答を投稿</span>
           </div>
         </button>
 
-        {/* ★追加：フォトライブラリアイコン */}
+        {/* ギャラリーボタン（即ファイル選択） */}
         <button
           style={styles.galleryButton}
           onClick={() => fileInputRef.current?.click()}
@@ -54,7 +54,7 @@ export default function ProblemActionBar({
         </button>
       </div>
 
-      {/* カメラ */}
+      {/* カメラ（即起動） */}
       <input
         ref={cameraInputRef}
         type="file"
@@ -67,7 +67,7 @@ export default function ProblemActionBar({
         }}
       />
 
-      {/* ★追加：フォトライブラリ */}
+      {/* ファイル選択（即ギャラリー） */}
       <input
         ref={fileInputRef}
         type="file"
@@ -112,8 +112,8 @@ export default function ProblemActionBar({
 const styles: { [key: string]: CSSProperties } = {
   bar: {
     display: 'flex',
-    alignItems: 'center', // ★追加（横並び調整）
-    gap: 8, // ★追加（ボタン間の余白）
+    alignItems: 'center',
+    gap: 8,
     padding: '8px 0',
   },
   actionButton: {
@@ -155,8 +155,6 @@ const styles: { [key: string]: CSSProperties } = {
   countText: {
     color: '#888',
   },
-
-  // ★追加：ギャラリーボタン
   galleryButton: {
     width: 36,
     height: 36,
