@@ -29,7 +29,8 @@ export default function LayoutShell({ children }: Props) {
 
   if (
     pathname === '/login' ||
-    pathname === '/terms'
+    pathname === '/terms' ||
+    pathname.startsWith('/threads') 
   ) {
     return <>{children}</>
   }

@@ -289,7 +289,7 @@ function ThreadModal({
           <input
             value={replyText}
             onChange={(e) => setReplyText(e.target.value)}
-            placeholder="返信を書く"
+            placeholder="返信..."
             style={modalStyles.input}
           />
           <button
@@ -398,20 +398,21 @@ const modalStyles: { [key: string]: CSSProperties } = {
   overlay: {
     position: 'fixed',
     inset: 0,
-    background: 'rgba(0,0,0,0.4)',
-    zIndex: 9999,
+    background: 'rgba(0,0,0,0.5)',
+    zIndex: 99999,
   },
   sheet: {
-    position: 'absolute',
-    bottom: 0,
-    width: '100%',
-    height: '80%',
-    background: '#fff',
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    display: 'flex',
-    flexDirection: 'column',
-    boxShadow: '0 -10px 30px rgba(0,0,0,0.1)',
+  position: 'absolute',
+  bottom: 0,
+  width: '100%',
+  height: '80%',
+  background: '#fff',
+  borderTopLeftRadius: 24,
+  borderTopRightRadius: 24,
+  display: 'flex',
+  flexDirection: 'column',
+  boxShadow: '0 -10px 30px rgba(0,0,0,0.1)',
+  zIndex: 100000, // ★追加
   },
   handle: {
     width: 40,
@@ -466,7 +467,7 @@ const modalStyles: { [key: string]: CSSProperties } = {
     borderRadius: '24px',
     border: '1px solid #eee',
     background: '#f9f9f9',
-    fontSize: '15px',
+    fontSize: '16px',
     outline: 'none',
   },
   send: {
