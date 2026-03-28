@@ -52,7 +52,6 @@ export default function AnswerCard({
 
   const [replyText, setReplyText] = useState('')
   const [showReactions, setShowReactions] = useState(true)
-
   const [openThread, setOpenThread] = useState<Reaction | null>(null)
 
   const displayName = anonymous ? 'Anonymous' : username
@@ -61,10 +60,9 @@ export default function AnswerCard({
     getReactionsByPostId(answerId).then(setReactions)
   }, [answerId])
 
-  // ★ 修正：アイコンのサイズダウンと色味をパステル調に調整
   const icon = (type: Reaction['type']) => {
-    const iconSize = 16 // 20から16へ縮小
-    const strokeColor = '#444' // 真っ黒から濃いグレーへ
+    const iconSize = 16
+    const strokeColor = '#444'
     const strokeWidth = 1.2
 
     if (type === 'star')
@@ -176,7 +174,6 @@ export default function AnswerCard({
                 })}
             </div>
 
-            {/* ★ 修正：トグルボタンをデザインに馴染むアイコンに変更 */}
             <button
               style={{
                 ...styles.toggleButton,
@@ -213,8 +210,9 @@ export default function AnswerCard({
 }
 
 /* ===================== */
-/* ★ Thread Modal */
+/* Thread Modal */
 /* ===================== */
+
 function ThreadModal({
   reaction,
   onClose,
@@ -224,19 +222,15 @@ function ThreadModal({
   parseQuestion,
 }: any) {
   const messages = parseQuestion(reaction) ?? []
+  const [localMessages, setLocalMessages] = useState(messages)
   const startY = useRef<number | null>(null)
 
-  // ★ 追加：スクロールロック
   useEffect(() => {
     const originalOverflow = document.body.style.overflow
-    const originalTouch = document.body.style.touchAction
-
     document.body.style.overflow = 'hidden'
-    document.body.style.touchAction = 'none'
 
     return () => {
       document.body.style.overflow = originalOverflow
-      document.body.style.touchAction = originalTouch
     }
   }, [])
 
@@ -249,10 +243,8 @@ function ThreadModal({
           startY.current = e.touches[0].clientY
         }}
         onTouchMove={(e) => {
-          // ★ 追加：下方向スワイプを検知しやすく
           if (!startY.current) return
           const diff = e.touches[0].clientY - startY.current
-
           if (diff > 0) {
             e.currentTarget.style.transform = `translateY(${diff}px)`
           }
@@ -261,12 +253,8 @@ function ThreadModal({
           if (!startY.current) return
           const diff = e.changedTouches[0].clientY - startY.current
 
-          if (diff > 80) {
-            onClose()
-          } else {
-            // ★ 戻す
-            e.currentTarget.style.transform = `translateY(0)`
-          }
+          if (diff > 80) onClose()
+          else e.currentTarget.style.transform = `translateY(0)`
 
           startY.current = null
         }}
@@ -274,7 +262,7 @@ function ThreadModal({
         <div style={modalStyles.handle} />
 
         <div style={modalStyles.thread}>
-          {messages.map((m: any, i: number) => (
+          {localMessages.map((m: any, i: number) => (
             <div key={i} style={modalStyles.row}>
               <UserBadge username={m.username} size={20} />
               <div style={modalStyles.bubble}>
@@ -293,7 +281,18 @@ function ThreadModal({
             style={modalStyles.input}
           />
           <button
-            onClick={() => sendReply(reaction, messages)}
+            onClick={() => {
+              if (!replyText.trim()) return
+
+              const next = [
+                ...localMessages,
+                { username: 'you', content: replyText },
+              ]
+
+              setLocalMessages(next)
+              sendReply(reaction, localMessages)
+              setReplyText('')
+            }}
             style={modalStyles.send}
           >
             <Send size={18} />
@@ -309,89 +308,20 @@ function ThreadModal({
 /* ===================== */
 
 const styles: { [key: string]: CSSProperties } = {
-  card: { 
-    display: 'flex', 
-    flexDirection: 'column', 
-    gap: 12, 
-    padding: '16px',
-    background: '#fff',
-    borderRadius: '20px',
-    border: '1px solid #f0f0f0',
-    boxShadow: '0 4px 12px rgba(0,0,0,0.02)',
-  },
+  card: { display: 'flex', flexDirection: 'column', gap: 12, padding: '16px', background: '#fff', borderRadius: '20px', border: '1px solid #f0f0f0', boxShadow: '0 4px 12px rgba(0,0,0,0.02)' },
   header: { display: 'flex', alignItems: 'center', gap: 6, fontSize: 13 },
   user: { display: 'flex', alignItems: 'center', gap: 8 },
   usernameText: { fontWeight: 700, color: '#333' },
   date: { fontSize: 11, color: '#bbb' },
-  
-  imageSection: {
-    position: 'relative',
-    display: 'flex',
-    flexDirection: 'column',
-    gap: 8,
-  },
-  imageWrapper: { 
-    position: 'relative',
-    width: '100%',
-    borderRadius: '12px',
-    overflow: 'hidden',
-    border: '1px solid #f5f5f5',
-  },
-  image: { width: '100%', display: 'block', borderRadius: 0 },
-  
-  toggleButton: {
-    alignSelf: 'flex-end',
-    background: '#fff',
-    border: '1px solid',
-    borderRadius: '10px',
-    padding: '8px',
-    cursor: 'pointer',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    transition: 'all 0.2s',
-    boxShadow: '0 2px 6px rgba(0,0,0,0.05)',
-  },
-  
-  reaction: {
-    position: 'absolute',
-    transform: 'translate(-50%, -50%)',
-    zIndex: 10,
-  },
-  bubble: {
-    position: 'absolute',
-    bottom: '160%',
-    left: '50%',
-    transform: 'translateX(-50%)',
-    background: 'rgba(0,0,0,0.8)',
-    color: '#fff',
-    padding: '8px 12px',
-    borderRadius: '10px',
-    fontSize: '12px',
-    whiteSpace: 'nowrap',
-    boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-    zIndex: 20,
-  },
-  bubbleHeader: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: 6,
-    marginBottom: 4,
-    fontSize: '11px',
-    opacity: 0.8,
-  },
-  bubbleContent: {
-    lineHeight: '1.4',
-  },
-  bubbleArrow: {
-    position: 'absolute',
-    top: '100%',
-    left: '50%',
-    transform: 'translateX(-50%)',
-    borderWidth: '6px',
-    borderStyle: 'solid',
-    borderColor: 'rgba(0,0,0,0.8) transparent transparent transparent',
-  }
+  imageSection: { position: 'relative', display: 'flex', flexDirection: 'column', gap: 8 },
+  imageWrapper: { position: 'relative', width: '100%', borderRadius: '12px', overflow: 'hidden', border: '1px solid #f5f5f5' },
+  image: { width: '100%', display: 'block' },
+  toggleButton: { alignSelf: 'flex-end', background: '#fff', border: '1px solid', borderRadius: '10px', padding: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' },
+  reaction: { position: 'absolute', transform: 'translate(-50%, -50%)', zIndex: 10 },
+  bubble: { position: 'absolute', bottom: '160%', left: '50%', transform: 'translateX(-50%)', background: 'rgba(0,0,0,0.8)', color: '#fff', padding: '8px 12px', borderRadius: '10px', fontSize: '12px' },
+  bubbleHeader: { display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4, fontSize: '11px' },
+  bubbleContent: { lineHeight: '1.4' },
+  bubbleArrow: { position: 'absolute', top: '100%', left: '50%', transform: 'translateX(-50%)', borderWidth: '6px', borderStyle: 'solid', borderColor: 'rgba(0,0,0,0.8) transparent transparent transparent' }
 }
 
 const modalStyles: { [key: string]: CSSProperties } = {
@@ -402,17 +332,17 @@ const modalStyles: { [key: string]: CSSProperties } = {
     zIndex: 99999,
   },
   sheet: {
-  position: 'absolute',
-  bottom: 0,
-  width: '100%',
-  height: '80%',
-  background: '#fff',
-  borderTopLeftRadius: 24,
-  borderTopRightRadius: 24,
-  display: 'flex',
-  flexDirection: 'column',
-  boxShadow: '0 -10px 30px rgba(0,0,0,0.1)',
-  zIndex: 100000, // ★追加
+    position: 'fixed', // ★最重要
+    bottom: 0,
+    left: 0,
+    width: '100%',
+    height: '80%',
+    background: '#fff',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    display: 'flex',
+    flexDirection: 'column',
+    zIndex: 100000,
   },
   handle: {
     width: 40,
@@ -433,32 +363,26 @@ const modalStyles: { [key: string]: CSSProperties } = {
   row: {
     display: 'flex',
     gap: 12,
-    alignItems: 'flex-start',
   },
   bubble: {
     background: '#f5f7fa',
     padding: '12px 16px',
     borderRadius: '16px',
-    borderTopLeftRadius: '4px',
     flex: 1,
   },
   name: {
     fontSize: 12,
     fontWeight: 'bold',
     color: '#666',
-    marginBottom: 4,
   },
   content: {
     fontSize: 15,
     color: '#333',
-    lineHeight: 1.5,
   },
   inputArea: {
     display: 'flex',
     padding: '16px',
     borderTop: '1px solid #f0f0f0',
-    background: '#fff',
-    alignItems: 'center',
     gap: 12,
   },
   input: {
@@ -466,9 +390,8 @@ const modalStyles: { [key: string]: CSSProperties } = {
     padding: '12px 18px',
     borderRadius: '24px',
     border: '1px solid #eee',
-    background: '#f9f9f9',
     fontSize: '16px',
-    outline: 'none',
+    WebkitAppearance: 'none', // ★文字表示バグ対策
   },
   send: {
     background: '#4D96FF',
@@ -480,7 +403,5 @@ const modalStyles: { [key: string]: CSSProperties } = {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    cursor: 'pointer',
-    transition: 'transform 0.1s',
   },
 }
