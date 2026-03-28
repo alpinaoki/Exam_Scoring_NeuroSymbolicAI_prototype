@@ -1,5 +1,6 @@
 'use client'
 
+import { createPortal } from 'react-dom'
 import { useEffect, useRef, useState } from 'react'
 import type { CSSProperties } from 'react'
 import { useRouter } from 'next/navigation'
@@ -212,7 +213,6 @@ export default function AnswerCard({
 /* ===================== */
 /* Thread Modal */
 /* ===================== */
-
 function ThreadModal({
   reaction,
   onClose,
@@ -224,8 +224,11 @@ function ThreadModal({
   const messages = parseQuestion(reaction) ?? []
   const [localMessages, setLocalMessages] = useState(messages)
   const startY = useRef<number | null>(null)
+  const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
+    setMounted(true)
+
     const originalOverflow = document.body.style.overflow
     document.body.style.overflow = 'hidden'
 
@@ -234,7 +237,9 @@ function ThreadModal({
     }
   }, [])
 
-  return (
+  if (!mounted) return null
+
+  return createPortal(
     <div style={modalStyles.overlay} onClick={onClose}>
       <div
         style={modalStyles.sheet}
@@ -284,13 +289,17 @@ function ThreadModal({
             onClick={() => {
               if (!replyText.trim()) return
 
-              const next = [
-                ...localMessages,
-                { username: 'you', content: replyText },
-              ]
+              const newMessage = {
+                username: 'you',
+                content: replyText,
+              }
 
+              // ✅ 楽観更新（正しく）
+              const next = [...localMessages, newMessage]
               setLocalMessages(next)
+
               sendReply(reaction, localMessages)
+
               setReplyText('')
             }}
             style={modalStyles.send}
@@ -299,10 +308,10 @@ function ThreadModal({
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body // ←ここが全てを解決する
   )
 }
-
 /* ===================== */
 /* styles */
 /* ===================== */
