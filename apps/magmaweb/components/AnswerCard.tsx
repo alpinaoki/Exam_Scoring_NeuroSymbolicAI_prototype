@@ -227,14 +227,29 @@ function ThreadModal({
   const startY = useRef<number | null>(null)
   const [mounted, setMounted] = useState(false)
 
+  // 👇追加：高さ制御
+  const [height, setHeight] = useState('80dvh')
+  const [translateY, setTranslateY] = useState(0)
+
   useEffect(() => {
     setMounted(true)
 
     const originalOverflow = document.body.style.overflow
     document.body.style.overflow = 'hidden'
 
+    // 👇追加：キーボード対策（visualViewport）
+    const handleResize = () => {
+      if (window.visualViewport) {
+        const vh = window.visualViewport.height
+        setHeight(`${vh}px`)
+      }
+    }
+
+    window.visualViewport?.addEventListener('resize', handleResize)
+
     return () => {
       document.body.style.overflow = originalOverflow
+      window.visualViewport?.removeEventListener('resize', handleResize)
     }
   }, [])
 
@@ -243,29 +258,50 @@ function ThreadModal({
   return createPortal(
     <div style={modalStyles.overlay} onClick={onClose}>
       <div
-        style={modalStyles.sheet}
+        style={{
+          ...modalStyles.sheet,
+          height,
+          transform: `translateY(${translateY}px)`,
+          transition: translateY === 0 ? 'transform 0.2s' : 'none',
+        }}
         onClick={(e) => e.stopPropagation()}
 
-        // 👇ここ追加
+        // 👇 スワイプ開始
         onTouchStart={(e) => {
           startY.current = e.touches[0].clientY
         }}
+
+        // 👇 スワイプ中
         onTouchMove={(e) => {
           if (!startY.current) return
           const diff = e.touches[0].clientY - startY.current
 
           if (diff > 0) {
-            e.currentTarget.style.transform = `translateY(${diff}px)`
+            // 下スワイプ → 閉じる方向
+            setTranslateY(diff)
+          } else {
+            // 上スワイプ → フルスクリーン方向
+            setTranslateY(diff)
           }
         }}
+
+        // 👇 スワイプ終了
         onTouchEnd={(e) => {
           if (!startY.current) return
           const diff = e.changedTouches[0].clientY - startY.current
 
-          if (diff > 80) {
+          // 下に引いた → 閉じる
+          if (diff > 100) {
             onClose()
-          } else {
-            e.currentTarget.style.transform = `translateY(0)`
+          }
+          // 上に引いた → フルスクリーン
+          else if (diff < -100) {
+            setHeight('100dvh')
+            setTranslateY(0)
+          }
+          // それ以外 → 元に戻す
+          else {
+            setTranslateY(0)
           }
 
           startY.current = null
