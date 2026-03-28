@@ -213,6 +213,7 @@ export default function AnswerCard({
 /* ===================== */
 /* Thread Modal */
 /* ===================== */
+
 function ThreadModal({
   reaction,
   onClose,
@@ -244,25 +245,6 @@ function ThreadModal({
       <div
         style={modalStyles.sheet}
         onClick={(e) => e.stopPropagation()}
-        onTouchStart={(e) => {
-          startY.current = e.touches[0].clientY
-        }}
-        onTouchMove={(e) => {
-          if (!startY.current) return
-          const diff = e.touches[0].clientY - startY.current
-          if (diff > 0) {
-            e.currentTarget.style.transform = `translateY(${diff}px)`
-          }
-        }}
-        onTouchEnd={(e) => {
-          if (!startY.current) return
-          const diff = e.changedTouches[0].clientY - startY.current
-
-          if (diff > 80) onClose()
-          else e.currentTarget.style.transform = `translateY(0)`
-
-          startY.current = null
-        }}
       >
         <div style={modalStyles.handle} />
 
@@ -294,11 +276,10 @@ function ThreadModal({
                 content: replyText,
               }
 
-              // ✅ 楽観更新（正しく）
               const next = [...localMessages, newMessage]
               setLocalMessages(next)
 
-              sendReply(reaction, localMessages)
+              sendReply(reaction, next) // ★修正（ここ重要）
 
               setReplyText('')
             }}
@@ -309,9 +290,10 @@ function ThreadModal({
         </div>
       </div>
     </div>,
-    document.body // ←ここが全てを解決する
+    document.body
   )
 }
+
 /* ===================== */
 /* styles */
 /* ===================== */
@@ -328,9 +310,6 @@ const styles: { [key: string]: CSSProperties } = {
   toggleButton: { alignSelf: 'flex-end', background: '#fff', border: '1px solid', borderRadius: '10px', padding: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' },
   reaction: { position: 'absolute', transform: 'translate(-50%, -50%)', zIndex: 10 },
   bubble: { position: 'absolute', bottom: '160%', left: '50%', transform: 'translateX(-50%)', background: 'rgba(0,0,0,0.8)', color: '#fff', padding: '8px 12px', borderRadius: '10px', fontSize: '12px' },
-  bubbleHeader: { display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4, fontSize: '11px' },
-  bubbleContent: { lineHeight: '1.4' },
-  bubbleArrow: { position: 'absolute', top: '100%', left: '50%', transform: 'translateX(-50%)', borderWidth: '6px', borderStyle: 'solid', borderColor: 'rgba(0,0,0,0.8) transparent transparent transparent' }
 }
 
 const modalStyles: { [key: string]: CSSProperties } = {
@@ -341,7 +320,7 @@ const modalStyles: { [key: string]: CSSProperties } = {
     zIndex: 99999,
   },
   sheet: {
-    position: 'fixed', // ★最重要
+    position: 'fixed',
     bottom: 0,
     left: 0,
     width: '100%',
@@ -385,8 +364,9 @@ const modalStyles: { [key: string]: CSSProperties } = {
     color: '#666',
   },
   content: {
-    fontSize: 15,
+    fontSize: '16px',
     color: '#333',
+    WebkitTextFillColor: '#333', // ★重要：文字見えないバグ対策
   },
   inputArea: {
     display: 'flex',
@@ -400,7 +380,8 @@ const modalStyles: { [key: string]: CSSProperties } = {
     borderRadius: '24px',
     border: '1px solid #eee',
     fontSize: '16px',
-    WebkitAppearance: 'none', // ★文字表示バグ対策
+    WebkitAppearance: 'none',
+    WebkitTextFillColor: '#000', // ★これが効く
   },
   send: {
     background: '#4D96FF',
