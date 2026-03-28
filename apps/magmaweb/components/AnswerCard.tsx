@@ -245,6 +245,31 @@ function ThreadModal({
       <div
         style={modalStyles.sheet}
         onClick={(e) => e.stopPropagation()}
+
+        // 👇ここ追加
+        onTouchStart={(e) => {
+          startY.current = e.touches[0].clientY
+        }}
+        onTouchMove={(e) => {
+          if (!startY.current) return
+          const diff = e.touches[0].clientY - startY.current
+
+          if (diff > 0) {
+            e.currentTarget.style.transform = `translateY(${diff}px)`
+          }
+        }}
+        onTouchEnd={(e) => {
+          if (!startY.current) return
+          const diff = e.changedTouches[0].clientY - startY.current
+
+          if (diff > 80) {
+            onClose()
+          } else {
+            e.currentTarget.style.transform = `translateY(0)`
+          }
+
+          startY.current = null
+        }}
       >
         <div style={modalStyles.handle} />
 
@@ -279,7 +304,7 @@ function ThreadModal({
               const next = [...localMessages, newMessage]
               setLocalMessages(next)
 
-              sendReply(reaction, next) // ★修正（ここ重要）
+              sendReply(reaction, next)
 
               setReplyText('')
             }}
@@ -293,7 +318,6 @@ function ThreadModal({
     document.body
   )
 }
-
 /* ===================== */
 /* styles */
 /* ===================== */
