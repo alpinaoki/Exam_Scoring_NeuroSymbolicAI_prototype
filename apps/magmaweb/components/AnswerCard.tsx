@@ -215,7 +215,6 @@ export default function AnswerCard({
 /* ===================== */
 /* ★ Thread Modal */
 /* ===================== */
-
 function ThreadModal({
   reaction,
   onClose,
@@ -227,6 +226,20 @@ function ThreadModal({
   const messages = parseQuestion(reaction) ?? []
   const startY = useRef<number | null>(null)
 
+  // ★ 追加：スクロールロック
+  useEffect(() => {
+    const originalOverflow = document.body.style.overflow
+    const originalTouch = document.body.style.touchAction
+
+    document.body.style.overflow = 'hidden'
+    document.body.style.touchAction = 'none'
+
+    return () => {
+      document.body.style.overflow = originalOverflow
+      document.body.style.touchAction = originalTouch
+    }
+  }, [])
+
   return (
     <div style={modalStyles.overlay} onClick={onClose}>
       <div
@@ -235,10 +248,27 @@ function ThreadModal({
         onTouchStart={(e) => {
           startY.current = e.touches[0].clientY
         }}
+        onTouchMove={(e) => {
+          // ★ 追加：下方向スワイプを検知しやすく
+          if (!startY.current) return
+          const diff = e.touches[0].clientY - startY.current
+
+          if (diff > 0) {
+            e.currentTarget.style.transform = `translateY(${diff}px)`
+          }
+        }}
         onTouchEnd={(e) => {
           if (!startY.current) return
           const diff = e.changedTouches[0].clientY - startY.current
-          if (diff > 80) onClose()
+
+          if (diff > 80) {
+            onClose()
+          } else {
+            // ★ 戻す
+            e.currentTarget.style.transform = `translateY(0)`
+          }
+
+          startY.current = null
         }}
       >
         <div style={modalStyles.handle} />
