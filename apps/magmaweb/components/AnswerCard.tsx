@@ -12,8 +12,7 @@ import {
   AlertTriangle,
   HelpCircle,
   Send,
-  Eye,
-  EyeOff,
+  Layers,
 } from 'lucide-react'
 
 type Reaction = {
@@ -54,7 +53,6 @@ export default function AnswerCard({
   const [replyText, setReplyText] = useState('')
   const [showReactions, setShowReactions] = useState(true)
 
-  // ★ 追加：スレッド用
   const [openThread, setOpenThread] = useState<Reaction | null>(null)
 
   const displayName = anonymous ? 'Anonymous' : username
@@ -63,12 +61,17 @@ export default function AnswerCard({
     getReactionsByPostId(answerId).then(setReactions)
   }, [answerId])
 
+  // ★ 修正：アイコンのサイズダウンと色味をパステル調に調整
   const icon = (type: Reaction['type']) => {
+    const iconSize = 16 // 20から16へ縮小
+    const strokeColor = '#444' // 真っ黒から濃いグレーへ
+    const strokeWidth = 1.2
+
     if (type === 'star')
-      return <Star size={20} fill="#FFD700" stroke="#000" strokeWidth={1.5} />
+      return <Star size={iconSize} fill="#FFE066" stroke={strokeColor} strokeWidth={strokeWidth} />
     if (type === 'exclamation')
-      return <AlertTriangle size={20} fill="#FF4500" stroke="#000" strokeWidth={1.5} />
-    return <HelpCircle size={20} fill="#00BFFF" stroke="#000" strokeWidth={1.5} />
+      return <AlertTriangle size={iconSize} fill="#FFAD99" stroke={strokeColor} strokeWidth={strokeWidth} />
+    return <HelpCircle size={iconSize} fill="#99E6FF" stroke={strokeColor} strokeWidth={strokeWidth} />
   }
 
   const parseQuestion = (r: Reaction): QuestionMessage[] | null => {
@@ -121,64 +124,69 @@ export default function AnswerCard({
             onClick={() => !anonymous && router.push(`/profiles/${username}`)}
           >
             <UserBadge username={displayName} />
-            <span>@{displayName}</span>
+            <span style={styles.usernameText}>@{displayName}</span>
           </div>
           <span style={styles.date}>· {formatDateTime(createdAt)}</span>
         </div>
 
         {image && (
-          <div style={styles.imageWrapper}>
-            <img src={image} alt="answer" style={styles.image} draggable={false} />
+          <div style={styles.imageSection}>
+            <div style={styles.imageWrapper}>
+              <img src={image} alt="answer" style={styles.image} draggable={false} />
 
-            <button
-              style={styles.toggleButton}
-              onClick={() => setShowReactions((prev) => !prev)}
-            >
-              {showReactions ? <Eye size={16} /> : <EyeOff size={16} />}
-            </button>
+              {showReactions &&
+                reactions.map((r) => {
+                  const isActive = activeReactionId === r.id
 
-            {showReactions &&
-              reactions.map((r) => {
-                const isActive = activeReactionId === r.id
-
-                return (
-                  <div
-                    key={r.id}
-                    style={{
-                      ...styles.reaction,
-                      left: `${r.x_float * 100}%`,
-                      top: `${r.y_float * 100}%`,
-                    }}
-                  >
+                  return (
                     <div
-                      onClick={(e) => {
-                        e.stopPropagation()
-
-                        // ★ questionだけ別処理
-                        if (r.type === 'question') {
-                          setOpenThread(r)
-                          return
-                        }
-
-                        setActiveReactionId(isActive ? null : r.id)
+                      key={r.id}
+                      style={{
+                        ...styles.reaction,
+                        left: `${r.x_float * 100}%`,
+                        top: `${r.y_float * 100}%`,
                       }}
                     >
-                      {icon(r.type)}
-                    </div>
-
-                    {/* ★ 従来バブルは question以外のみ */}
-                    {isActive && r.type !== 'question' && (
-                      <div style={styles.bubble}>
-                        <div style={styles.bubbleHeader}>
-                          <UserBadge username={r.username ?? ''} size={14} />
-                          <span>@{r.username ?? 'unknown'}</span>
-                        </div>
-                        <div>{r.comment ?? ''}</div>
+                      <div
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          if (r.type === 'question') {
+                            setOpenThread(r)
+                            return
+                          }
+                          setActiveReactionId(isActive ? null : r.id)
+                        }}
+                        style={{ cursor: 'pointer' }}
+                      >
+                        {icon(r.type)}
                       </div>
-                    )}
-                  </div>
-                )
-              })}
+
+                      {isActive && r.type !== 'question' && (
+                        <div style={styles.bubble}>
+                          <div style={styles.bubbleHeader}>
+                            <UserBadge username={r.username ?? ''} size={14} />
+                            <span>@{r.username ?? 'unknown'}</span>
+                          </div>
+                          <div style={styles.bubbleContent}>{r.comment ?? ''}</div>
+                          <div style={styles.bubbleArrow} />
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
+            </div>
+
+            {/* ★ 修正：トグルボタンをデザインに馴染むアイコンに変更 */}
+            <button
+              style={{
+                ...styles.toggleButton,
+                color: showReactions ? '#4D96FF' : '#bbb',
+                borderColor: showReactions ? '#4D96FF44' : '#eee',
+              }}
+              onClick={() => setShowReactions((prev) => !prev)}
+            >
+              <Layers size={18} />
+            </button>
           </div>
         )}
 
@@ -190,7 +198,6 @@ export default function AnswerCard({
         />
       </div>
 
-      {/* ★ フルスクリーンスレッド */}
       {openThread && (
         <ThreadModal
           reaction={openThread}
@@ -218,20 +225,20 @@ function ThreadModal({
   parseQuestion,
 }: any) {
   const messages = parseQuestion(reaction) ?? []
-
   const startY = useRef<number | null>(null)
 
   return (
-    <div style={modalStyles.overlay}>
+    <div style={modalStyles.overlay} onClick={onClose}>
       <div
         style={modalStyles.sheet}
+        onClick={(e) => e.stopPropagation()}
         onTouchStart={(e) => {
           startY.current = e.touches[0].clientY
         }}
         onTouchEnd={(e) => {
           if (!startY.current) return
           const diff = e.changedTouches[0].clientY - startY.current
-          if (diff > 80) onClose() // 下スワイプで閉じる
+          if (diff > 80) onClose()
         }}
       >
         <div style={modalStyles.handle} />
@@ -242,7 +249,7 @@ function ThreadModal({
               <UserBadge username={m.username} size={20} />
               <div style={modalStyles.bubble}>
                 <div style={modalStyles.name}>@{m.username}</div>
-                <div>{m.content}</div>
+                <div style={modalStyles.content}>{m.content}</div>
               </div>
             </div>
           ))}
@@ -272,31 +279,89 @@ function ThreadModal({
 /* ===================== */
 
 const styles: { [key: string]: CSSProperties } = {
-  card: { display: 'flex', flexDirection: 'column', gap: 8, padding: '0 16px' },
-  header: { display: 'flex', alignItems: 'center', gap: 6, fontSize: 13 },
-  user: { display: 'flex', alignItems: 'center', gap: 6 },
-  date: { fontSize: 11, color: '#aaa' },
-  imageWrapper: { position: 'relative' },
-  image: { width: '100%', borderRadius: 8 },
-  toggleButton: {
-    position: 'absolute',
-    top: 8,
-    right: 8,
-    background: 'rgba(0,0,0,0.3)',
-    color: '#fff',
+  card: { 
+    display: 'flex', 
+    flexDirection: 'column', 
+    gap: 12, 
+    padding: '16px',
+    background: '#fff',
+    borderRadius: '20px',
+    border: '1px solid #f0f0f0',
+    boxShadow: '0 4px 12px rgba(0,0,0,0.02)',
   },
+  header: { display: 'flex', alignItems: 'center', gap: 6, fontSize: 13 },
+  user: { display: 'flex', alignItems: 'center', gap: 8 },
+  usernameText: { fontWeight: 700, color: '#333' },
+  date: { fontSize: 11, color: '#bbb' },
+  
+  imageSection: {
+    position: 'relative',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 8,
+  },
+  imageWrapper: { 
+    position: 'relative',
+    width: '100%',
+    borderRadius: '12px',
+    overflow: 'hidden',
+    border: '1px solid #f5f5f5',
+  },
+  image: { width: '100%', display: 'block', borderRadius: 0 },
+  
+  toggleButton: {
+    alignSelf: 'flex-end',
+    background: '#fff',
+    border: '1px solid',
+    borderRadius: '10px',
+    padding: '8px',
+    cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    transition: 'all 0.2s',
+    boxShadow: '0 2px 6px rgba(0,0,0,0.05)',
+  },
+  
   reaction: {
     position: 'absolute',
     transform: 'translate(-50%, -50%)',
+    zIndex: 10,
   },
   bubble: {
     position: 'absolute',
-    bottom: '140%',
-    background: '#000',
+    bottom: '160%',
+    left: '50%',
+    transform: 'translateX(-50%)',
+    background: 'rgba(0,0,0,0.8)',
     color: '#fff',
-    padding: 8,
-    borderRadius: 8,
+    padding: '8px 12px',
+    borderRadius: '10px',
+    fontSize: '12px',
+    whiteSpace: 'nowrap',
+    boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+    zIndex: 20,
   },
+  bubbleHeader: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 4,
+    fontSize: '11px',
+    opacity: 0.8,
+  },
+  bubbleContent: {
+    lineHeight: '1.4',
+  },
+  bubbleArrow: {
+    position: 'absolute',
+    top: '100%',
+    left: '50%',
+    transform: 'translateX(-50%)',
+    borderWidth: '6px',
+    borderStyle: 'solid',
+    borderColor: 'rgba(0,0,0,0.8) transparent transparent transparent',
+  }
 }
 
 const modalStyles: { [key: string]: CSSProperties } = {
@@ -312,50 +377,79 @@ const modalStyles: { [key: string]: CSSProperties } = {
     width: '100%',
     height: '80%',
     background: '#fff',
-    borderTopLeftRadius: 16,
-    borderTopRightRadius: 16,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
     display: 'flex',
     flexDirection: 'column',
+    boxShadow: '0 -10px 30px rgba(0,0,0,0.1)',
   },
   handle: {
     width: 40,
-    height: 4,
-    background: '#ccc',
-    borderRadius: 2,
+    height: 5,
+    background: '#eee',
+    borderRadius: 2.5,
     alignSelf: 'center',
-    margin: 8,
+    margin: '12px 0',
   },
   thread: {
     flex: 1,
     overflowY: 'auto',
-    padding: 16,
+    padding: '20px',
     display: 'flex',
     flexDirection: 'column',
-    gap: 12,
+    gap: 16,
   },
   row: {
     display: 'flex',
-    gap: 8,
+    gap: 12,
+    alignItems: 'flex-start',
   },
   bubble: {
-    background: '#f1f1f1',
-    padding: 8,
-    borderRadius: 8,
+    background: '#f5f7fa',
+    padding: '12px 16px',
+    borderRadius: '16px',
+    borderTopLeftRadius: '4px',
+    flex: 1,
   },
   name: {
     fontSize: 12,
     fontWeight: 'bold',
+    color: '#666',
+    marginBottom: 4,
+  },
+  content: {
+    fontSize: 15,
+    color: '#333',
+    lineHeight: 1.5,
   },
   inputArea: {
     display: 'flex',
-    padding: 8,
-    borderTop: '1px solid #eee',
+    padding: '16px',
+    borderTop: '1px solid #f0f0f0',
+    background: '#fff',
+    alignItems: 'center',
+    gap: 12,
   },
   input: {
     flex: 1,
-    padding: 8,
+    padding: '12px 18px',
+    borderRadius: '24px',
+    border: '1px solid #eee',
+    background: '#f9f9f9',
+    fontSize: '15px',
+    outline: 'none',
   },
   send: {
-    marginLeft: 8,
+    background: '#4D96FF',
+    color: '#fff',
+    border: 'none',
+    borderRadius: '50%',
+    width: '42px',
+    height: '42px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    cursor: 'pointer',
+    transition: 'transform 0.1s',
   },
 }
