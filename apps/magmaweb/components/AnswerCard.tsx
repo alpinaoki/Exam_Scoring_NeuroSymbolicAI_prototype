@@ -236,6 +236,8 @@ function ThreadModal({
 
   const dragging = useRef(false)
 
+  const sheetRef = useRef<HTMLDivElement | null>(null)
+
   const [mounted, setMounted] = useState(false)
 
   const [height, setHeight] = useState('45dvh')
@@ -266,6 +268,7 @@ function ThreadModal({
   return createPortal(
     <div style={modalStyles.overlay} onClick={onClose}>
       <div
+        ref={sheetRef}
         style={{
           ...modalStyles.sheet,
           height,
@@ -274,12 +277,14 @@ function ThreadModal({
         }}
         onClick={(e) => e.stopPropagation()}
 
-        // ★ 上部エリアならどこでもスワイプOK
+        // ★ ゆるい当たり判定（シート上部150px）
         onTouchStart={(e) => {
           const touchY = e.touches[0].clientY
+          const rect = sheetRef.current?.getBoundingClientRect()
 
-          // 上から80px以内ならOK（当たり判定ゆるめ）
-          if (touchY < 120) {
+          if (!rect) return
+
+          if (touchY < rect.top + 150) {
             dragging.current = true
             startY.current = touchY
             lastY.current = touchY
@@ -296,21 +301,24 @@ function ThreadModal({
 
           const diff = currentY - startY.current
 
-          // ★ velocity計算
+          // ★ velocity計算（強化）
           if (lastY.current !== null && lastTime.current !== null) {
             const dy = currentY - lastY.current
             const dt = now - lastTime.current
-            velocity.current = dy / dt // px/ms
+            velocity.current = dy / Math.max(dt, 1)
           }
 
           lastY.current = currentY
           lastTime.current = now
 
-          // ★ 下はそのまま、上は軽く抵抗
+          // ★ ゴムっぽい挙動
           if (diff > 0) {
+            // 下はそのまま
             setTranslateY(diff)
           } else {
-            setTranslateY(diff * 0.35)
+            // 上は非線形で抵抗
+            const resistance = Math.pow(Math.abs(diff), 0.85)
+            setTranslateY(-resistance)
           }
         }}
 
@@ -322,13 +330,17 @@ function ThreadModal({
 
           dragging.current = false
 
-          // ★ 慣性込み判定
-          if (diff > 120 || v > 0.6) {
-            onClose()
-          } else if (diff < -120 || v < -0.6) {
+          // ★ 慣性付き判定（完成版）
+          if (diff > 100 || v > 0.7) {
+            // 閉じる（スッと落ちる）
+            setTranslateY(300)
+            setTimeout(onClose, 150)
+          } else if (diff < -100 || v < -0.7) {
+            // フルスクリーン
             setHeight('100dvh')
             setTranslateY(0)
           } else {
+            // 戻る
             setTranslateY(0)
           }
 
