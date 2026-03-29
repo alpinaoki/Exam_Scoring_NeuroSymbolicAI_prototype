@@ -237,6 +237,7 @@ function ThreadModal({
   const dragging = useRef(false)
 
   const sheetRef = useRef<HTMLDivElement | null>(null)
+  const threadRef = useRef<HTMLDivElement | null>(null)
 
   const [mounted, setMounted] = useState(false)
 
@@ -249,17 +250,8 @@ function ThreadModal({
     const originalOverflow = document.body.style.overflow
     document.body.style.overflow = 'hidden'
 
-    const handleResize = () => {
-      if (window.visualViewport) {
-        setHeight(`${window.visualViewport.height}px`)
-      }
-    }
-
-    window.visualViewport?.addEventListener('resize', handleResize)
-
     return () => {
       document.body.style.overflow = originalOverflow
-      window.visualViewport?.removeEventListener('resize', handleResize)
     }
   }, [])
 
@@ -277,14 +269,17 @@ function ThreadModal({
         }}
         onClick={(e) => e.stopPropagation()}
 
-        // ★ ゆるい当たり判定（シート上部150px）
         onTouchStart={(e) => {
           const touchY = e.touches[0].clientY
           const rect = sheetRef.current?.getBoundingClientRect()
 
           if (!rect) return
 
-          if (touchY < rect.top + 150) {
+          const isTopArea = touchY < rect.top + 120
+          const isAtTop = threadRef.current?.scrollTop === 0
+
+          // ★ここが最重要
+          if (isTopArea || isAtTop) {
             dragging.current = true
             startY.current = touchY
             lastY.current = touchY
@@ -301,7 +296,13 @@ function ThreadModal({
 
           const diff = currentY - startY.current
 
-          // ★ velocity計算（強化）
+          // ★ 上方向は「スクロール優先」に戻す
+          if (diff < 0 && threadRef.current && threadRef.current.scrollTop > 0) {
+            dragging.current = false
+            return
+          }
+
+          // velocity
           if (lastY.current !== null && lastTime.current !== null) {
             const dy = currentY - lastY.current
             const dt = now - lastTime.current
@@ -311,14 +312,10 @@ function ThreadModal({
           lastY.current = currentY
           lastTime.current = now
 
-          // ★ ゴムっぽい挙動
           if (diff > 0) {
-            // 下はそのまま
             setTranslateY(diff)
           } else {
-            // 上は非線形で抵抗
-            const resistance = Math.pow(Math.abs(diff), 0.85)
-            setTranslateY(-resistance)
+            setTranslateY(diff * 0.4)
           }
         }}
 
@@ -330,17 +327,13 @@ function ThreadModal({
 
           dragging.current = false
 
-          // ★ 慣性付き判定（完成版）
           if (diff > 100 || v > 0.7) {
-            // 閉じる（スッと落ちる）
             setTranslateY(300)
             setTimeout(onClose, 150)
           } else if (diff < -100 || v < -0.7) {
-            // フルスクリーン
             setHeight('100dvh')
             setTranslateY(0)
           } else {
-            // 戻る
             setTranslateY(0)
           }
 
@@ -349,7 +342,7 @@ function ThreadModal({
       >
         <div style={modalStyles.handle} />
 
-        <div style={modalStyles.thread}>
+        <div ref={threadRef} style={modalStyles.thread}>
           {localMessages.map((m: any, i: number) => (
             <div key={i} style={modalStyles.row}>
               <UserBadge username={m.username} size={20} />
