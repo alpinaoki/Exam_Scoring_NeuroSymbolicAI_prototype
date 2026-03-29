@@ -239,6 +239,9 @@ function ThreadModal({
   const sheetRef = useRef<HTMLDivElement | null>(null)
   const threadRef = useRef<HTMLDivElement | null>(null)
 
+  // ★追加：開始時の状態を固定
+  const startAtTop = useRef(false)
+
   const [mounted, setMounted] = useState(false)
 
   const [height, setHeight] = useState('45dvh')
@@ -278,7 +281,9 @@ function ThreadModal({
           const isTopArea = touchY < rect.top + 120
           const isAtTop = threadRef.current?.scrollTop === 0
 
-          // ★ここが最重要
+          // ★ここが修正ポイント①
+          startAtTop.current = !!isAtTop
+
           if (isTopArea || isAtTop) {
             dragging.current = true
             startY.current = touchY
@@ -296,7 +301,14 @@ function ThreadModal({
 
           const diff = currentY - startY.current
 
-          // ★ 上方向は「スクロール優先」に戻す
+          // ★修正ポイント①（ここが本質）
+          // 「開始時にトップじゃなかったなら絶対ドラッグさせない」
+          if (!startAtTop.current && threadRef.current) {
+            dragging.current = false
+            return
+          }
+
+          // 上方向はスクロール優先
           if (diff < 0 && threadRef.current && threadRef.current.scrollTop > 0) {
             dragging.current = false
             return
@@ -358,7 +370,14 @@ function ThreadModal({
           ))}
         </div>
 
-        <div style={modalStyles.inputArea}>
+        {/* ★修正ポイント② */}
+        <div
+          style={{
+            ...modalStyles.inputArea,
+            paddingBottom: '32px', // ←余白追加
+            background: '#fff',    // ←下も白で埋める
+          }}
+        >
           <input
             value={replyText}
             onChange={(e) => setReplyText(e.target.value)}
