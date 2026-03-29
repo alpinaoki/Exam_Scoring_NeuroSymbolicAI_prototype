@@ -230,11 +230,14 @@ function ThreadModal({
   const [localMessages, setLocalMessages] = useState(messages)
 
   const startY = useRef<number | null>(null)
+  const lastY = useRef<number | null>(null)
+  const lastTime = useRef<number | null>(null)
+  const velocity = useRef(0)
+
   const dragging = useRef(false)
 
   const [mounted, setMounted] = useState(false)
 
-  // ★ デフォルト低め
   const [height, setHeight] = useState('45dvh')
   const [translateY, setTranslateY] = useState(0)
 
@@ -246,8 +249,7 @@ function ThreadModal({
 
     const handleResize = () => {
       if (window.visualViewport) {
-        const vh = window.visualViewport.height
-        setHeight(`${vh}px`)
+        setHeight(`${window.visualViewport.height}px`)
       }
     }
 
@@ -268,55 +270,78 @@ function ThreadModal({
           ...modalStyles.sheet,
           height,
           transform: `translateY(${translateY}px)`,
-          transition: dragging.current ? 'none' : 'transform 0.2s',
+          transition: dragging.current ? 'none' : 'transform 0.25s ease-out',
         }}
         onClick={(e) => e.stopPropagation()}
-      >
-        {/* ★ スワイプはここだけ */}
-        <div
-          style={modalStyles.handle}
-          onTouchStart={(e) => {
+
+        // ★ 上部エリアならどこでもスワイプOK
+        onTouchStart={(e) => {
+          const touchY = e.touches[0].clientY
+
+          // 上から80px以内ならOK（当たり判定ゆるめ）
+          if (touchY < 120) {
             dragging.current = true
-            startY.current = e.touches[0].clientY
-          }}
-          onTouchMove={(e) => {
-            if (!dragging.current || startY.current === null) return
+            startY.current = touchY
+            lastY.current = touchY
+            lastTime.current = Date.now()
+            velocity.current = 0
+          }
+        }}
 
-            const diff = e.touches[0].clientY - startY.current
+        onTouchMove={(e) => {
+          if (!dragging.current || startY.current === null) return
 
-            // ★ 下はそのまま、上は軽く制限（暴れ防止）
-            if (diff > 0) {
-              setTranslateY(diff)
-            } else {
-              setTranslateY(diff * 0.3)
-            }
-          }}
-          onTouchEnd={(e) => {
-            if (!dragging.current || startY.current === null) return
+          const currentY = e.touches[0].clientY
+          const now = Date.now()
 
-            const diff = e.changedTouches[0].clientY - startY.current
+          const diff = currentY - startY.current
 
-            dragging.current = false
+          // ★ velocity計算
+          if (lastY.current !== null && lastTime.current !== null) {
+            const dy = currentY - lastY.current
+            const dt = now - lastTime.current
+            velocity.current = dy / dt // px/ms
+          }
 
-            if (diff > 100) {
-              onClose()
-            } else if (diff < -100) {
-              setHeight('100dvh')
-              setTranslateY(0)
-            } else {
-              setTranslateY(0)
-            }
+          lastY.current = currentY
+          lastTime.current = now
 
-            startY.current = null
-          }}
-        />
+          // ★ 下はそのまま、上は軽く抵抗
+          if (diff > 0) {
+            setTranslateY(diff)
+          } else {
+            setTranslateY(diff * 0.35)
+          }
+        }}
+
+        onTouchEnd={(e) => {
+          if (!dragging.current || startY.current === null) return
+
+          const diff = e.changedTouches[0].clientY - startY.current
+          const v = velocity.current
+
+          dragging.current = false
+
+          // ★ 慣性込み判定
+          if (diff > 120 || v > 0.6) {
+            onClose()
+          } else if (diff < -120 || v < -0.6) {
+            setHeight('100dvh')
+            setTranslateY(0)
+          } else {
+            setTranslateY(0)
+          }
+
+          startY.current = null
+        }}
+      >
+        <div style={modalStyles.handle} />
 
         <div style={modalStyles.thread}>
           {localMessages.map((m: any, i: number) => (
             <div key={i} style={modalStyles.row}>
               <UserBadge username={m.username} size={20} />
 
-              {/* username外出し */}
               <div style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
                 <div style={modalStyles.name}>@{m.username}</div>
 
