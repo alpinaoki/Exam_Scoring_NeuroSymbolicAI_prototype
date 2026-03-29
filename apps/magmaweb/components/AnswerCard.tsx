@@ -259,6 +259,13 @@ function ThreadModal({
     }
   }, [])
 
+  // ★② height変化でもトップへ戻す（安定化）
+  useEffect(() => {
+    if (height === '100dvh' && threadRef.current) {
+      threadRef.current.scrollTop = 0
+    }
+  }, [height])
+
   if (!mounted) return null
 
   return createPortal(
@@ -284,7 +291,7 @@ function ThreadModal({
           const isTopArea = touchY < rect.top + 120
           const isAtTop = thread?.scrollTop === 0
 
-          // ★下端（余裕あり版）
+          // ★下端（余裕あり）
           const isAtBottom =
             thread &&
             thread.scrollHeight - thread.scrollTop - thread.clientHeight < 10
@@ -308,8 +315,6 @@ function ThreadModal({
           const now = Date.now()
 
           const diff = currentY - startY.current
-
-          const thread = threadRef.current
 
           // ★下スワイプ（閉じる）
           if (diff > 0) {
@@ -357,6 +362,12 @@ function ThreadModal({
             setTimeout(onClose, 150)
           } else if (diff < -100 || v < -0.7) {
             setHeight('100dvh')
+
+            // ★① その場でもトップへ戻す
+            if (threadRef.current) {
+              threadRef.current.scrollTop = 0
+            }
+
             setTranslateY(0)
           } else {
             setTranslateY(0)
