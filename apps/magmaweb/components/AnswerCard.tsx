@@ -231,7 +231,6 @@ function ThreadModal({
   const startY = useRef<number | null>(null)
   const [mounted, setMounted] = useState(false)
 
-  // ★ デフォルト低め（そのまま維持）
   const [height, setHeight] = useState('45dvh')
   const [translateY, setTranslateY] = useState(0)
 
@@ -241,7 +240,6 @@ function ThreadModal({
     const originalOverflow = document.body.style.overflow
     document.body.style.overflow = 'hidden'
 
-    // ★ キーボード対応（復活）
     const handleResize = () => {
       if (window.visualViewport) {
         const vh = window.visualViewport.height
@@ -269,50 +267,40 @@ function ThreadModal({
           transition: translateY === 0 ? 'transform 0.2s' : 'none',
         }}
         onClick={(e) => e.stopPropagation()}
-
-        // ★ スワイプ開始
-        onTouchStart={(e) => {
-          startY.current = e.touches[0].clientY
-        }}
-
-        // ★ スワイプ中
-        onTouchMove={(e) => {
-          if (!startY.current) return
-          const diff = e.touches[0].clientY - startY.current
-
-          setTranslateY(diff)
-        }}
-
-        // ★ スワイプ終了
-        onTouchEnd={(e) => {
-          if (!startY.current) return
-          const diff = e.changedTouches[0].clientY - startY.current
-
-          // 下 → 閉じる
-          if (diff > 100) {
-            onClose()
-          }
-          // 上 → フルスクリーン
-          else if (diff < -100) {
-            setHeight('100dvh')
-            setTranslateY(0)
-          }
-          // 戻る
-          else {
-            setTranslateY(0)
-          }
-
-          startY.current = null
-        }}
       >
-        <div style={modalStyles.handle} />
+        {/* ★ここにスワイプを限定 */}
+        <div
+          style={modalStyles.handle}
+          onTouchStart={(e) => {
+            startY.current = e.touches[0].clientY
+          }}
+          onTouchMove={(e) => {
+            if (!startY.current) return
+            const diff = e.touches[0].clientY - startY.current
+            setTranslateY(diff)
+          }}
+          onTouchEnd={(e) => {
+            if (!startY.current) return
+            const diff = e.changedTouches[0].clientY - startY.current
+
+            if (diff > 100) {
+              onClose()
+            } else if (diff < -100) {
+              setHeight('100dvh')
+              setTranslateY(0)
+            } else {
+              setTranslateY(0)
+            }
+
+            startY.current = null
+          }}
+        />
 
         <div style={modalStyles.thread}>
           {localMessages.map((m: any, i: number) => (
             <div key={i} style={modalStyles.row}>
               <UserBadge username={m.username} size={20} />
 
-              {/* ★ username外出し（維持） */}
               <div style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
                 <div style={modalStyles.name}>@{m.username}</div>
 
