@@ -228,9 +228,13 @@ function ThreadModal({
 }: any) {
   const messages = parseQuestion(reaction) ?? []
   const [localMessages, setLocalMessages] = useState(messages)
+
   const startY = useRef<number | null>(null)
+  const dragging = useRef(false)
+
   const [mounted, setMounted] = useState(false)
 
+  // ★ デフォルト低め
   const [height, setHeight] = useState('45dvh')
   const [translateY, setTranslateY] = useState(0)
 
@@ -264,24 +268,35 @@ function ThreadModal({
           ...modalStyles.sheet,
           height,
           transform: `translateY(${translateY}px)`,
-          transition: translateY === 0 ? 'transform 0.2s' : 'none',
+          transition: dragging.current ? 'none' : 'transform 0.2s',
         }}
         onClick={(e) => e.stopPropagation()}
       >
-        {/* ★ここにスワイプを限定 */}
+        {/* ★ スワイプはここだけ */}
         <div
           style={modalStyles.handle}
           onTouchStart={(e) => {
+            dragging.current = true
             startY.current = e.touches[0].clientY
           }}
           onTouchMove={(e) => {
-            if (!startY.current) return
+            if (!dragging.current || startY.current === null) return
+
             const diff = e.touches[0].clientY - startY.current
-            setTranslateY(diff)
+
+            // ★ 下はそのまま、上は軽く制限（暴れ防止）
+            if (diff > 0) {
+              setTranslateY(diff)
+            } else {
+              setTranslateY(diff * 0.3)
+            }
           }}
           onTouchEnd={(e) => {
-            if (!startY.current) return
+            if (!dragging.current || startY.current === null) return
+
             const diff = e.changedTouches[0].clientY - startY.current
+
+            dragging.current = false
 
             if (diff > 100) {
               onClose()
@@ -301,6 +316,7 @@ function ThreadModal({
             <div key={i} style={modalStyles.row}>
               <UserBadge username={m.username} size={20} />
 
+              {/* username外出し */}
               <div style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
                 <div style={modalStyles.name}>@{m.username}</div>
 
