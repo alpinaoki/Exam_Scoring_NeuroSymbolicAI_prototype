@@ -130,7 +130,11 @@ export default function AnswerCard({
 
         {image && (
           <div style={styles.imageSection}>
-            <div style={styles.imageWrapper}>
+            {/* ✅ 外クリックで閉じる */}
+            <div
+              style={styles.imageWrapper}
+              onClick={() => setActiveReactionId(null)}
+            >
               <img src={image} alt="answer" style={styles.image} draggable={false} />
 
               {showReactions &&
@@ -144,6 +148,7 @@ export default function AnswerCard({
                         ...styles.reaction,
                         left: `${r.x_float * 100}%`,
                         top: `${r.y_float * 100}%`,
+                        zIndex: isActive ? 999 : 10, // ✅ 最前面
                       }}
                     >
                       <div
@@ -227,8 +232,8 @@ function ThreadModal({
   const startY = useRef<number | null>(null)
   const [mounted, setMounted] = useState(false)
 
-  // 👇追加：高さ制御
-  const [height, setHeight] = useState('80dvh')
+  // ✅ 初期高さ下げた
+  const [height, setHeight] = useState('55dvh')
   const [translateY, setTranslateY] = useState(0)
 
   useEffect(() => {
@@ -237,19 +242,8 @@ function ThreadModal({
     const originalOverflow = document.body.style.overflow
     document.body.style.overflow = 'hidden'
 
-    // 👇追加：キーボード対策（visualViewport）
-    const handleResize = () => {
-      if (window.visualViewport) {
-        const vh = window.visualViewport.height
-        setHeight(`${vh}px`)
-      }
-    }
-
-    window.visualViewport?.addEventListener('resize', handleResize)
-
     return () => {
       document.body.style.overflow = originalOverflow
-      window.visualViewport?.removeEventListener('resize', handleResize)
     }
   }, [])
 
@@ -262,47 +256,22 @@ function ThreadModal({
           ...modalStyles.sheet,
           height,
           transform: `translateY(${translateY}px)`,
-          transition: translateY === 0 ? 'transform 0.2s' : 'none',
         }}
         onClick={(e) => e.stopPropagation()}
-
-        // 👇 スワイプ開始
         onTouchStart={(e) => {
           startY.current = e.touches[0].clientY
         }}
-
-        // 👇 スワイプ中
         onTouchMove={(e) => {
           if (!startY.current) return
           const diff = e.touches[0].clientY - startY.current
-
-          if (diff > 0) {
-            // 下スワイプ → 閉じる方向
-            setTranslateY(diff)
-          } else {
-            // 上スワイプ → フルスクリーン方向
-            setTranslateY(diff)
-          }
+          if (diff > 0) setTranslateY(diff)
         }}
-
-        // 👇 スワイプ終了
         onTouchEnd={(e) => {
           if (!startY.current) return
           const diff = e.changedTouches[0].clientY - startY.current
 
-          // 下に引いた → 閉じる
-          if (diff > 100) {
-            onClose()
-          }
-          // 上に引いた → フルスクリーン
-          else if (diff < -100) {
-            setHeight('100dvh')
-            setTranslateY(0)
-          }
-          // それ以外 → 元に戻す
-          else {
-            setTranslateY(0)
-          }
+          if (diff > 100) onClose()
+          else setTranslateY(0)
 
           startY.current = null
         }}
@@ -312,9 +281,13 @@ function ThreadModal({
         <div style={modalStyles.thread}>
           {localMessages.map((m: any, i: number) => (
             <div key={i} style={modalStyles.row}>
-              <UserBadge username={m.username} size={20} />
+              {/* ✅ ユーザー名を外へ */}
+              <div style={modalStyles.userLine}>
+                <UserBadge username={m.username} size={20} />
+                <span>@{m.username}</span>
+              </div>
+
               <div style={modalStyles.bubble}>
-                <div style={modalStyles.name}>@{m.username}</div>
                 <div style={modalStyles.content}>{m.content}</div>
               </div>
             </div>
@@ -354,104 +327,35 @@ function ThreadModal({
     document.body
   )
 }
+
 /* ===================== */
 /* styles */
 /* ===================== */
 
 const styles: { [key: string]: CSSProperties } = {
-  card: { display: 'flex', flexDirection: 'column', gap: 12, padding: '16px', background: '#fff', borderRadius: '20px', border: '1px solid #f0f0f0', boxShadow: '0 4px 12px rgba(0,0,0,0.02)' },
-  header: { display: 'flex', alignItems: 'center', gap: 6, fontSize: 13 },
+  card: { display: 'flex', flexDirection: 'column', gap: 12, padding: '16px', background: '#fff', borderRadius: '20px', border: '1px solid #f0f0f0' },
+  header: { display: 'flex', alignItems: 'center', gap: 6 },
   user: { display: 'flex', alignItems: 'center', gap: 8 },
-  usernameText: { fontWeight: 700, color: '#333' },
-  date: { fontSize: 11, color: '#bbb' },
-  imageSection: { position: 'relative', display: 'flex', flexDirection: 'column', gap: 8 },
-  imageWrapper: { position: 'relative', width: '100%', borderRadius: '12px', overflow: 'hidden', border: '1px solid #f5f5f5' },
-  image: { width: '100%', display: 'block' },
-  toggleButton: { alignSelf: 'flex-end', background: '#fff', border: '1px solid', borderRadius: '10px', padding: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' },
-  reaction: { position: 'absolute', transform: 'translate(-50%, -50%)', zIndex: 10 },
-  bubble: { position: 'absolute', bottom: '160%', left: '50%', transform: 'translateX(-50%)', background: 'rgba(0,0,0,0.8)', color: '#fff', padding: '8px 12px', borderRadius: '10px', fontSize: '12px' },
+  usernameText: { fontWeight: 700 },
+  date: { fontSize: 11 },
+  imageSection: { position: 'relative' },
+  imageWrapper: { position: 'relative' },
+  image: { width: '100%' },
+  toggleButton: { alignSelf: 'flex-end' },
+  reaction: { position: 'absolute', transform: 'translate(-50%, -50%)' },
+  bubble: { position: 'absolute', bottom: '160%', left: '50%', transform: 'translateX(-50%)', background: 'black', color: 'white', padding: 8 },
 }
 
 const modalStyles: { [key: string]: CSSProperties } = {
-  overlay: {
-    position: 'fixed',
-    inset: 0,
-    background: 'rgba(0,0,0,0.5)',
-    zIndex: 99999,
-  },
-  sheet: {
-    position: 'fixed',
-    bottom: 0,
-    left: 0,
-    width: '100%',
-    height: '80%',
-    background: '#fff',
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    display: 'flex',
-    flexDirection: 'column',
-    zIndex: 100000,
-  },
-  handle: {
-    width: 40,
-    height: 5,
-    background: '#eee',
-    borderRadius: 2.5,
-    alignSelf: 'center',
-    margin: '12px 0',
-  },
-  thread: {
-    flex: 1,
-    overflowY: 'auto',
-    padding: '20px',
-    display: 'flex',
-    flexDirection: 'column',
-    gap: 16,
-  },
-  row: {
-    display: 'flex',
-    gap: 12,
-  },
-  bubble: {
-    background: '#f5f7fa',
-    padding: '12px 16px',
-    borderRadius: '16px',
-    flex: 1,
-  },
-  name: {
-    fontSize: 12,
-    fontWeight: 'bold',
-    color: '#666',
-  },
-  content: {
-    fontSize: '16px',
-    color: '#333',
-    WebkitTextFillColor: '#333', // ★重要：文字見えないバグ対策
-  },
-  inputArea: {
-    display: 'flex',
-    padding: '16px',
-    borderTop: '1px solid #f0f0f0',
-    gap: 12,
-  },
-  input: {
-    flex: 1,
-    padding: '12px 18px',
-    borderRadius: '24px',
-    border: '1px solid #eee',
-    fontSize: '16px',
-    WebkitAppearance: 'none',
-    WebkitTextFillColor: '#000', // ★これが効く
-  },
-  send: {
-    background: '#4D96FF',
-    color: '#fff',
-    border: 'none',
-    borderRadius: '50%',
-    width: '42px',
-    height: '42px',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
+  overlay: { position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)' },
+  sheet: { position: 'fixed', bottom: 0, width: '100%', background: '#fff', display: 'flex', flexDirection: 'column' },
+  handle: { width: 40, height: 5, background: '#eee', alignSelf: 'center', margin: 12 },
+  thread: { flex: 1, overflowY: 'auto', padding: 20 },
+  row: { display: 'flex', flexDirection: 'column', gap: 4 },
+  userLine: { display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: '#666' },
+  bubble: { background: '#f5f7fa', padding: 12, borderRadius: 12 },
+  content: { fontSize: 16 },
+  inputArea: { display: 'flex', padding: 16 },
+  input: { flex: 1 },
+  send: { width: 40, height: 40 },
 }
