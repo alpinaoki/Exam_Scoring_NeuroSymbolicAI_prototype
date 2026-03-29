@@ -239,8 +239,9 @@ function ThreadModal({
   const sheetRef = useRef<HTMLDivElement | null>(null)
   const threadRef = useRef<HTMLDivElement | null>(null)
 
-  // ★追加：開始時の状態を固定
+  // ★開始状態
   const startAtTop = useRef(false)
+  const startAtBottom = useRef(false)
 
   const [mounted, setMounted] = useState(false)
 
@@ -278,13 +279,20 @@ function ThreadModal({
 
           if (!rect) return
 
+          const thread = threadRef.current
+
           const isTopArea = touchY < rect.top + 120
-          const isAtTop = threadRef.current?.scrollTop === 0
+          const isAtTop = thread?.scrollTop === 0
 
-          // ★ここが修正ポイント①
+          // ★下端（余裕あり版）
+          const isAtBottom =
+            thread &&
+            thread.scrollHeight - thread.scrollTop - thread.clientHeight < 10
+
           startAtTop.current = !!isAtTop
+          startAtBottom.current = !!isAtBottom
 
-          if (isTopArea || isAtTop) {
+          if (isTopArea || isAtTop || isAtBottom) {
             dragging.current = true
             startY.current = touchY
             lastY.current = touchY
@@ -301,17 +309,22 @@ function ThreadModal({
 
           const diff = currentY - startY.current
 
-          // ★修正ポイント①（ここが本質）
-          // 「開始時にトップじゃなかったなら絶対ドラッグさせない」
-          if (!startAtTop.current && threadRef.current) {
-            dragging.current = false
-            return
+          const thread = threadRef.current
+
+          // ★下スワイプ（閉じる）
+          if (diff > 0) {
+            if (!startAtTop.current) {
+              dragging.current = false
+              return
+            }
           }
 
-          // 上方向はスクロール優先
-          if (diff < 0 && threadRef.current && threadRef.current.scrollTop > 0) {
-            dragging.current = false
-            return
+          // ★上スワイプ（開く）
+          if (diff < 0) {
+            if (!startAtBottom.current) {
+              dragging.current = false
+              return
+            }
           }
 
           // velocity
@@ -370,12 +383,11 @@ function ThreadModal({
           ))}
         </div>
 
-        {/* ★修正ポイント② */}
         <div
           style={{
             ...modalStyles.inputArea,
-            paddingBottom: '32px', // ←余白追加
-            background: '#fff',    // ←下も白で埋める
+            paddingBottom: '32px',
+            background: '#fff',
           }}
         >
           <input
@@ -441,12 +453,13 @@ const modalStyles: { [key: string]: CSSProperties } = {
     left: 0,
     width: '100%',
     height: '80%',
+    paddingBottom: 'env(safe-area-inset-bottom)',
     background: '#fff',
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     display: 'flex',
     flexDirection: 'column',
-    zIndex: 100000,
+    zIndex: 100000,    
   },
   handle: {
     width: 40,
