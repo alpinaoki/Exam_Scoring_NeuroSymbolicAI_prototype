@@ -27,18 +27,17 @@ export default function ReactionEditorModal({
   const [comment, setComment] = useState('')
   const [pos, setPos] = useState<{ x: number; y: number } | null>(null)
   const [saving, setSaving] = useState(false)
+  const [imgSize, setImgSize] = useState<{ width: number; height: number } | null>(null)
 
   const imgRef = useRef<HTMLImageElement>(null)
 
   useEffect(() => {
     if (!open) return
-    const o = document.body.style.overflow
-    const t = document.body.style.touchAction
     document.body.style.overflow = 'hidden'
     document.body.style.touchAction = 'none'
     return () => {
-      document.body.style.overflow = o
-      document.body.style.touchAction = t
+      document.body.style.overflow = ''
+      document.body.style.touchAction = ''
     }
   }, [open])
 
@@ -46,17 +45,21 @@ export default function ReactionEditorModal({
     setMounted(true)
   }, [])
 
+  // 画像が読み込まれたらアスペクト比を取得する
+  const handleImageLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
+    const { naturalWidth, naturalHeight } = e.currentTarget
+    setImgSize({ width: naturalWidth, height: naturalHeight })
+  }
+
   if (!open || !mounted) return null
 
   const submit = async () => {
     if (!pos || saving) return
     setSaving(true)
-
     try {
-      const finalComment =
-        type === 'question'
-          ? JSON.stringify([{ username, content: comment }])
-          : comment
+      const finalComment = type === 'question'
+        ? JSON.stringify([{ username, content: comment }])
+        : comment
 
       await createReaction({
         postId,
@@ -65,7 +68,6 @@ export default function ReactionEditorModal({
         x: pos.x,
         y: pos.y,
       })
-
       onClose()
       setPos(null)
       setComment('')
@@ -94,9 +96,7 @@ export default function ReactionEditorModal({
       <div style={styles.container}>
         {/* Header */}
         <div style={styles.header}>
-          <button onClick={onClose} style={styles.iconBtn}>
-            <X size={24} />
-          </button>
+          <button onClick={onClose} style={styles.iconBtn}><X size={24} /></button>
           <span style={styles.headerTitle}>位置を指定してリアクション</span>
           <button
             onClick={submit}
@@ -113,25 +113,29 @@ export default function ReactionEditorModal({
 
         {/* Canvas Area */}
         <div style={styles.canvas}>
-          <div style={styles.imageContainer}>
+          {/* 画像のアスペクト比を維持し、はみ出しを防ぐラッパー */}
+          <div 
+            style={{
+              ...styles.imageContainer,
+              aspectRatio: imgSize ? `${imgSize.width} / ${imgSize.height}` : 'auto',
+            }}
+          >
             <img
               ref={imgRef}
               src={imageUrl}
+              onLoad={handleImageLoad}
               style={styles.image}
               alt="Target"
               onClick={(e) => {
-                const img = imgRef.current
-                if (!img) return
-                const rect = img.getBoundingClientRect()
-                // 厳密に画像表示領域内でのクリック率を計算
+                const rect = e.currentTarget.getBoundingClientRect()
+                // offsetではなくgetBoundingClientRectでビューポート基準の絶対差分を取る（ズレ対策）
                 const x = (e.clientX - rect.left) / rect.width
                 const y = (e.clientY - rect.top) / rect.height
-                setPos({ x, y })
+                setPos({ x: Math.max(0, Math.min(1, x)), y: Math.max(0, Math.min(1, y)) })
               }}
               draggable={false}
             />
 
-            {/* Tap Hint: 画像がまだタップされていない時に中央に表示 */}
             {!pos && (
               <div style={styles.tapHintOverlay}>
                 <div style={styles.tapHintBadge}>
@@ -141,7 +145,6 @@ export default function ReactionEditorModal({
               </div>
             )}
 
-            {/* Marker Overlay: 画像と完全に重なる透明レイヤー */}
             {pos && (
               <div style={styles.markerOverlay}>
                 <div
@@ -162,26 +165,14 @@ export default function ReactionEditorModal({
         <div style={styles.controls}>
           <div style={styles.typeRow}>
             {(['star', 'exclamation', 'question'] as const).map((t) => (
-              <TypeButton
-                key={t}
-                active={type === t}
-                onClick={() => setType(t)}
-                type={t}
-              >
-                {t === 'star' && (
-                  <Star size={20} fill={type === t ? COLORS.star : 'transparent'} stroke={type === t ? '#000' : '#888'} />
-                )}
-                {t === 'exclamation' && (
-                  <AlertTriangle size={20} fill={type === t ? COLORS.exclamation : 'transparent'} stroke={type === t ? '#000' : '#888'} />
-                )}
-                {t === 'question' && (
-                  <HelpCircle size={20} fill={type === t ? COLORS.question : 'transparent'} stroke={type === t ? '#000' : '#888'} />
-                )}
+              <TypeButton key={t} active={type === t} onClick={() => setType(t)} type={t}>
+                {t === 'star' && <Star size={20} fill={type === t ? COLORS.star : 'transparent'} stroke={type === t ? '#000' : '#888'} />}
+                {t === 'exclamation' && <AlertTriangle size={20} fill={type === t ? COLORS.exclamation : 'transparent'} stroke={type === t ? '#000' : '#888'} />}
+                {t === 'question' && <HelpCircle size={20} fill={type === t ? COLORS.question : 'transparent'} stroke={type === t ? '#000' : '#888'} />}
                 <span style={styles.typeLabel}>{typeLabels[t]}</span>
               </TypeButton>
             ))}
           </div>
-
           <div style={styles.inputWrapper}>
             <input
               placeholder="具体的に説明..."
@@ -197,29 +188,18 @@ export default function ReactionEditorModal({
   )
 }
 
-function TypeButton({
-  children,
-  active,
-  onClick,
-  type,
-}: {
-  children: React.ReactNode
-  active: boolean
-  onClick: () => void
-  type: ReactionType
-}) {
+function TypeButton({ children, active, onClick, type }: any) {
   const activeColors = {
     star: 'rgba(255, 215, 0, 0.2)',
     exclamation: 'rgba(255, 107, 107, 0.2)',
     question: 'rgba(77, 150, 255, 0.2)',
   }
-
   return (
     <button
       onClick={onClick}
       style={{
         ...styles.typeButton,
-        background: active ? activeColors[type] : 'rgba(255,255,255,0.05)',
+        background: active ? activeColors[type as ReactionType] : 'rgba(255,255,255,0.05)',
         borderColor: active ? 'transparent' : 'rgba(255,255,255,0.1)',
         color: active ? '#fff' : '#888',
       }}
@@ -229,137 +209,50 @@ function TypeButton({
   )
 }
 
-const typeLabels = {
-  star: 'いいね！',
-  exclamation: '指摘',
-  question: '疑問・確認',
-}
+const typeLabels = { star: 'いいね！', exclamation: '指摘', question: '疑問・確認' }
 
 const styles: { [key: string]: React.CSSProperties } = {
-  overlay: {
-    position: 'fixed',
-    inset: 0,
-    zIndex: 999999,
-    background: '#000',
-  },
-  container: {
-    width: '100vw',
-    height: '100dvh',
-    display: 'flex',
-    flexDirection: 'column',
-    color: '#fff',
-    overflow: 'hidden',
-  },
-  header: {
-    flexShrink: 0,
-    padding: '0 16px',
-    height: '60px',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    background: '#000',
-    borderBottom: '1px solid rgba(255,255,255,0.1)',
-  },
+  overlay: { position: 'fixed', inset: 0, zIndex: 999999, background: '#000' },
+  container: { width: '100vw', height: '100dvh', display: 'flex', flexDirection: 'column', color: '#fff', overflow: 'hidden' },
+  header: { flexShrink: 0, padding: '0 16px', height: '60px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#000', borderBottom: '1px solid rgba(255,255,255,0.1)' },
   headerTitle: { fontSize: '14px', fontWeight: 500, color: '#ccc' },
   iconBtn: { background: 'none', border: 'none', color: '#fff', padding: '8px', cursor: 'pointer' },
   submitHeader: { background: 'none', border: 'none', fontWeight: 700, fontSize: '16px', cursor: 'pointer', padding: '8px' },
-  
   canvas: {
     flex: 1,
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
     background: '#0a0a0a',
-    padding: '16px',
-    overflow: 'hidden',
+    padding: '20px',
+    overflow: 'hidden', // これにより親を突き破らない
   },
   imageContainer: {
     position: 'relative',
+    maxWidth: '100%',
+    maxHeight: '100%',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    maxWidth: '100%',
-    maxHeight: '100%',
   },
   image: {
+    width: '100%',
+    height: '100%',
     maxWidth: '100%',
     maxHeight: '100%',
-    objectFit: 'contain',
+    objectFit: 'contain', // これが最重要
     display: 'block',
     userSelect: 'none',
     WebkitUserSelect: 'none',
   },
-  // マーカー表示専用のレイヤー：imgと全く同じサイズになるようにする
-  markerOverlay: {
-    position: 'absolute',
-    inset: 0,
-    pointerEvents: 'none',
-  },
-  marker: {
-    position: 'absolute',
-    transform: 'translate(-50%, -50%)',
-    zIndex: 10,
-  },
-  // ヒントの中央配置デザイン
-  tapHintOverlay: {
-    position: 'absolute',
-    inset: 0,
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    pointerEvents: 'none',
-  },
-  tapHintBadge: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '10px',
-    background: 'rgba(255,255,255,0.15)',
-    backdropFilter: 'blur(10px)',
-    WebkitBackdropFilter: 'blur(10px)',
-    padding: '12px 20px',
-    borderRadius: '100px',
-    border: '1px solid rgba(255,255,255,0.2)',
-    boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
-    fontSize: '14px',
-    fontWeight: 500,
-    color: '#fff',
-  },
-  controls: {
-    flexShrink: 0,
-    padding: '20px 16px calc(20px + env(safe-area-inset-bottom))',
-    background: '#000',
-    borderTop: '1px solid rgba(255,255,255,0.1)',
-  },
-  typeRow: {
-    display: 'flex',
-    justifyContent: 'center',
-    gap: '12px',
-    marginBottom: '20px',
-  },
-  typeButton: {
-    flex: 1,
-    maxWidth: '100px',
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    gap: '6px',
-    padding: '12px 8px',
-    borderRadius: '12px',
-    border: '1px solid',
-    fontSize: '12px',
-    transition: 'all 0.2s ease',
-    cursor: 'pointer',
-  },
+  markerOverlay: { position: 'absolute', inset: 0, pointerEvents: 'none' },
+  marker: { position: 'absolute', transform: 'translate(-50%, -50%)', zIndex: 10 },
+  tapHintOverlay: { position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' },
+  tapHintBadge: { display: 'flex', alignItems: 'center', gap: '10px', background: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(10px)', WebkitBackdropFilter: 'blur(10px)', padding: '12px 20px', borderRadius: '100px', border: '1px solid rgba(255,255,255,0.2)', fontSize: '14px', color: '#fff' },
+  controls: { flexShrink: 0, padding: '20px 16px calc(20px + env(safe-area-inset-bottom))', background: '#000', borderTop: '1px solid rgba(255,255,255,0.1)' },
+  typeRow: { display: 'flex', justifyContent: 'center', gap: '12px', marginBottom: '20px' },
+  typeButton: { flex: 1, maxWidth: '100px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', padding: '12px 8px', borderRadius: '12px', border: '1px solid', fontSize: '12px', transition: 'all 0.2s ease', cursor: 'pointer' },
   typeLabel: { fontWeight: 500 },
   inputWrapper: { maxWidth: '500px', margin: '0 auto' },
-  input: {
-    width: '100%',
-    background: 'rgba(255,255,255,0.08)',
-    border: '1px solid rgba(255,255,255,0.1)',
-    borderRadius: '14px',
-    padding: '14px 18px',
-    color: '#fff',
-    fontSize: '16px',
-    outline: 'none',
-  },
+  input: { width: '100%', background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '14px', padding: '14px 18px', color: '#fff', fontSize: '16px', outline: 'none' },
 }
