@@ -113,7 +113,7 @@ export default function ReactionEditorModal({
 
         {/* Canvas Area */}
         <div style={styles.canvas}>
-          <div style={styles.imageWrapper}>
+          <div style={styles.imageContainer}>
             <img
               ref={imgRef}
               src={imageUrl}
@@ -122,22 +122,18 @@ export default function ReactionEditorModal({
               onClick={(e) => {
                 const img = imgRef.current
                 if (!img) return
-                
-                // 画像自体の表示領域を正確に取得
                 const rect = img.getBoundingClientRect()
-                
-                // クリック位置を画像内の 0~1 の割合に変換
+                // 厳密に画像表示領域内でのクリック率を計算
                 const x = (e.clientX - rect.left) / rect.width
                 const y = (e.clientY - rect.top) / rect.height
-                
                 setPos({ x, y })
               }}
               draggable={false}
             />
 
-            {/* Tap Hint: 画像中央にオーバーレイ */}
+            {/* Tap Hint: 画像がまだタップされていない時に中央に表示 */}
             {!pos && (
-              <div style={styles.tapHintContainer}>
+              <div style={styles.tapHintOverlay}>
                 <div style={styles.tapHintBadge}>
                   <TouchpadOff size={18} />
                   <span>画像をタップして位置を指定</span>
@@ -145,16 +141,18 @@ export default function ReactionEditorModal({
               </div>
             )}
 
-            {/* Marker */}
+            {/* Marker Overlay: 画像と完全に重なる透明レイヤー */}
             {pos && (
-              <div
-                style={{
-                  ...styles.marker,
-                  left: `${pos.x * 100}%`,
-                  top: `${pos.y * 100}%`,
-                }}
-              >
-                {iconMap[type]}
+              <div style={styles.markerOverlay}>
+                <div
+                  style={{
+                    ...styles.marker,
+                    left: `${pos.x * 100}%`,
+                    top: `${pos.y * 100}%`,
+                  }}
+                >
+                  {iconMap[type]}
+                </div>
               </div>
             )}
           </div>
@@ -272,13 +270,14 @@ const styles: { [key: string]: React.CSSProperties } = {
     alignItems: 'center',
     justifyContent: 'center',
     background: '#0a0a0a',
+    padding: '16px',
     overflow: 'hidden',
-    padding: '12px',
-    position: 'relative',
   },
-  imageWrapper: {
+  imageContainer: {
     position: 'relative',
-    display: 'inline-block', // これが重要：画像の実表示サイズに合わせる
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
     maxWidth: '100%',
     maxHeight: '100%',
   },
@@ -290,9 +289,19 @@ const styles: { [key: string]: React.CSSProperties } = {
     userSelect: 'none',
     WebkitUserSelect: 'none',
   },
-
-  // ヒントのデザイン刷新
-  tapHintContainer: {
+  // マーカー表示専用のレイヤー：imgと全く同じサイズになるようにする
+  markerOverlay: {
+    position: 'absolute',
+    inset: 0,
+    pointerEvents: 'none',
+  },
+  marker: {
+    position: 'absolute',
+    transform: 'translate(-50%, -50%)',
+    zIndex: 10,
+  },
+  // ヒントの中央配置デザイン
+  tapHintOverlay: {
     position: 'absolute',
     inset: 0,
     display: 'flex',
@@ -303,26 +312,21 @@ const styles: { [key: string]: React.CSSProperties } = {
   tapHintBadge: {
     display: 'flex',
     alignItems: 'center',
-    gap: '8px',
-    background: 'rgba(0,0,0,0.6)',
-    backdropFilter: 'blur(4px)',
-    padding: '10px 16px',
+    gap: '10px',
+    background: 'rgba(255,255,255,0.15)',
+    backdropFilter: 'blur(10px)',
+    WebkitBackdropFilter: 'blur(10px)',
+    padding: '12px 20px',
     borderRadius: '100px',
     border: '1px solid rgba(255,255,255,0.2)',
-    fontSize: '13px',
+    boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
+    fontSize: '14px',
+    fontWeight: 500,
     color: '#fff',
-    animation: 'pulse 2s infinite',
-  },
-
-  marker: {
-    position: 'absolute',
-    transform: 'translate(-50%, -50%)',
-    zIndex: 10,
-    pointerEvents: 'none',
   },
   controls: {
     flexShrink: 0,
-    padding: '20px 16px calc(20px + env(safe-area-inset-bottom))', // Safariのノッチ/バー対策
+    padding: '20px 16px calc(20px + env(safe-area-inset-bottom))',
     background: '#000',
     borderTop: '1px solid rgba(255,255,255,0.1)',
   },
