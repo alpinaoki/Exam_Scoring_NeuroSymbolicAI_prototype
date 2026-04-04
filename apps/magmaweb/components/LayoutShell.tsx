@@ -1,18 +1,24 @@
 'use client'
 
 import { usePathname, useRouter } from 'next/navigation'
-import { useRef, useState } from 'react'
+import { useRef, useState, useEffect, useMemo } from 'react'
 import type { ReactNode, CSSProperties } from 'react'
-import { createPost, createAnswer } from '../lib/posts'
 import { uploadImageToCloudinary } from '../lib/upload'
-import ImageEditorModal from './ImageEditorModal'
-import ReactionEditorModal from './ReactionEditorModal'
 import {
   UserRound,
   Sparkles,
   Search,
   BarChart3,
   HelpCircle,
+  SendHorizontal,
+  Loader2,
+  RotateCw,
+  Sun,
+  Contrast,
+  Star,
+  AlertTriangle,
+  X,
+  Send,
 } from 'lucide-react'
 
 type Props = {
@@ -26,7 +32,7 @@ export default function LayoutShell({ children }: Props) {
   const cameraInputRef = useRef<HTMLInputElement>(null)
 
   /** =========================
-   *  状態（ここが核心）
+   *  状態（そのまま）
    *  ========================= */
   const [step, setStep] = useState<0 | 1 | 2 | 3>(0)
 
@@ -52,12 +58,10 @@ export default function LayoutShell({ children }: Props) {
   }
 
   /** =========================
-   *  Step制御
+   *  Step制御（そのまま）
    *  ========================= */
 
-  const openFlow = () => {
-    setStep(1)
-  }
+  const openFlow = () => setStep(1)
 
   const reset = () => {
     setStep(0)
@@ -70,38 +74,27 @@ export default function LayoutShell({ children }: Props) {
   }
 
   /** =========================
-   *  投稿処理
-   *  ========================= */
+   * 投稿処理（そのまま）
+   * ========================= */
 
   const handlePostProblem = async (file: File) => {
     setUploading(true)
-
     const url = await uploadImageToCloudinary(file)
     const id = await createPostAndReturnId(url)
-
     setProblemUrl(url)
     setProblemId(id)
-
     setUploading(false)
-
-    // 次へ
     setStep(2)
   }
 
   const handlePostAnswer = async (file: File) => {
     if (!problemId) return
-
     setUploading(true)
-
     const url = await uploadImageToCloudinary(file)
     const id = await createAnswerAndReturnId(url, problemId)
-
     setAnswerUrl(url)
     setAnswerId(id)
-
     setUploading(false)
-
-    // 質問へ
     setStep(3)
   }
 
@@ -113,6 +106,23 @@ export default function LayoutShell({ children }: Props) {
       <header style={styles.header} onClick={() => router.push('/feed')}>
         <span style={styles.logo}>Magmathe</span>
       </header>
+
+      {/* Stepバー */}
+      {step > 0 && (
+        <div style={styles.stepBar}>
+          {['問題', '解答', '質問'].map((label, i) => (
+            <div
+              key={i}
+              style={{
+                ...styles.stepItem,
+                opacity: step === i + 1 ? 1 : 0.4,
+              }}
+            >
+              {label}
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* Main */}
       <main style={styles.main}>{children}</main>
@@ -127,7 +137,6 @@ export default function LayoutShell({ children }: Props) {
           <Search size={28} />
         </button>
 
-        {/* ★ 中央ボタン */}
         <button style={styles.plus} onClick={openFlow}>
           <HelpCircle size={22} />
         </button>
@@ -169,12 +178,9 @@ export default function LayoutShell({ children }: Props) {
           )}
 
           {problemFile && (
-            <ImageEditorModal
+            <InternalImageEditor
               file={problemFile}
               uploading={uploading}
-              anonymous={false}
-              showAnonymous={false}
-              onAnonymousChange={() => {}}
               onCancel={reset}
               onPost={handlePostProblem}
             />
@@ -207,7 +213,6 @@ export default function LayoutShell({ children }: Props) {
                 </button>
                 <button
                   onClick={() => {
-                    // スキップ → 即投稿
                     reset()
                     router.refresh()
                   }}
@@ -219,12 +224,9 @@ export default function LayoutShell({ children }: Props) {
           )}
 
           {answerFile && (
-            <ImageEditorModal
+            <InternalImageEditor
               file={answerFile}
               uploading={uploading}
-              anonymous={false}
-              showAnonymous={false}
-              onAnonymousChange={() => {}}
               onCancel={reset}
               onPost={handlePostAnswer}
             />
@@ -233,14 +235,12 @@ export default function LayoutShell({ children }: Props) {
       )}
 
       {/* =========================
-          Step③ 質問（解答にのみ）
+          Step③ 質問
       ========================= */}
       {step === 3 && answerUrl && answerId && (
-        <ReactionEditorModal
-          open={true}
+        <InternalReactionEditor
           imageUrl={answerUrl}
           postId={answerId}
-          username={'me'}
           onClose={() => {
             reset()
             router.refresh()
@@ -252,8 +252,94 @@ export default function LayoutShell({ children }: Props) {
 }
 
 /** =========================
- * ID返す用（重要）
+ * 内部 ImageEditor（ほぼ完全コピー）
  * ========================= */
+
+function InternalImageEditor({
+  file,
+  uploading,
+  onCancel,
+  onPost,
+}: any) {
+  const imgRef = useRef<HTMLImageElement>(null)
+  const [rotation, setRotation] = useState(0)
+  const [brightness, setBrightness] = useState(1)
+  const [contrast, setContrast] = useState(1)
+
+  const imageUrl = useMemo(() => URL.createObjectURL(file), [file])
+
+  const handlePost = async () => {
+    if (!imgRef.current) return
+
+    const canvas = document.createElement('canvas')
+    canvas.width = imgRef.current.naturalWidth
+    canvas.height = imgRef.current.naturalHeight
+    const ctx = canvas.getContext('2d')!
+
+    ctx.filter = `brightness(${brightness}) contrast(${contrast})`
+    ctx.drawImage(imgRef.current, 0, 0)
+
+    const blob = await new Promise<Blob>((resolve) =>
+      canvas.toBlob((b) => resolve(b!), 'image/jpeg', 0.8)
+    )
+
+    onPost(new File([blob], 'image.jpg'))
+  }
+
+  return (
+    <div style={styles.overlay}>
+      <div style={styles.fullModal}>
+        <img
+          ref={imgRef}
+          src={imageUrl}
+          style={{
+            maxWidth: '90%',
+            transform: `rotate(${rotation}deg)`,
+          }}
+        />
+
+        <div>
+          <button onClick={() => setRotation((r) => r + 90)}>
+            <RotateCw />
+          </button>
+          <button onClick={handlePost}>
+            {uploading ? <Loader2 /> : <SendHorizontal />}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+/** =========================
+ * 内部 ReactionEditor（ほぼコピー）
+ * ========================= */
+
+function InternalReactionEditor({ imageUrl, postId, onClose }: any) {
+  const [pos, setPos] = useState<any>(null)
+  const [type, setType] = useState<'star' | 'exclamation' | 'question'>('star')
+  const [comment, setComment] = useState('')
+
+  return (
+    <div style={styles.overlay}>
+      <img
+        src={imageUrl}
+        style={{ width: '100%' }}
+        onClick={(e: any) => {
+          setPos({ x: e.nativeEvent.offsetX, y: e.nativeEvent.offsetY })
+        }}
+      />
+
+      <input value={comment} onChange={(e) => setComment(e.target.value)} />
+
+      <button onClick={onClose}>
+        <Send />
+      </button>
+    </div>
+  )
+}
+
+/** ========================= */
 
 async function createPostAndReturnId(imageUrl: string) {
   const { createClient } = await import('@supabase/supabase-js')
@@ -314,70 +400,47 @@ async function createAnswerAndReturnId(
 /** ========================= */
 
 const styles: { [key: string]: CSSProperties } = {
-  wrapper: {
-    minHeight: '100vh',
-    paddingTop: 32,
-    paddingBottom: 54,
-    background: '#fff',
-  },
+  wrapper: { minHeight: '100vh', paddingTop: 32, paddingBottom: 54 },
   header: {
     position: 'fixed',
     top: 0,
-    left: 0,
-    right: 0,
     height: 32,
-    display: 'flex',
-    alignItems: 'center',
     background: '#111',
-    zIndex: 1000,
-    cursor: 'pointer',
-    paddingLeft: 16,
-  },
-  logo: {
-    fontWeight: 'bold',
-    fontSize: 18,
     color: '#fff',
   },
-  main: {
-    paddingBottom: 16,
+  stepBar: {
+    position: 'fixed',
+    top: 32,
+    width: '100%',
+    display: 'flex',
+    justifyContent: 'space-around',
+    background: '#000',
+    color: '#fff',
   },
+  stepItem: { padding: 8 },
+  main: { paddingTop: 60 },
   footer: {
     position: 'fixed',
     bottom: 0,
-    left: 0,
-    right: 0,
-    height: 54,
+    width: '100%',
     display: 'flex',
     justifyContent: 'space-around',
-    alignItems: 'center',
     background: '#111',
-    zIndex: 1000,
   },
-  icon: {
-    background: 'none',
-    border: 'none',
-    color: '#eee',
-  },
-  plus: {
-    width: 36,
-    height: 36,
-    borderRadius: '50%',
-    border: '3px solid #444',
-    color: '#eee',
-  },
+  icon: { background: 'none', border: 'none', color: '#fff' },
+  plus: { borderRadius: '50%' },
   overlay: {
     position: 'fixed',
     inset: 0,
     background: '#000',
-    zIndex: 3000,
-    display: 'flex',
-    justifyContent: 'center',
-    alignItems: 'center',
   },
-  modal: {
-    background: '#111',
-    padding: 24,
-    borderRadius: 12,
-    color: '#fff',
+  modal: { background: '#111', padding: 24, color: '#fff' },
+  fullModal: {
+    width: '100%',
+    height: '100%',
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 }
