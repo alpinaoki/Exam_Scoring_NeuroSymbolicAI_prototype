@@ -169,6 +169,7 @@ export default function LayoutShell({ children }: Props) {
           )}
 
           {problemFile && (
+            
             <ImageEditorModal
               file={problemFile}
               uploading={uploading}

@@ -11,7 +11,7 @@ interface Props {
   open: boolean
   imageUrl: string
   postId: string
-  username: string   // ← 追加
+  username: string
   onClose: () => void
 }
 
@@ -19,7 +19,7 @@ export default function ReactionEditorModal({
   open,
   imageUrl,
   postId,
-  username,          // ← 追加
+  username,
   onClose,
 }: Props) {
   const [mounted, setMounted] = useState(false)
@@ -48,6 +48,47 @@ export default function ReactionEditorModal({
 
   if (!open || !mounted) return null
 
+  // 座標計算の修正：object-fit: contain による余白を考慮した正確な正規化
+  const handleImageClick = (e: React.MouseEvent<HTMLImageElement>) => {
+    const img = imgRef.current
+    if (!img) return
+
+    const rect = img.getBoundingClientRect()
+    
+    // 要素内のクリック座標
+    const offsetX = e.clientX - rect.left
+    const offsetY = e.clientY - rect.top
+
+    // 画像の本来の縦横比と表示されている縦横比から、実際の描画領域を算出
+    const imgRatio = img.naturalWidth / img.naturalHeight
+    const containerRatio = rect.width / rect.height
+
+    let actualWidth, actualHeight, startX, startY
+
+    if (containerRatio > imgRatio) {
+      // 左右に余白がある場合
+      actualHeight = rect.height
+      actualWidth = rect.height * imgRatio
+      startX = (rect.width - actualWidth) / 2
+      startY = 0
+    } else {
+      // 上下に余白がある場合
+      actualWidth = rect.width
+      actualHeight = rect.width / imgRatio
+      startX = 0
+      startY = (rect.height - actualHeight) / 2
+    }
+
+    // 描画エリア内での相対座標を計算 (0.0 ~ 1.0)
+    const x = (offsetX - startX) / actualWidth
+    const y = (offsetY - startY) / actualHeight
+
+    // 範囲外クリック（余白部分）は無視
+    if (x < 0 || x > 1 || y < 0 || y > 1) return
+
+    setPos({ x, y })
+  }
+
   const submit = async () => {
     if (!pos || saving) return
     setSaving(true)
@@ -57,7 +98,7 @@ export default function ReactionEditorModal({
         type === 'question'
           ? JSON.stringify([
               {
-                username,       // ← 投稿者名をそのまま入れる
+                username,
                 content: comment,
               },
             ])
@@ -72,12 +113,28 @@ export default function ReactionEditorModal({
       })
 
       onClose()
+      setPos(null)
+      setComment('')
     } catch (e) {
       console.error(e)
       alert('リアクションの保存に失敗しました')
     } finally {
       setSaving(false)
     }
+  }
+
+  // カラー定数
+  const COLORS = {
+    star: '#FFE066',
+    exclamation: '#FFAD99',
+    question: '#4D96FF',
+    bg: '#1a1a1a'
+  }
+
+  const iconMap = {
+    star: <Star size={20} fill={COLORS.star} stroke="#333" strokeWidth={1} />,
+    exclamation: <AlertTriangle size={20} fill={COLORS.exclamation} stroke="#333" strokeWidth={1} />,
+    question: <HelpCircle size={20} fill={COLORS.question} stroke="#333" strokeWidth={1} />,
   }
 
   return createPortal(
@@ -88,21 +145,20 @@ export default function ReactionEditorModal({
           <button onClick={onClose} style={styles.iconBtn}>
             <X size={24} />
           </button>
-          <span style={styles.headerTitle}>ポイントをタップして位置を指定</span>
+          <span style={styles.headerTitle}>位置を指定してリアクション</span>
           <button
             onClick={submit}
             disabled={!pos || saving}
             style={{
               ...styles.submitHeader,
-              opacity: !pos || saving ? 0.4 : 1,
-              color: pos ? '4D96FF_1' : '#666',
+              color: pos && !saving ? '#4D96FF' : '#666',
             }}
           >
-            {saving ? '保存中...' : <Send size={22} />}
+            {saving ? '...' : <Send size={22} />}
           </button>
         </div>
 
-        {/* Image Canvas */}
+        {/* Canvas Area */}
         <div style={styles.canvas}>
           <div style={styles.imageWrapper}>
             <img
@@ -110,20 +166,13 @@ export default function ReactionEditorModal({
               src={imageUrl}
               style={styles.image}
               alt="Target"
-              onClick={(e) => {
-                if (!imgRef.current) return
-                const rect = imgRef.current.getBoundingClientRect()
-
-                setPos({
-                  x: (e.clientX - rect.left) / rect.width,
-                  y: (e.clientY - rect.top) / rect.height,
-                })
-              }}
+              onClick={handleImageClick}
+              draggable={false}
             />
 
             {!pos && (
               <div style={styles.tapHint}>
-                画像をタップして位置を指定
+                画像をタップしてマーカーを設置
               </div>
             )}
 
@@ -145,38 +194,31 @@ export default function ReactionEditorModal({
         <div style={styles.controls}>
           <div style={styles.typeRow}>
             {(['star', 'exclamation', 'question'] as const).map((t) => (
-              <TypeButton
+              <button
                 key={t}
-                active={type === t}
                 onClick={() => setType(t)}
-                type={t}
+                style={{
+                  ...styles.typeButton,
+                  background: type === t ? `${COLORS[t]}22` : 'rgba(255,255,255,0.05)',
+                  borderColor: type === t ? COLORS[t] : 'rgba(255,255,255,0.1)',
+                  color: type === t ? '#fff' : '#888',
+                }}
               >
-                {t === 'star' && (
-                  <Star size={20} fill={type === t ? 'FFD700_1' : 'transparent'} />
-                )}
-                {t === 'exclamation' && (
-                  <AlertTriangle
-                    size={20}
-                    fill={type === t ? 'FF6B6B_1' : 'transparent'}
-                  />
-                )}
-                {t === 'question' && (
-                  <HelpCircle
-                    size={20}
-                    fill={type === t ? '4D96FF_1' : 'transparent'}
-                  />
-                )}
+                {t === 'star' && <Star size={20} fill={type === t ? COLORS.star : 'none'} stroke={type === t ? '#333' : '#888'} />}
+                {t === 'exclamation' && <AlertTriangle size={20} fill={type === t ? COLORS.exclamation : 'none'} stroke={type === t ? '#333' : '#888'} />}
+                {t === 'question' && <HelpCircle size={20} fill={type === t ? COLORS.question : 'none'} stroke={type === t ? '#333' : '#888'} />}
                 <span style={styles.typeLabel}>{typeLabels[t]}</span>
-              </TypeButton>
+              </button>
             ))}
           </div>
 
           <div style={styles.inputWrapper}>
             <input
-              placeholder="具体的に説明..."
+              placeholder={type === 'question' ? "質問・不明点を入力..." : "コメントを追加 (任意)..."}
               value={comment}
               onChange={(e) => setComment(e.target.value)}
               style={styles.input}
+              autoFocus
             />
           </div>
         </div>
@@ -186,52 +228,10 @@ export default function ReactionEditorModal({
   )
 }
 
-function TypeButton({
-  children,
-  active,
-  onClick,
-  type,
-}: {
-  children: React.ReactNode
-  active: boolean
-  onClick: () => void
-  type: ReactionType
-}) {
-  const activeColors = {
-    star: 'rgba(255, 215, 0, 0.15)',
-    exclamation: 'rgba(255, 107, 107, 0.15)',
-    question: 'rgba(77, 150, 255, 0.15)',
-  }
-
-  return (
-    <button
-      onClick={onClick}
-      style={{
-        ...styles.typeButton,
-        background: active ? activeColors[type] : 'rgba(255,255,255,0.05)',
-        borderColor: active ? 'transparent' : 'rgba(255,255,255,0.1)',
-        color: active ? '#fff' : '#888',
-      }}
-    >
-      {children}
-    </button>
-  )
-}
-
-const iconMap = {
-  star: <Star size={28} fill="FFD700_1" stroke="#000" strokeWidth={1.5} />,
-  exclamation: (
-    <AlertTriangle size={28} fill="FF6B6B_1" stroke="#000" strokeWidth={1.5} />
-  ),
-  question: (
-    <HelpCircle size={28} fill="4D96FF_1" stroke="#000" strokeWidth={1.5} />
-  ),
-}
-
 const typeLabels = {
-  star: 'いいね！',
-  exclamation: '指摘',
-  question: '疑問・確認',
+  star: 'なるほど',
+  exclamation: 'ミス指摘',
+  question: '質問',
 }
 
 const styles: { [key: string]: React.CSSProperties } = {
@@ -249,18 +249,18 @@ const styles: { [key: string]: React.CSSProperties } = {
     color: '#fff',
   },
   header: {
-    padding: '8px 16px',
-    height: '60px',
+    padding: '0 16px',
+    height: '64px',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'space-between',
-    background: 'rgba(0,0,0,0.8)',
+    background: '#000',
     borderBottom: '1px solid rgba(255,255,255,0.1)',
   },
   headerTitle: {
     fontSize: '14px',
-    fontWeight: 500,
-    color: '#ccc',
+    fontWeight: 600,
+    color: '#eee',
   },
   iconBtn: {
     background: 'none',
@@ -272,19 +272,22 @@ const styles: { [key: string]: React.CSSProperties } = {
   submitHeader: {
     background: 'none',
     border: 'none',
-    fontWeight: 700,
-    fontSize: '16px',
     cursor: 'pointer',
     padding: '8px',
+    transition: 'all 0.2s',
   },
   canvas: {
     flex: 1,
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
+    overflow: 'hidden',
+    position: 'relative',
+    background: '#0a0a0a',
   },
   imageWrapper: {
     position: 'relative',
+    display: 'inline-block',
     maxWidth: '100%',
     maxHeight: '100%',
   },
@@ -293,48 +296,55 @@ const styles: { [key: string]: React.CSSProperties } = {
     maxHeight: '100%',
     objectFit: 'contain',
     display: 'block',
+    userSelect: 'none',
   },
   tapHint: {
     position: 'absolute',
-    bottom: 16,
+    top: '50%',
     left: '50%',
-    transform: 'translateX(-50%)',
-    fontSize: 12,
-    color: '#ccc',
-    opacity: 0.8,
+    transform: 'translate(-50%, -50%)',
+    fontSize: '13px',
+    color: '#fff',
+    background: 'rgba(0,0,0,0.5)',
+    padding: '8px 16px',
+    borderRadius: '20px',
+    pointerEvents: 'none',
+    whiteSpace: 'nowrap',
   },
   marker: {
     position: 'absolute',
     transform: 'translate(-50%, -50%)',
     zIndex: 10,
+    pointerEvents: 'none',
+    filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))',
   },
   controls: {
-    padding: '20px 16px 40px',
-    background: 'linear-gradient(to top, #000 80%, transparent)',
-    borderTop: '1px solid rgba(255,255,255,0.05)',
+    padding: '24px 20px 48px',
+    background: '#000',
+    borderTop: '1px solid rgba(255,255,255,0.1)',
   },
   typeRow: {
     display: 'flex',
     justifyContent: 'center',
     gap: '12px',
-    marginBottom: '20px',
+    marginBottom: '24px',
   },
   typeButton: {
     flex: 1,
-    maxWidth: '100px',
+    maxWidth: '110px',
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
-    gap: '6px',
-    padding: '12px 8px',
-    borderRadius: '12px',
-    border: '1px solid',
-    fontSize: '12px',
+    gap: '8px',
+    padding: '12px 4px',
+    borderRadius: '16px',
+    border: '2px solid',
+    fontSize: '11px',
     transition: 'all 0.2s ease',
     cursor: 'pointer',
   },
   typeLabel: {
-    fontWeight: 500,
+    fontWeight: 700,
   },
   inputWrapper: {
     maxWidth: '500px',
@@ -342,9 +352,9 @@ const styles: { [key: string]: React.CSSProperties } = {
   },
   input: {
     width: '100%',
-    background: 'rgba(255,255,255,0.08)',
-    border: '1px solid rgba(255,255,255,0.1)',
-    borderRadius: '14px',
+    background: '#222',
+    border: '1px solid #333',
+    borderRadius: '12px',
     padding: '14px 18px',
     color: '#fff',
     fontSize: '16px',
