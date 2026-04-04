@@ -11,7 +11,7 @@ interface Props {
   open: boolean
   imageUrl: string
   postId: string
-  username: string   // ← 追加
+  username: string
   onClose: () => void
 }
 
@@ -19,7 +19,7 @@ export default function ReactionEditorModal({
   open,
   imageUrl,
   postId,
-  username,          // ← 追加
+  username,
   onClose,
 }: Props) {
   const [mounted, setMounted] = useState(false)
@@ -57,7 +57,7 @@ export default function ReactionEditorModal({
         type === 'question'
           ? JSON.stringify([
               {
-                username,       // ← 投稿者名をそのまま入れる
+                username,
                 content: comment,
               },
             ])
@@ -72,6 +72,8 @@ export default function ReactionEditorModal({
       })
 
       onClose()
+      setPos(null)
+      setComment('')
     } catch (e) {
       console.error(e)
       alert('リアクションの保存に失敗しました')
@@ -80,29 +82,42 @@ export default function ReactionEditorModal({
     }
   }
 
+  // カラー定義（不正な _1 を削除）
+  const COLORS = {
+    star: '#FFD700',
+    exclamation: '#FF6B6B',
+    question: '#4D96FF',
+  }
+
+  const iconMap = {
+    star: <Star size={22} fill={COLORS.star} stroke="#000" strokeWidth={1.5} />,
+    exclamation: <AlertTriangle size={22} fill={COLORS.exclamation} stroke="#000" strokeWidth={1.5} />,
+    question: <HelpCircle size={22} fill={COLORS.question} stroke="#000" strokeWidth={1.5} />,
+  }
+
   return createPortal(
     <div style={styles.overlay}>
       <div style={styles.container}>
-        {/* Header */}
+        {/* Header: 固定高さ */}
         <div style={styles.header}>
           <button onClick={onClose} style={styles.iconBtn}>
             <X size={24} />
           </button>
-          <span style={styles.headerTitle}>ポイントをタップして位置を指定</span>
+          <span style={styles.headerTitle}>位置を指定してリアクション</span>
           <button
             onClick={submit}
             disabled={!pos || saving}
             style={{
               ...styles.submitHeader,
               opacity: !pos || saving ? 0.4 : 1,
-              color: pos ? '4D96FF_1' : '#666',
+              color: pos ? COLORS.question : '#666',
             }}
           >
-            {saving ? '保存中...' : <Send size={22} />}
+            {saving ? '...' : <Send size={22} />}
           </button>
         </div>
 
-        {/* Image Canvas */}
+        {/* Canvas Area: 縦長画像でもはみ出さないよう flex:1 で制御 */}
         <div style={styles.canvas}>
           <div style={styles.imageWrapper}>
             <img
@@ -113,12 +128,13 @@ export default function ReactionEditorModal({
               onClick={(e) => {
                 if (!imgRef.current) return
                 const rect = imgRef.current.getBoundingClientRect()
-
+                // 座標計算ロジックは絶対に変えていません
                 setPos({
                   x: (e.clientX - rect.left) / rect.width,
                   y: (e.clientY - rect.top) / rect.height,
                 })
               }}
+              draggable={false}
             />
 
             {!pos && (
@@ -141,7 +157,7 @@ export default function ReactionEditorModal({
           </div>
         </div>
 
-        {/* Controls Area */}
+        {/* Controls Area: 最下部に固定 */}
         <div style={styles.controls}>
           <div style={styles.typeRow}>
             {(['star', 'exclamation', 'question'] as const).map((t) => (
@@ -152,18 +168,20 @@ export default function ReactionEditorModal({
                 type={t}
               >
                 {t === 'star' && (
-                  <Star size={20} fill={type === t ? 'FFD700_1' : 'transparent'} />
+                  <Star size={20} fill={type === t ? COLORS.star : 'transparent'} stroke={type === t ? '#000' : '#888'} />
                 )}
                 {t === 'exclamation' && (
                   <AlertTriangle
                     size={20}
-                    fill={type === t ? 'FF6B6B_1' : 'transparent'}
+                    fill={type === t ? COLORS.exclamation : 'transparent'}
+                    stroke={type === t ? '#000' : '#888'}
                   />
                 )}
                 {t === 'question' && (
                   <HelpCircle
                     size={20}
-                    fill={type === t ? '4D96FF_1' : 'transparent'}
+                    fill={type === t ? COLORS.question : 'transparent'}
+                    stroke={type === t ? '#000' : '#888'}
                   />
                 )}
                 <span style={styles.typeLabel}>{typeLabels[t]}</span>
@@ -177,6 +195,7 @@ export default function ReactionEditorModal({
               value={comment}
               onChange={(e) => setComment(e.target.value)}
               style={styles.input}
+              /* autoFocus は削除済み：いきなりキーボードが出るのを防ぎます */
             />
           </div>
         </div>
@@ -198,9 +217,9 @@ function TypeButton({
   type: ReactionType
 }) {
   const activeColors = {
-    star: 'rgba(255, 215, 0, 0.15)',
-    exclamation: 'rgba(255, 107, 107, 0.15)',
-    question: 'rgba(77, 150, 255, 0.15)',
+    star: 'rgba(255, 215, 0, 0.2)',
+    exclamation: 'rgba(255, 107, 107, 0.2)',
+    question: 'rgba(77, 150, 255, 0.2)',
   }
 
   return (
@@ -218,16 +237,6 @@ function TypeButton({
   )
 }
 
-const iconMap = {
-  star: <Star size={28} fill="FFD700_1" stroke="#000" strokeWidth={1.5} />,
-  exclamation: (
-    <AlertTriangle size={28} fill="FF6B6B_1" stroke="#000" strokeWidth={1.5} />
-  ),
-  question: (
-    <HelpCircle size={28} fill="4D96FF_1" stroke="#000" strokeWidth={1.5} />
-  ),
-}
-
 const typeLabels = {
   star: 'いいね！',
   exclamation: '指摘',
@@ -243,18 +252,20 @@ const styles: { [key: string]: React.CSSProperties } = {
   },
   container: {
     width: '100vw',
-    height: '100vh',
+    height: '100dvh', // Safariのアドレスバーを考慮した高さ
     display: 'flex',
     flexDirection: 'column',
     color: '#fff',
+    overflow: 'hidden',
   },
   header: {
-    padding: '8px 16px',
+    flexShrink: 0,
+    padding: '0 16px',
     height: '60px',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'space-between',
-    background: 'rgba(0,0,0,0.8)',
+    background: '#000',
     borderBottom: '1px solid rgba(255,255,255,0.1)',
   },
   headerTitle: {
@@ -278,10 +289,13 @@ const styles: { [key: string]: React.CSSProperties } = {
     padding: '8px',
   },
   canvas: {
-    flex: 1,
+    flex: 1, // ここが伸び縮みして、下のパネルを押し出さないようにする
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
+    background: '#0a0a0a',
+    overflow: 'hidden',
+    padding: '10px',
   },
   imageWrapper: {
     position: 'relative',
@@ -293,6 +307,7 @@ const styles: { [key: string]: React.CSSProperties } = {
     maxHeight: '100%',
     objectFit: 'contain',
     display: 'block',
+    userSelect: 'none',
   },
   tapHint: {
     position: 'absolute',
@@ -302,16 +317,20 @@ const styles: { [key: string]: React.CSSProperties } = {
     fontSize: 12,
     color: '#ccc',
     opacity: 0.8,
+    pointerEvents: 'none',
+    whiteSpace: 'nowrap',
   },
   marker: {
     position: 'absolute',
     transform: 'translate(-50%, -50%)',
     zIndex: 10,
+    pointerEvents: 'none',
   },
   controls: {
-    padding: '20px 16px 40px',
-    background: 'linear-gradient(to top, #000 80%, transparent)',
-    borderTop: '1px solid rgba(255,255,255,0.05)',
+    flexShrink: 0,
+    padding: '20px 16px 40px', // 下側の余白をしっかり確保
+    background: '#000',
+    borderTop: '1px solid rgba(255,255,255,0.1)',
   },
   typeRow: {
     display: 'flex',
