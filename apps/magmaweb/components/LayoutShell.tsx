@@ -138,7 +138,7 @@ export default function LayoutShell({ children }: Props) {
 
       {step > 0 && (
         <div style={styles.fullOverlay}>
-          {/* 進捗バーコンテナ：モーダルより上に表示 */}
+          {/* 進捗バーコンテナ：モーダル(zIndex 9000)より上に配置 */}
           <div style={styles.progressContainer}>
             <button onClick={() => {
                 if (rawFile) setRawFile(null); 
@@ -221,7 +221,6 @@ export default function LayoutShell({ children }: Props) {
                 username="me"
                 onClose={(reactionData) => {
                   if (reactionData) handleFinalSubmit(reactionData);
-                  // onCloseが引数なし（Xボタン等）で呼ばれた場合は前のステップへ
                   else goToStep(2);
                 }}
               />
@@ -253,7 +252,8 @@ const styles: { [key: string]: CSSProperties } = {
     alignItems: 'center', 
     background: '#000', 
     borderBottom: '1px solid #222', 
-    zIndex: 4000 // モーダル(3050)より上に配置
+    position: 'relative',
+    zIndex: 9999 // モーダルより確実に上に配置
   },
   progressBars: { flex: 1, display: 'flex', gap: 6 },
   navBtn: { background: 'none', border: 'none', color: '#fff', cursor: 'pointer', padding: 4 },
