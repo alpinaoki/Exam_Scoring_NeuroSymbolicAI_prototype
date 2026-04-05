@@ -138,6 +138,7 @@ export default function LayoutShell({ children }: Props) {
 
       {step > 0 && (
         <div style={styles.fullOverlay}>
+          {/* 進捗バーコンテナ：モーダルより上に表示 */}
           <div style={styles.progressContainer}>
             <button onClick={() => {
                 if (rawFile) setRawFile(null); 
@@ -151,6 +152,7 @@ export default function LayoutShell({ children }: Props) {
                 <div key={s} style={styles.progressBarBase}>
                   <div style={{
                     ...styles.progressBarFill,
+                    // 修正：前のステップは100%、現在のステップは10%
                     width: step > s ? '100%' : step === s ? '10%' : '0%',
                     opacity: step >= s ? 1 : 0.3
                   }} />
@@ -219,6 +221,7 @@ export default function LayoutShell({ children }: Props) {
                 username="me"
                 onClose={(reactionData) => {
                   if (reactionData) handleFinalSubmit(reactionData);
+                  // onCloseが引数なし（Xボタン等）で呼ばれた場合は前のステップへ
                   else goToStep(2);
                 }}
               />
@@ -243,7 +246,15 @@ const styles: { [key: string]: CSSProperties } = {
   icon: { background: 'none', border: 'none', color: '#eee', cursor: 'pointer' },
   plus: { width: 36, height: 36, borderRadius: '50%', border: '3px solid #444', color: '#eee', display: 'flex', justifyContent: 'center', alignItems: 'center', padding: 0, cursor: 'pointer' },
   fullOverlay: { position: 'fixed', inset: 0, background: '#000', zIndex: 3000, display: 'flex', flexDirection: 'column', color: '#fff' },
-  progressContainer: { padding: '12px 16px', display: 'flex', gap: 12, alignItems: 'center', background: '#000', borderBottom: '1px solid #222', zIndex: 3100 },
+  progressContainer: { 
+    padding: '12px 16px', 
+    display: 'flex', 
+    gap: 12, 
+    alignItems: 'center', 
+    background: '#000', 
+    borderBottom: '1px solid #222', 
+    zIndex: 4000 // モーダル(3050)より上に配置
+  },
   progressBars: { flex: 1, display: 'flex', gap: 6 },
   navBtn: { background: 'none', border: 'none', color: '#fff', cursor: 'pointer', padding: 4 },
   progressBarBase: { flex: 1, height: 4, background: '#333', borderRadius: 2, overflow: 'hidden' },
