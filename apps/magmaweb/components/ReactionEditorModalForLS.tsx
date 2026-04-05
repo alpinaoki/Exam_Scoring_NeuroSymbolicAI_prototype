@@ -21,7 +21,6 @@ export default function ReactionEditorModal({
   onClose,
 }: Props) {
   const [mounted, setMounted] = useState(false)
-  // 質問固定にする
   const type: ReactionType = 'question'
   const [comment, setComment] = useState('')
   const [pos, setPos] = useState<{ x: number; y: number } | null>(null)
@@ -75,7 +74,7 @@ export default function ReactionEditorModal({
         <div style={styles.header}>
           <button onClick={() => onClose()} style={styles.iconBtn}><X size={24} /></button>
           <span style={styles.headerTitle}>わからない箇所をタップ</span>
-          <div style={{ width: 40 }} /> {/* バランス用の空要素 */}
+          <div style={{ width: 40 }} />
         </div>
 
         {/* Canvas Area */}
@@ -134,7 +133,7 @@ export default function ReactionEditorModal({
               <span style={styles.labelText}>質問内容</span>
             </div>
             <textarea
-              placeholder="ここがなぜこうなるのか教えてほしい、など"
+              placeholder="「ここがなぜこうなるのか」など"
               value={comment}
               onChange={(e) => setComment(e.target.value)}
               style={styles.textarea}
@@ -159,7 +158,7 @@ export default function ReactionEditorModal({
 }
 
 const styles: { [key: string]: React.CSSProperties } = {
-  overlay: { position: 'fixed', inset: 0, zIndex: 999999, background: '#000' },
+  overlay: { position: 'fixed', inset: 0, zIndex: 6000, background: '#000' },
   container: { width: '100vw', height: '100dvh', display: 'flex', flexDirection: 'column', color: '#fff', overflow: 'hidden' },
   header: { flexShrink: 0, padding: '0 16px', height: '60px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#000', borderBottom: '1px solid rgba(255,255,255,0.1)' },
   headerTitle: { fontSize: '16px', fontWeight: 'bold', color: '#fff' },

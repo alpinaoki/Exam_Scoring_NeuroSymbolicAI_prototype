@@ -247,12 +247,13 @@ export default function ImageEditorModal({
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 4 }}>
               <input
                 type="checkbox"
+                id="anon-check"
                 checked={anonymous}
                 onChange={(e) => onAnonymousChange(e.target.checked)}
               />
-              <span style={{ fontSize: 13, color: '#ccc' }}>
+              <label htmlFor="anon-check" style={{ fontSize: 13, color: '#ccc' }}>
                 匿名で投稿
-              </span>
+              </label>
             </div>
           )}
         </div>
@@ -306,7 +307,7 @@ const styles: { [k: string]: CSSProperties } = {
     position: 'fixed',
     inset: 0,
     background: '#000',
-    zIndex: 3000,
+    zIndex: 5000,
   },
   modal: {
     position: 'absolute',
@@ -330,7 +331,7 @@ const styles: { [k: string]: CSSProperties } = {
     border: 'none',
     color: '#fff',
     borderRadius: 20,
-    padding: '4px 12px',
+    padding: '4px 16px',
     display: 'flex',
     alignItems: 'center',
     gap: 4,
@@ -370,11 +371,11 @@ const styles: { [k: string]: CSSProperties } = {
     border: '2px solid #fff',
   },
   controlPanel: {
-    padding: '12px 20px',
+    padding: '16px 20px',
     background: 'rgba(255,255,255,0.08)',
     display: 'flex',
     flexDirection: 'column',
-    gap: '8px',
+    gap: '12px',
   },
   controlRow: {
     display: 'flex',
