@@ -12,7 +12,7 @@ import {
   Sparkles,
   Search,
   BarChart3,
-  HelpCircle,
+  MessageCircleQuestionIcon,
   X,
   ChevronLeft,
   Camera
@@ -140,7 +140,7 @@ export default function LayoutShell({ children }: Props) {
         <button style={styles.icon} onClick={() => router.push('/search')}><Search size={28} /></button>
         {/* 背景円をなくし、他のボタンと同じスタイル(styles.icon)を適用 */}
         <button style={styles.icon} onClick={() => goToStep(1)}>
-          <HelpCircle size={28} />
+          <MessageCircleQuestionIcon size={28} />
         </button>
         <button style={styles.icon} onClick={() => router.push('/analysis')}><BarChart3 size={28} /></button>
         <button style={styles.icon} onClick={() => router.push('/me')}><UserRound size={28} /></button>
