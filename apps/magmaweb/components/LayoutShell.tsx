@@ -65,7 +65,7 @@ export default function LayoutShell({ children }: Props) {
     setUploading(false)
   }
 
-  /** =========================
+/** =========================
    * 最終投稿処理（一括実行）
    * ========================= */
 
@@ -74,27 +74,29 @@ export default function LayoutShell({ children }: Props) {
     setUploading(true)
 
     try {
+      // lib/posts.ts で使っているのと同じように、auth を含む処理を行う
       const { createClient } = await import('@supabase/supabase-js')
       const supabase = createClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
         process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
       )
 
-      // ユーザー情報の取得（一回で済ませる）
       const { data: userData, error: userError } = await supabase.auth.getUser()
       if (userError || !userData.user) throw new Error('認証に失敗しました')
       const userId = userData.user.id
 
-      // 1. 問題のアップロードと保存
+      // 1. 問題のアップロード
       const pUrl = await uploadImageToCloudinary(problemFile)
       
+      // postsテーブルのカラム名に合わせて insert (lib/posts.ts 参照)
       const { data: pInserted, error: pError } = await supabase
         .from('posts')
         .insert({
           user_id: userId,
           type: 'problem',
           image_url: pUrl,
-          is_anonymous: isAnonymous,
+          // DB側のカラム名はおそらく 'anonymous' なので修正
+          anonymous: isAnonymous, 
         })
         .select('id')
         .single()
@@ -117,7 +119,7 @@ export default function LayoutShell({ children }: Props) {
             image_url: aUrl,
             parent_id: pId,
             root_id: pId,
-            is_anonymous: isAnonymous,
+            anonymous: isAnonymous,
           })
           .select('id')
           .single()
@@ -132,7 +134,7 @@ export default function LayoutShell({ children }: Props) {
             user_id: userId,
             type: reactionData.type,
             comment: reactionData.comment,
-            // カラム名を lib/posts.ts の getReactionsByPostId で使われている名前に合わせる
+            // lib/posts.ts の getReactionsByPostId に合わせる
             x_float: reactionData.x, 
             y_float: reactionData.y,
           })
@@ -142,12 +144,13 @@ export default function LayoutShell({ children }: Props) {
 
       reset()
       router.refresh()
-      // 成功したらフィードへ
       router.push('/feed')
       
-    } catch (error) {
-      console.error('Submit Error:', error)
-      alert('投稿に失敗しました。詳細: ' + (error instanceof Error ? error.message : 'Unknown error'))
+    } catch (error: any) {
+      console.error('Submit Error Details:', error)
+      // エラーオブジェクトの中身をアラートで見れるようにする
+      const msg = error.message || error.details || 'Unknown Error'
+      alert('投稿に失敗しました。\n理由: ' + msg)
     } finally {
       setUploading(false)
     }
