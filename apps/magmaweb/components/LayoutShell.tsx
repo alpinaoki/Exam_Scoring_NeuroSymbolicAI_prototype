@@ -29,15 +29,9 @@ export default function LayoutShell({ children }: Props) {
    * 状態管理
    * ========================= */
   const [step, setStep] = useState<0 | 1 | 2 | 3>(0)
-
-  // 選択された「生の」ファイル
   const [rawFile, setRawFile] = useState<File | null>(null)
-
-  // 加工済みの確定ファイル
   const [problemFile, setProblemFile] = useState<File | null>(null)
   const [answerFile, setAnswerFile] = useState<File | null>(null)
-
-  // 匿名設定
   const [isAnonymous, setIsAnonymous] = useState(false)
   const [uploading, setUploading] = useState(false)
 
@@ -53,9 +47,7 @@ export default function LayoutShell({ children }: Props) {
    * Step制御 & リセット
    * ========================= */
 
-  const openFlow = () => {
-    setStep(1)
-  }
+  const openFlow = () => setStep(1)
 
   const reset = () => {
     setStep(0)
@@ -65,8 +57,8 @@ export default function LayoutShell({ children }: Props) {
     setUploading(false)
   }
 
-/** =========================
-   * 最終投稿処理（一括実行）
+  /** =========================
+   * 最終投稿処理
    * ========================= */
 
   const handleFinalSubmit = async (reactionData?: any) => {
@@ -74,7 +66,6 @@ export default function LayoutShell({ children }: Props) {
     setUploading(true)
 
     try {
-      // lib/posts.ts で使っているのと同じように、auth を含む処理を行う
       const { createClient } = await import('@supabase/supabase-js')
       const supabase = createClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -88,14 +79,12 @@ export default function LayoutShell({ children }: Props) {
       // 1. 問題のアップロード
       const pUrl = await uploadImageToCloudinary(problemFile)
       
-      // postsテーブルのカラム名に合わせて insert (lib/posts.ts 参照)
       const { data: pInserted, error: pError } = await supabase
         .from('posts')
         .insert({
           user_id: userId,
           type: 'problem',
           image_url: pUrl,
-          // DB側のカラム名はおそらく 'anonymous' なので修正
           anonymous: isAnonymous, 
         })
         .select('id')
@@ -103,8 +92,6 @@ export default function LayoutShell({ children }: Props) {
 
       if (pError || !pInserted) throw pError
       const pId = pInserted.id
-
-      // root_id を自分自身に更新
       await supabase.from('posts').update({ root_id: pId }).eq('id', pId)
 
       // 2. 解答がある場合
@@ -134,7 +121,6 @@ export default function LayoutShell({ children }: Props) {
             user_id: userId,
             type: reactionData.type,
             comment: reactionData.comment,
-            // lib/posts.ts の getReactionsByPostId に合わせる
             x_float: reactionData.x, 
             y_float: reactionData.y,
           })
@@ -147,10 +133,8 @@ export default function LayoutShell({ children }: Props) {
       router.push('/feed')
       
     } catch (error: any) {
-      console.error('Submit Error Details:', error)
-      // エラーオブジェクトの中身をアラートで見れるようにする
-      const msg = error.message || error.details || 'Unknown Error'
-      alert('投稿に失敗しました。\n理由: ' + msg)
+      console.error('Submit Error:', error)
+      alert('投稿に失敗しました。\n理由: ' + (error.message || 'Unknown Error'))
     } finally {
       setUploading(false)
     }
@@ -165,26 +149,14 @@ export default function LayoutShell({ children }: Props) {
       <main style={styles.main}>{children}</main>
 
       <footer style={styles.footer}>
-        <button style={styles.icon} onClick={() => router.push('/feed')}>
-          <Sparkles size={28} />
-        </button>
-        <button style={styles.icon} onClick={() => router.push('/search')}>
-          <Search size={28} />
-        </button>
-        <button style={styles.plus} onClick={openFlow}>
-          <HelpCircle size={22} />
-        </button>
-        <button style={styles.icon} onClick={() => router.push('/analysis')}>
-          <BarChart3 size={28} />
-        </button>
-        <button style={styles.icon} onClick={() => router.push('/me')}>
-          <UserRound size={28} />
-        </button>
+        <button style={styles.icon} onClick={() => router.push('/feed')}><Sparkles size={28} /></button>
+        <button style={styles.icon} onClick={() => router.push('/search')}><Search size={28} /></button>
+        <button style={styles.plus} onClick={openFlow}><HelpCircle size={22} /></button>
+        <button style={styles.icon} onClick={() => router.push('/analysis')}><BarChart3 size={28} /></button>
+        <button style={styles.icon} onClick={() => router.push('/me')}><UserRound size={28} /></button>
       </footer>
 
-      {/* =========================
-          Step① 問題選択・編集
-      ========================= */}
+      {/* Step① 問題文撮影 */}
       {step === 1 && (
         <>
           <input
@@ -197,21 +169,16 @@ export default function LayoutShell({ children }: Props) {
               if (f) setRawFile(f)
             }}
           />
-
           {!rawFile && (
             <div style={styles.overlay} onClick={reset}>
               <div style={styles.modal} onClick={(e) => e.stopPropagation()}>
                 <h3 style={{ marginBottom: 16 }}>① 問題文を撮影</h3>
-                <button 
-                  style={styles.selectBtn} 
-                  onClick={() => cameraInputRef.current?.click()}
-                >
+                <button style={styles.selectBtn} onClick={() => cameraInputRef.current?.click()}>
                   画像を選択
                 </button>
               </div>
             </div>
           )}
-
           {rawFile && (
             <ImageEditorModal
               file={rawFile}
@@ -220,7 +187,7 @@ export default function LayoutShell({ children }: Props) {
               onCancel={reset}
               onConfirm={(editedFile) => {
                 setProblemFile(editedFile)
-                setRawFile(null) // 次のステップのためにクリア
+                setRawFile(null)
                 setStep(2)
               }}
               showAnonymous={true}
@@ -229,9 +196,7 @@ export default function LayoutShell({ children }: Props) {
         </>
       )}
 
-      {/* =========================
-          Step② 解答選択・編集
-      ========================= */}
+      {/* Step② 考え方（解答）撮影 */}
       {step === 2 && (
         <>
           <input
@@ -244,21 +209,17 @@ export default function LayoutShell({ children }: Props) {
               if (f) setRawFile(f)
             }}
           />
-
           {!rawFile && (
             <div style={styles.overlay} onClick={reset}>
               <div style={styles.modal} onClick={(e) => e.stopPropagation()}>
                 <h3 style={{ marginBottom: 16 }}>② 考え方を撮影</h3>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                  <button 
-                    style={styles.selectBtn} 
-                    onClick={() => cameraInputRef.current?.click()}
-                  >
+                  <button style={styles.selectBtn} onClick={() => cameraInputRef.current?.click()}>
                     画像を選択
                   </button>
                   <button
                     style={{ ...styles.selectBtn, background: '#333' }}
-                    onClick={() => handleFinalSubmit()} // 即投稿
+                    onClick={() => handleFinalSubmit()} // ここでのスキップは問題のみを投稿
                   >
                     スキップして投稿
                   </button>
@@ -266,13 +227,12 @@ export default function LayoutShell({ children }: Props) {
               </div>
             </div>
           )}
-
           {rawFile && (
             <ImageEditorModal
               file={rawFile}
               anonymous={isAnonymous}
               onAnonymousChange={setIsAnonymous}
-              onCancel={reset}
+              onCancel={reset} // ここで「×」ならリセット
               onConfirm={(editedFile) => {
                 setAnswerFile(editedFile)
                 setStep(3)
@@ -283,9 +243,7 @@ export default function LayoutShell({ children }: Props) {
         </>
       )}
 
-      {/* =========================
-          Step③ 質問ピン & 最終送信
-      ========================= */}
+      {/* Step③ 質問ピン */}
       {step === 3 && answerFile && (
         <ReactionEditorModal
           open={true}
@@ -293,13 +251,17 @@ export default function LayoutShell({ children }: Props) {
           postId="temp"
           username={'me'}
           onClose={(reactionData) => {
-            // reactionData があればピンあり、なければピンなしで送信
-            handleFinalSubmit(reactionData)
+            if (reactionData) {
+              // 「質問を送信」ボタンが押された場合のみ投稿
+              handleFinalSubmit(reactionData)
+            } else {
+              // 左上の「×」ボタンが押された場合は投稿をキャンセルしてリセット
+              reset()
+            }
           }}
         />
       )}
 
-      {/* 送信中オーバーレイ */}
       {uploading && (
         <div style={styles.loadingOverlay}>
           <Loader2 size={48} className="animate-spin-custom" />
