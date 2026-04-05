@@ -253,7 +253,7 @@ const styles: { [key: string]: CSSProperties } = {
     alignItems: 'center', 
     background: '#000', 
     borderBottom: '1px solid #222', 
-    zIndex: 4000 // モーダル(3050)より上に配置
+    zIndex: 9999 // モーダル(3050)より上に配置
   },
   progressBars: { flex: 1, display: 'flex', gap: 6 },
   navBtn: { background: 'none', border: 'none', color: '#fff', cursor: 'pointer', padding: 4 },
