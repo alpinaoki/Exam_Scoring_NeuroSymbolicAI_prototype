@@ -125,7 +125,6 @@ export default function LayoutShell({ children }: Props) {
     }
   }
 
-  // 「戻る」か「閉じる」かを判定
   const isInitialStep = step === 1 && !rawFile;
 
   return (
@@ -139,7 +138,10 @@ export default function LayoutShell({ children }: Props) {
       <footer style={styles.footer}>
         <button style={styles.icon} onClick={() => router.push('/feed')}><Sparkles size={28} /></button>
         <button style={styles.icon} onClick={() => router.push('/search')}><Search size={28} /></button>
-        <button style={styles.plus} onClick={() => goToStep(1)}><HelpCircle size={22} /></button>
+        {/* 背景円をなくし、他のボタンと同じスタイル(styles.icon)を適用 */}
+        <button style={styles.icon} onClick={() => goToStep(1)}>
+          <HelpCircle size={28} />
+        </button>
         <button style={styles.icon} onClick={() => router.push('/analysis')}><BarChart3 size={28} /></button>
         <button style={styles.icon} onClick={() => router.push('/me')}><UserRound size={28} /></button>
       </footer>
@@ -251,21 +253,7 @@ const styles: { [key: string]: CSSProperties } = {
   logo: { fontWeight: 'bold', fontSize: 18, color: '#fff' },
   main: { paddingBottom: 16 },
   footer: { position: 'fixed', bottom: 0, left: 0, right: 0, height: 54, display: 'flex', justifyContent: 'space-around', alignItems: 'center', background: '#111', zIndex: 1000 },
-  icon: { background: 'none', border: 'none', color: '#eee', cursor: 'pointer' },
-  plus: { 
-    width: 42, 
-    height: 42, 
-    borderRadius: '50%', 
-    border: '2px solid #555', 
-    background: '#222', // 背景を少し明るい黒にして浮かせる
-    color: '#fff', 
-    display: 'flex', 
-    justifyContent: 'center', 
-    alignItems: 'center', 
-    padding: 0, 
-    cursor: 'pointer',
-    boxShadow: '0 0 10px rgba(0,0,0,0.5)' // 影をつけてボタンらしさを出す
-  },
+  icon: { background: 'none', border: 'none', color: '#eee', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0 },
   fullOverlay: { position: 'fixed', inset: 0, background: '#000', zIndex: 3000, display: 'flex', flexDirection: 'column', color: '#fff' },
   portalProgressContainer: { 
     position: 'fixed',
@@ -289,7 +277,6 @@ const styles: { [key: string]: CSSProperties } = {
   stepContainer: { flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '0 32px', textAlign: 'center' },
   stepTitle: { fontSize: 26, fontWeight: 'bold', marginBottom: 12 },
   mainActionBtn: { width: '100%', background: '#00aaff', color: '#fff', border: 'none', padding: '20px', borderRadius: '18px', fontSize: 18, fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12, cursor: 'pointer' },
-  // スキップボタンをよりボタンらしく、押しやすく修正
   skipBtn: { 
     background: 'rgba(255,255,255,0.05)', 
     color: '#aaa', 
