@@ -252,7 +252,20 @@ const styles: { [key: string]: CSSProperties } = {
   main: { paddingBottom: 16 },
   footer: { position: 'fixed', bottom: 0, left: 0, right: 0, height: 54, display: 'flex', justifyContent: 'space-around', alignItems: 'center', background: '#111', zIndex: 1000 },
   icon: { background: 'none', border: 'none', color: '#eee', cursor: 'pointer' },
-  plus: { width: 36, height: 36, borderRadius: '50%', border: '3px solid #444', color: '#eee', display: 'flex', justifyContent: 'center', alignItems: 'center', padding: 0, cursor: 'pointer' },
+  plus: { 
+    width: 42, 
+    height: 42, 
+    borderRadius: '50%', 
+    border: '2px solid #555', 
+    background: '#222', // 背景を少し明るい黒にして浮かせる
+    color: '#fff', 
+    display: 'flex', 
+    justifyContent: 'center', 
+    alignItems: 'center', 
+    padding: 0, 
+    cursor: 'pointer',
+    boxShadow: '0 0 10px rgba(0,0,0,0.5)' // 影をつけてボタンらしさを出す
+  },
   fullOverlay: { position: 'fixed', inset: 0, background: '#000', zIndex: 3000, display: 'flex', flexDirection: 'column', color: '#fff' },
   portalProgressContainer: { 
     position: 'fixed',
