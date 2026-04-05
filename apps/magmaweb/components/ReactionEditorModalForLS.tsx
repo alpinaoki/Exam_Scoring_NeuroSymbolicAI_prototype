@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { HelpCircle, X, TouchpadOff } from 'lucide-react'
+import { HelpCircle, TouchpadOff } from 'lucide-react'
 
 type ReactionType = 'star' | 'exclamation' | 'question'
 
@@ -51,31 +51,18 @@ export default function ReactionEditorModal({
 
   const handleSubmit = () => {
     if (!pos) return
-    
-    // 既存の question 形式（JSON文字列）を維持
     const finalComment = JSON.stringify([{ username, content: comment }])
-
-    onClose({
-      type,
-      comment: finalComment,
-      x: pos.x,
-      y: pos.y,
-    })
+    onClose({ type, comment: finalComment, x: pos.x, y: pos.y })
   }
 
-  const COLORS = {
-    question: '#4D96FF',
-  }
+  const COLORS = { question: '#4D96FF' }
 
   return createPortal(
     <div style={styles.overlay}>
       <div style={styles.container}>
-        {/* Header */}
-        <div style={styles.header}>
-          <button onClick={() => onClose()} style={styles.iconBtn}><X size={24} /></button>
-          <span style={styles.headerTitle}>わからない箇所をタップ</span>
-          <div style={{ width: 40 }} />
-        </div>
+        {/* 【修正】LayoutShellのヘッダー（進捗バー）が見えるように、
+            モーダル内の独自ヘッダーを削除しました。
+         */}
 
         {/* Canvas Area */}
         <div style={styles.canvas}>
@@ -158,57 +145,21 @@ export default function ReactionEditorModal({
 }
 
 const styles: { [key: string]: React.CSSProperties } = {
-  overlay: { position: 'fixed', inset: 0, zIndex: 6000, background: '#000' },
-  container: { width: '100vw', height: '100dvh', display: 'flex', flexDirection: 'column', color: '#fff', overflow: 'hidden' },
-  header: { flexShrink: 0, padding: '0 16px', height: '60px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#000', borderBottom: '1px solid rgba(255,255,255,0.1)' },
-  headerTitle: { fontSize: '16px', fontWeight: 'bold', color: '#fff' },
-  iconBtn: { background: 'none', border: 'none', color: '#fff', padding: '8px', cursor: 'pointer' },
-  canvas: {
-    flex: 1,
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    background: '#0a0a0a',
-    padding: '20px',
-    overflow: 'hidden',
-  },
-  imageContainer: {
-    position: 'relative',
-    maxWidth: '100%',
-    maxHeight: '100%',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  image: {
-    width: '100%',
-    height: '100%',
-    maxWidth: '100%',
-    maxHeight: '100%',
-    objectFit: 'contain',
-    display: 'block',
-    userSelect: 'none',
-    WebkitUserSelect: 'none',
-  },
+  // z-index を 3000(Shell Overlay) より少し低くするか調整
+  // ここでは inset: 0 ですが背景を透過させないため Shell の上に重なります。
+  overlay: { position: 'fixed', inset: 0, zIndex: 3050, background: '#000' }, 
+  container: { width: '100vw', height: '100dvh', display: 'flex', flexDirection: 'column', color: '#fff', overflow: 'hidden', paddingTop: '60px' }, // 進捗バーを避けるための余白
+  canvas: { flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#0a0a0a', padding: '20px', overflow: 'hidden' },
+  imageContainer: { position: 'relative', maxWidth: '100%', maxHeight: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' },
+  image: { width: '100%', height: '100%', objectFit: 'contain', display: 'block', userSelect: 'none' },
   markerOverlay: { position: 'absolute', inset: 0, pointerEvents: 'none' },
   marker: { position: 'absolute', transform: 'translate(-50%, -50%)', zIndex: 10 },
   tapHintOverlay: { position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' },
-  tapHintBadge: { display: 'flex', alignItems: 'center', gap: '10px', background: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(10px)', WebkitBackdropFilter: 'blur(10px)', padding: '12px 20px', borderRadius: '100px', border: '1px solid rgba(255,255,255,0.2)', fontSize: '14px', color: '#fff' },
+  tapHintBadge: { display: 'flex', alignItems: 'center', gap: '10px', background: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(10px)', padding: '12px 20px', borderRadius: '100px', fontSize: '14px', color: '#fff' },
   controls: { flexShrink: 0, padding: '20px 16px calc(24px + env(safe-area-inset-bottom))', background: '#111', borderTop: '1px solid rgba(255,255,255,0.1)', borderRadius: '24px 24px 0 0' },
   inputWrapper: { maxWidth: '500px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '12px' },
   labelRow: { display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' },
   labelText: { fontSize: '14px', fontWeight: 'bold', color: '#4D96FF' },
   textarea: { width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', padding: '14px', color: '#fff', fontSize: '16px', outline: 'none', resize: 'none' },
-  finalSubmitBtn: { 
-    width: '100%', 
-    background: '#4D96FF', 
-    color: '#fff', 
-    border: 'none', 
-    borderRadius: '12px', 
-    padding: '16px', 
-    fontSize: '16px', 
-    fontWeight: 'bold', 
-    cursor: 'pointer',
-    marginTop: '8px'
-  },
+  finalSubmitBtn: { width: '100%', background: '#4D96FF', color: '#fff', border: 'none', borderRadius: '12px', padding: '16px', fontSize: '16px', fontWeight: 'bold', cursor: 'pointer', marginTop: '8px' },
 }
