@@ -5,8 +5,8 @@ import { useRef, useState } from 'react'
 import type { ReactNode, CSSProperties } from 'react'
 import { createPost, createAnswer } from '../lib/posts'
 import { uploadImageToCloudinary } from '../lib/upload'
-import ImageEditorModal from './ImageEditorModal'
-import ReactionEditorModal from './ReactionEditorModal'
+import ImageEditorModal from './ImageEditorModalForLS'
+import ReactionEditorModal from './ReactionEditorModalForLS'
 import {
   UserRound,
   Sparkles,
