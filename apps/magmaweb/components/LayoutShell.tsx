@@ -73,7 +73,7 @@ export default function LayoutShell({ children }: Props) {
 
       const pUrl = await uploadImageToCloudinary(problemFile)
       
-      // 修正ポイント: label に '質問' を追加して投稿
+      // 問題画像の投稿
       const { data: pInserted, error: pError } = await supabase
         .from('posts')
         .insert({
@@ -81,7 +81,7 @@ export default function LayoutShell({ children }: Props) {
           type: 'problem',
           image_url: pUrl,
           anonymous: isAnonymous,
-          label: '質問', // ← ここで初期タグを設定
+          label: '質問',
         })
         .select('id').single()
 
@@ -118,9 +118,12 @@ export default function LayoutShell({ children }: Props) {
           if (rError) throw rError
         }
       }
+
       reset()
       router.refresh()
-      router.push('/feed')
+      // 修正ポイント: 投稿完了後、その問題の個別スレッドページへ移動
+      router.push(`/threads/${pId}`)
+      
     } catch (error: any) {
       alert('投稿に失敗しました。\n' + (error.message || 'Unknown Error'))
     } finally {
