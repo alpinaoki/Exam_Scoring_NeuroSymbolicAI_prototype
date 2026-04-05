@@ -125,15 +125,21 @@ export default function ReactionEditorModal({
 }
 
 const styles: { [key: string]: React.CSSProperties } = {
-  // zIndexを下げ、背景を透明にして下の進捗バーが見えるようにする
-  overlay: { position: 'fixed', inset: 0, zIndex: 9000, background: 'transparent' }, 
+  overlay: { 
+    position: 'fixed', 
+    inset: 0, 
+    zIndex: 5000, // LayoutShellのprogressContainer(10000)より低く、fullOverlay(3000)より高く
+    background: 'transparent',
+    pointerEvents: 'none'
+  }, 
   container: { 
     width: '100vw', 
     height: '100dvh', 
     display: 'flex', 
     flexDirection: 'column', 
     background: '#000',
-    paddingTop: '60px' // LayoutShell側の進捗バーが表示される領域を確保
+    paddingTop: '60px', // LayoutShellのヘッダー高さ分を確保
+    pointerEvents: 'auto'
   },
   canvas: { flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#0a0a0a', padding: '20px', overflow: 'hidden' },
   imageContainer: { position: 'relative', maxWidth: '100%', maxHeight: '100%' },
