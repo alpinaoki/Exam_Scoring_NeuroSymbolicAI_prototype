@@ -13,6 +13,8 @@ import {
   BarChart3,
   HelpCircle,
   Loader2,
+  X,
+  Camera
 } from 'lucide-react'
 
 type Props = {
@@ -22,32 +24,27 @@ type Props = {
 export default function LayoutShell({ children }: Props) {
   const pathname = usePathname()
   const router = useRouter()
-
   const cameraInputRef = useRef<HTMLInputElement>(null)
 
   /** =========================
    * 状態管理
    * ========================= */
   const [step, setStep] = useState<0 | 1 | 2 | 3>(0)
+  const [direction, setDirection] = useState<'in' | 'out'>('in') 
   const [rawFile, setRawFile] = useState<File | null>(null)
   const [problemFile, setProblemFile] = useState<File | null>(null)
   const [answerFile, setAnswerFile] = useState<File | null>(null)
   const [isAnonymous, setIsAnonymous] = useState(false)
   const [uploading, setUploading] = useState(false)
 
-  if (
-    pathname === '/login' ||
-    pathname === '/terms' ||
-    pathname.startsWith('/threads')
-  ) {
-    return <>{children}</>
+  // ステップ遷移時のアニメーション制御
+  const goToStep = (next: 0 | 1 | 2 | 3) => {
+    setDirection('out')
+    setTimeout(() => {
+      setStep(next)
+      setDirection('in')
+    }, 250) 
   }
-
-  /** =========================
-   * Step制御 & リセット
-   * ========================= */
-
-  const openFlow = () => setStep(1)
 
   const reset = () => {
     setStep(0)
@@ -57,10 +54,14 @@ export default function LayoutShell({ children }: Props) {
     setUploading(false)
   }
 
+  // 特定のページではシェル（ヘッダー・フッター）を表示しない
+  if (pathname === '/login' || pathname === '/terms' || pathname.startsWith('/threads')) {
+    return <>{children}</>
+  }
+
   /** =========================
    * 最終投稿処理
    * ========================= */
-
   const handleFinalSubmit = async (reactionData?: any) => {
     if (!problemFile) return
     setUploading(true)
@@ -92,6 +93,8 @@ export default function LayoutShell({ children }: Props) {
 
       if (pError || !pInserted) throw pError
       const pId = pInserted.id
+
+      // root_id を自分自身に更新
       await supabase.from('posts').update({ root_id: pId }).eq('id', pId)
 
       // 2. 解答がある場合
@@ -142,23 +145,123 @@ export default function LayoutShell({ children }: Props) {
 
   return (
     <div style={styles.wrapper}>
+      {/* 通常のヘッダー */}
       <header style={styles.header} onClick={() => router.push('/feed')}>
         <span style={styles.logo}>Magmathe</span>
       </header>
 
       <main style={styles.main}>{children}</main>
 
+      {/* 通常のフッター */}
       <footer style={styles.footer}>
         <button style={styles.icon} onClick={() => router.push('/feed')}><Sparkles size={28} /></button>
         <button style={styles.icon} onClick={() => router.push('/search')}><Search size={28} /></button>
-        <button style={styles.plus} onClick={openFlow}><HelpCircle size={22} /></button>
+        <button style={styles.plus} onClick={() => goToStep(1)}><HelpCircle size={22} /></button>
         <button style={styles.icon} onClick={() => router.push('/analysis')}><BarChart3 size={28} /></button>
         <button style={styles.icon} onClick={() => router.push('/me')}><UserRound size={28} /></button>
       </footer>
 
-      {/* Step① 問題文撮影 */}
-      {step === 1 && (
-        <>
+      {/* ======================================================
+          3ステップ・フル画面投稿フロー
+      ======================================================= */}
+      {step > 0 && (
+        <div style={styles.fullOverlay}>
+          {/* 上部プログレスバー */}
+          <div style={styles.progressContainer}>
+            {[1, 2, 3].map((s) => (
+              <div key={s} style={styles.progressBarBase}>
+                <div style={{
+                  ...styles.progressBarFill,
+                  width: step >= s ? '100%' : '0%'
+                }} />
+              </div>
+            ))}
+            <button onClick={reset} style={styles.closeCircle} aria-label="キャンセル">
+              <X size={20} />
+            </button>
+          </div>
+
+          <div className={direction === 'in' ? 'slide-in' : 'slide-out'} style={styles.stepContent}>
+            
+            {/* Step 1: 問題文の撮影・選択 */}
+            {step === 1 && (
+              <div style={styles.stepContainer}>
+                {!rawFile ? (
+                  <>
+                    <h2 style={styles.stepTitle}>問題文を撮影</h2>
+                    <p style={styles.stepDesc}>まずは解きたい問題を撮りましょう</p>
+                    <button style={styles.mainActionBtn} onClick={() => cameraInputRef.current?.click()}>
+                      <Camera size={24} /> カメラを起動
+                    </button>
+                  </>
+                ) : (
+                  <ImageEditorModal
+                    file={rawFile}
+                    anonymous={isAnonymous}
+                    onAnonymousChange={setIsAnonymous}
+                    onCancel={() => setRawFile(null)}
+                    onConfirm={(editedFile) => {
+                      setProblemFile(editedFile)
+                      setRawFile(null)
+                      goToStep(2)
+                    }}
+                    showAnonymous={true}
+                  />
+                )}
+              </div>
+            )}
+
+            {/* Step 2: 解答・考え方の撮影・選択 */}
+            {step === 2 && (
+              <div style={styles.stepContainer}>
+                {!rawFile ? (
+                  <>
+                    <h2 style={styles.stepTitle}>自分の考えを撮影</h2>
+                    <p style={styles.stepDesc}>書いたところまででOK！ヒントになります</p>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 16, width: '100%', maxWidth: 320 }}>
+                      <button style={styles.mainActionBtn} onClick={() => cameraInputRef.current?.click()}>
+                        <Camera size={24} /> カメラを起動
+                      </button>
+                      <button style={styles.skipBtn} onClick={() => handleFinalSubmit()}>
+                        撮影せずに問題だけ投稿する
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  <ImageEditorModal
+                    file={rawFile}
+                    anonymous={isAnonymous}
+                    onAnonymousChange={setIsAnonymous}
+                    onCancel={() => setRawFile(null)}
+                    onConfirm={(editedFile) => {
+                      setAnswerFile(editedFile)
+                      setRawFile(null)
+                      goToStep(3)
+                    }}
+                    showAnonymous={false}
+                  />
+                )}
+              </div>
+            )}
+
+            {/* Step 3: 質問ピン打ち */}
+            {step === 3 && answerFile && (
+              <ReactionEditorModal
+                open={true}
+                imageUrl={URL.createObjectURL(answerFile)}
+                postId="temp"
+                username="me"
+                onClose={(reactionData) => {
+                  if (reactionData) {
+                    handleFinalSubmit(reactionData)
+                  } else {
+                    reset() // キャンセルなら最初からやり直し
+                  }
+                }}
+              />
+            )}
+          </div>
+
           <input
             ref={cameraInputRef}
             type="file"
@@ -169,107 +272,29 @@ export default function LayoutShell({ children }: Props) {
               if (f) setRawFile(f)
             }}
           />
-          {!rawFile && (
-            <div style={styles.overlay} onClick={reset}>
-              <div style={styles.modal} onClick={(e) => e.stopPropagation()}>
-                <h3 style={{ marginBottom: 16 }}>① 問題文を撮影</h3>
-                <button style={styles.selectBtn} onClick={() => cameraInputRef.current?.click()}>
-                  画像を選択
-                </button>
-              </div>
-            </div>
-          )}
-          {rawFile && (
-            <ImageEditorModal
-              file={rawFile}
-              anonymous={isAnonymous}
-              onAnonymousChange={setIsAnonymous}
-              onCancel={reset}
-              onConfirm={(editedFile) => {
-                setProblemFile(editedFile)
-                setRawFile(null)
-                setStep(2)
-              }}
-              showAnonymous={true}
-            />
-          )}
-        </>
-      )}
-
-      {/* Step② 考え方（解答）撮影 */}
-      {step === 2 && (
-        <>
-          <input
-            ref={cameraInputRef}
-            type="file"
-            accept="image/*"
-            hidden
-            onChange={(e) => {
-              const f = e.target.files?.[0]
-              if (f) setRawFile(f)
-            }}
-          />
-          {!rawFile && (
-            <div style={styles.overlay} onClick={reset}>
-              <div style={styles.modal} onClick={(e) => e.stopPropagation()}>
-                <h3 style={{ marginBottom: 16 }}>② 考え方を撮影</h3>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                  <button style={styles.selectBtn} onClick={() => cameraInputRef.current?.click()}>
-                    画像を選択
-                  </button>
-                  <button
-                    style={{ ...styles.selectBtn, background: '#333' }}
-                    onClick={() => handleFinalSubmit()} // ここでのスキップは問題のみを投稿
-                  >
-                    スキップして投稿
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-          {rawFile && (
-            <ImageEditorModal
-              file={rawFile}
-              anonymous={isAnonymous}
-              onAnonymousChange={setIsAnonymous}
-              onCancel={reset} // ここで「×」ならリセット
-              onConfirm={(editedFile) => {
-                setAnswerFile(editedFile)
-                setStep(3)
-              }}
-              showAnonymous={false}
-            />
-          )}
-        </>
-      )}
-
-      {/* Step③ 質問ピン */}
-      {step === 3 && answerFile && (
-        <ReactionEditorModal
-          open={true}
-          imageUrl={URL.createObjectURL(answerFile)}
-          postId="temp"
-          username={'me'}
-          onClose={(reactionData) => {
-            if (reactionData) {
-              // 「質問を送信」ボタンが押された場合のみ投稿
-              handleFinalSubmit(reactionData)
-            } else {
-              // 左上の「×」ボタンが押された場合は投稿をキャンセルしてリセット
-              reset()
-            }
-          }}
-        />
-      )}
-
-      {uploading && (
-        <div style={styles.loadingOverlay}>
-          <Loader2 size={48} className="animate-spin-custom" />
-          <p style={{ marginTop: 12 }}>アップロード中...</p>
         </div>
       )}
 
+      {/* 送信中オーバーレイ */}
+      {uploading && (
+        <div style={styles.loadingOverlay}>
+          <Loader2 size={48} className="animate-spin-custom" />
+          <p style={{ marginTop: 12, fontWeight: 'bold' }}>投稿を作成中...</p>
+        </div>
+      )}
+
+      {/* アニメーション用CSS */}
       <style>{`
+        @keyframes slideIn {
+          from { transform: translateX(100%); opacity: 0; }
+          to { transform: translateX(0); opacity: 1; }
+        }
+        @keyframes slideOut {
+          from { transform: translateX(0); opacity: 1; }
+          to { transform: translateX(-100%); opacity: 0; }
+        }
+        .slide-in { animation: slideIn 0.3s cubic-bezier(0.25, 1, 0.5, 1) forwards; }
+        .slide-out { animation: slideOut 0.25s cubic-bezier(0.25, 1, 0.5, 1) forwards; }
         @keyframes spin { to { transform: rotate(360deg); } }
         .animate-spin-custom { animation: spin 1s linear infinite; }
       `}</style>
@@ -278,70 +303,8 @@ export default function LayoutShell({ children }: Props) {
 }
 
 /** =========================
- * DB登録用
+ * スタイル定義
  * ========================= */
-
-async function createPostAndReturnId(imageUrl: string, isAnonymous: boolean) {
-  const { createClient } = await import('@supabase/supabase-js')
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  )
-
-  const { data } = await supabase.auth.getUser()
-  const user = data.user!
-
-  const { data: inserted } = await supabase
-    .from('posts')
-    .insert({
-      user_id: user.id,
-      type: 'problem',
-      image_url: imageUrl,
-      is_anonymous: isAnonymous,
-    })
-    .select('id')
-    .single()
-
-  await supabase
-    .from('posts')
-    .update({ root_id: inserted.id })
-    .eq('id', inserted.id)
-
-  return inserted.id
-}
-
-async function createAnswerAndReturnId(
-  imageUrl: string,
-  problemId: string,
-  isAnonymous: boolean
-) {
-  const { createClient } = await import('@supabase/supabase-js')
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  )
-
-  const { data } = await supabase.auth.getUser()
-  const user = data.user!
-
-  const { data: inserted } = await supabase
-    .from('posts')
-    .insert({
-      user_id: user.id,
-      type: 'answer',
-      image_url: imageUrl,
-      parent_id: problemId,
-      root_id: problemId,
-      is_anonymous: isAnonymous,
-    })
-    .select('id')
-    .single()
-
-  return inserted.id
-}
-
-/** ========================= */
-
 const styles: { [key: string]: CSSProperties } = {
   wrapper: {
     minHeight: '100vh',
@@ -350,91 +313,58 @@ const styles: { [key: string]: CSSProperties } = {
     background: '#fff',
   },
   header: {
-    position: 'fixed',
-    top: 0,
-    left: 0,
-    right: 0,
-    height: 32,
-    display: 'flex',
-    alignItems: 'center',
-    background: '#111',
-    zIndex: 1000,
-    cursor: 'pointer',
-    paddingLeft: 16,
+    position: 'fixed', top: 0, left: 0, right: 0, height: 32,
+    display: 'flex', alignItems: 'center', background: '#111', zIndex: 1000,
+    cursor: 'pointer', paddingLeft: 16,
   },
-  logo: {
-    fontWeight: 'bold',
-    fontSize: 18,
-    color: '#fff',
-  },
-  main: {
-    paddingBottom: 16,
-  },
+  logo: { fontWeight: 'bold', fontSize: 18, color: '#fff' },
+  main: { paddingBottom: 16 },
   footer: {
-    position: 'fixed',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    height: 54,
-    display: 'flex',
-    justifyContent: 'space-around',
-    alignItems: 'center',
-    background: '#111',
-    zIndex: 1000,
+    position: 'fixed', bottom: 0, left: 0, right: 0, height: 54,
+    display: 'flex', justifyContent: 'space-around', alignItems: 'center',
+    background: '#111', zIndex: 1000,
   },
-  icon: {
-    background: 'none',
-    border: 'none',
-    color: '#eee',
-  },
+  icon: { background: 'none', border: 'none', color: '#eee', cursor: 'pointer' },
   plus: {
-    width: 36,
-    height: 36,
-    borderRadius: '50%',
-    border: '3px solid #444',
-    color: '#eee',
-    display: 'flex',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 0,
+    width: 36, height: 36, borderRadius: '50%', border: '3px solid #444',
+    color: '#eee', display: 'flex', justifyContent: 'center', alignItems: 'center',
+    padding: 0, cursor: 'pointer'
   },
-  overlay: {
-    position: 'fixed',
-    inset: 0,
-    background: 'rgba(0,0,0,0.8)',
-    zIndex: 3000,
-    display: 'flex',
-    justifyContent: 'center',
-    alignItems: 'center',
+  // フル画面フロー用
+  fullOverlay: {
+    position: 'fixed', inset: 0, background: '#000', zIndex: 3000,
+    display: 'flex', flexDirection: 'column', color: '#fff',
   },
-  modal: {
-    background: '#111',
-    padding: 24,
-    borderRadius: 12,
-    color: '#fff',
-    textAlign: 'center',
-    minWidth: 280,
+  progressContainer: {
+    padding: '20px 16px', display: 'flex', gap: 8, alignItems: 'center',
+    marginTop: 'env(safe-area-inset-top, 20px)'
   },
-  selectBtn: {
-    background: '#00aaff',
-    color: '#fff',
-    border: 'none',
-    padding: '12px 24px',
-    borderRadius: 8,
-    fontWeight: 'bold',
-    fontSize: 16,
-    cursor: 'pointer',
-    width: '100%',
+  progressBarBase: { flex: 1, height: 4, background: '#333', borderRadius: 2, overflow: 'hidden' },
+  progressBarFill: { height: '100%', background: '#00aaff', transition: 'width 0.4s ease' },
+  closeCircle: { 
+    width: 32, height: 32, borderRadius: '50%', background: '#222', 
+    display: 'flex', alignItems: 'center', justifyContent: 'center', 
+    border: 'none', color: '#fff', marginLeft: 8, cursor: 'pointer'
+  },
+  stepContent: { flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' },
+  stepContainer: {
+    flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', 
+    justifyContent: 'center', padding: '0 32px', textAlign: 'center'
+  },
+  stepTitle: { fontSize: 26, fontWeight: 'bold', marginBottom: 12 },
+  stepDesc: { fontSize: 16, color: '#aaa', marginBottom: 48, lineHeight: 1.5 },
+  mainActionBtn: {
+    width: '100%', background: '#00aaff', color: '#fff', border: 'none', 
+    padding: '20px', borderRadius: '18px', fontSize: 18, fontWeight: 'bold',
+    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12, cursor: 'pointer'
+  },
+  skipBtn: {
+    background: 'transparent', color: '#666', border: 'none', fontSize: 14, 
+    textDecoration: 'underline', cursor: 'pointer', marginTop: 8
   },
   loadingOverlay: {
-    position: 'fixed',
-    inset: 0,
-    background: 'rgba(0,0,0,0.7)',
-    zIndex: 5000,
-    display: 'flex',
-    flexDirection: 'column',
-    justifyContent: 'center',
-    alignItems: 'center',
-    color: '#fff',
+    position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 5000,
+    display: 'flex', flexDirection: 'column', justifyContent: 'center', 
+    alignItems: 'center', color: '#fff'
   },
 }
