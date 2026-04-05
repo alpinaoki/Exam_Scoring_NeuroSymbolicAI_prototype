@@ -14,6 +14,7 @@ import {
   BarChart3,
   HelpCircle,
   X,
+  ChevronLeft,
   Camera
 } from 'lucide-react'
 
@@ -124,6 +125,9 @@ export default function LayoutShell({ children }: Props) {
     }
   }
 
+  // 「戻る」か「閉じる」かを判定
+  const isInitialStep = step === 1 && !rawFile;
+
   return (
     <div style={styles.wrapper}>
       <header style={styles.header} onClick={() => router.push('/feed')}>
@@ -142,7 +146,6 @@ export default function LayoutShell({ children }: Props) {
 
       {step > 0 && (
         <div style={styles.fullOverlay}>
-          {/* 進捗バーを Portal で最前面に送る */}
           {mounted && createPortal(
             <div style={styles.portalProgressContainer}>
               <button onClick={() => {
@@ -150,7 +153,7 @@ export default function LayoutShell({ children }: Props) {
                   else if (step > 1) goToStep((step - 1) as any);
                   else reset();
               }} style={styles.navBtn}>
-                <X size={20} />
+                {isInitialStep ? <X size={24} /> : <ChevronLeft size={28} />}
               </button>
               <div style={styles.progressBars}>
                 {[1, 2, 3].map((s) => (
@@ -251,7 +254,6 @@ const styles: { [key: string]: CSSProperties } = {
   icon: { background: 'none', border: 'none', color: '#eee', cursor: 'pointer' },
   plus: { width: 36, height: 36, borderRadius: '50%', border: '3px solid #444', color: '#eee', display: 'flex', justifyContent: 'center', alignItems: 'center', padding: 0, cursor: 'pointer' },
   fullOverlay: { position: 'fixed', inset: 0, background: '#000', zIndex: 3000, display: 'flex', flexDirection: 'column', color: '#fff' },
-  // Portal用のスタイル：zIndexを極限まで上げる
   portalProgressContainer: { 
     position: 'fixed',
     top: 0,
@@ -267,12 +269,24 @@ const styles: { [key: string]: CSSProperties } = {
     color: '#fff'
   },
   progressBars: { flex: 1, display: 'flex', gap: 6 },
-  navBtn: { background: 'none', border: 'none', color: '#fff', cursor: 'pointer', padding: 4 },
+  navBtn: { background: 'none', border: 'none', color: '#fff', cursor: 'pointer', padding: 4, display: 'flex', alignItems: 'center', justifyContent: 'center' },
   progressBarBase: { flex: 1, height: 4, background: '#333', borderRadius: 2, overflow: 'hidden' },
   progressBarFill: { height: '100%', background: '#00aaff', transition: 'width 0.4s ease' },
-  stepContent: { flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', paddingTop: 60 }, // バーの高さ分確保
+  stepContent: { flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', paddingTop: 60 },
   stepContainer: { flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '0 32px', textAlign: 'center' },
   stepTitle: { fontSize: 26, fontWeight: 'bold', marginBottom: 12 },
   mainActionBtn: { width: '100%', background: '#00aaff', color: '#fff', border: 'none', padding: '20px', borderRadius: '18px', fontSize: 18, fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12, cursor: 'pointer' },
-  skipBtn: { background: 'transparent', color: '#666', border: 'none', fontSize: 14, textDecoration: 'underline', cursor: 'pointer', marginTop: 8 },
+  // スキップボタンをよりボタンらしく、押しやすく修正
+  skipBtn: { 
+    background: 'rgba(255,255,255,0.05)', 
+    color: '#aaa', 
+    border: '1px solid #444', 
+    padding: '12px 24px',
+    borderRadius: '12px',
+    fontSize: 14, 
+    fontWeight: 'bold',
+    cursor: 'pointer', 
+    marginTop: '24px',
+    transition: 'all 0.2s'
+  },
 }
