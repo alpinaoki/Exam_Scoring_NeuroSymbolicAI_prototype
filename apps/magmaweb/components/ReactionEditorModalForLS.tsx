@@ -3,22 +3,21 @@
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Star, AlertTriangle, HelpCircle, X, Send, TouchpadOff } from 'lucide-react'
-import { createReaction } from '../lib/reactions'
 
 type ReactionType = 'star' | 'exclamation' | 'question'
 
+// 型定義を修正：onClose が引数 (data) を受け取れるようにする
 interface Props {
   open: boolean
   imageUrl: string
   postId: string
   username: string
-  onClose: () => void
+  onClose: (data?: { type: ReactionType; comment: string; x: number; y: number }) => void
 }
 
 export default function ReactionEditorModal({
   open,
   imageUrl,
-  postId,
   username,
   onClose,
 }: Props) {
@@ -26,7 +25,6 @@ export default function ReactionEditorModal({
   const [type, setType] = useState<ReactionType>('star')
   const [comment, setComment] = useState('')
   const [pos, setPos] = useState<{ x: number; y: number } | null>(null)
-  const [saving, setSaving] = useState(false)
   const [imgSize, setImgSize] = useState<{ width: number; height: number } | null>(null)
 
   const imgRef = useRef<HTMLImageElement>(null)
@@ -45,7 +43,6 @@ export default function ReactionEditorModal({
     setMounted(true)
   }, [])
 
-  // 画像が読み込まれたらアスペクト比を取得する
   const handleImageLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
     const { naturalWidth, naturalHeight } = e.currentTarget
     setImgSize({ width: naturalWidth, height: naturalHeight })
@@ -53,30 +50,21 @@ export default function ReactionEditorModal({
 
   if (!open || !mounted) return null
 
-  const submit = async () => {
-    if (!pos || saving) return
-    setSaving(true)
-    try {
-      const finalComment = type === 'question'
-        ? JSON.stringify([{ username, content: comment }])
-        : comment
+  // submit 関数を修正：DB保存はせず、データを親(LayoutShell)に渡すだけにする
+  const handleSubmit = () => {
+    if (!pos) return
+    
+    const finalComment = type === 'question'
+      ? JSON.stringify([{ username, content: comment }])
+      : comment
 
-      await createReaction({
-        postId,
-        type,
-        comment: finalComment,
-        x: pos.x,
-        y: pos.y,
-      })
-      onClose()
-      setPos(null)
-      setComment('')
-    } catch (e) {
-      console.error(e)
-      alert('リアクションの保存に失敗しました')
-    } finally {
-      setSaving(false)
-    }
+    // データを親に渡して閉じる
+    onClose({
+      type,
+      comment: finalComment,
+      x: pos.x,
+      y: pos.y,
+    })
   }
 
   const COLORS = {
@@ -96,24 +84,23 @@ export default function ReactionEditorModal({
       <div style={styles.container}>
         {/* Header */}
         <div style={styles.header}>
-          <button onClick={onClose} style={styles.iconBtn}><X size={24} /></button>
+          <button onClick={() => onClose()} style={styles.iconBtn}><X size={24} /></button>
           <span style={styles.headerTitle}>位置を指定してリアクション</span>
           <button
-            onClick={submit}
-            disabled={!pos || saving}
+            onClick={handleSubmit}
+            disabled={!pos}
             style={{
               ...styles.submitHeader,
-              opacity: !pos || saving ? 0.4 : 1,
+              opacity: !pos ? 0.4 : 1,
               color: pos ? COLORS.question : '#666',
             }}
           >
-            {saving ? '...' : <Send size={22} />}
+            <Send size={22} />
           </button>
         </div>
 
         {/* Canvas Area */}
         <div style={styles.canvas}>
-          {/* 画像のアスペクト比を維持し、はみ出しを防ぐラッパー */}
           <div 
             style={{
               ...styles.imageContainer,
@@ -128,7 +115,6 @@ export default function ReactionEditorModal({
               alt="Target"
               onClick={(e) => {
                 const rect = e.currentTarget.getBoundingClientRect()
-                // offsetではなくgetBoundingClientRectでビューポート基準の絶対差分を取る（ズレ対策）
                 const x = (e.clientX - rect.left) / rect.width
                 const y = (e.clientY - rect.top) / rect.height
                 setPos({ x: Math.max(0, Math.min(1, x)), y: Math.max(0, Math.min(1, y)) })
@@ -225,7 +211,7 @@ const styles: { [key: string]: React.CSSProperties } = {
     justifyContent: 'center',
     background: '#0a0a0a',
     padding: '20px',
-    overflow: 'hidden', // これにより親を突き破らない
+    overflow: 'hidden',
   },
   imageContainer: {
     position: 'relative',
@@ -240,7 +226,7 @@ const styles: { [key: string]: React.CSSProperties } = {
     height: '100%',
     maxWidth: '100%',
     maxHeight: '100%',
-    objectFit: 'contain', // これが最重要
+    objectFit: 'contain',
     display: 'block',
     userSelect: 'none',
     WebkitUserSelect: 'none',

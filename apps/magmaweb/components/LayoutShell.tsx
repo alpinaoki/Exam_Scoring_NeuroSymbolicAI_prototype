@@ -3,7 +3,6 @@
 import { usePathname, useRouter } from 'next/navigation'
 import { useRef, useState } from 'react'
 import type { ReactNode, CSSProperties } from 'react'
-import { createPost, createAnswer } from '../lib/posts'
 import { uploadImageToCloudinary } from '../lib/upload'
 import ImageEditorModal from './ImageEditorModalForLS'
 import ReactionEditorModal from './ReactionEditorModalForLS'
@@ -13,6 +12,7 @@ import {
   Search,
   BarChart3,
   HelpCircle,
+  Loader2,
 } from 'lucide-react'
 
 type Props = {
@@ -26,22 +26,20 @@ export default function LayoutShell({ children }: Props) {
   const cameraInputRef = useRef<HTMLInputElement>(null)
 
   /** =========================
-   *  状態（ここが核心）
-   *  ========================= */
+   * 状態管理
+   * ========================= */
   const [step, setStep] = useState<0 | 1 | 2 | 3>(0)
 
+  // 選択された「生の」ファイル
+  const [rawFile, setRawFile] = useState<File | null>(null)
+
+  // 加工済みの確定ファイル
   const [problemFile, setProblemFile] = useState<File | null>(null)
   const [answerFile, setAnswerFile] = useState<File | null>(null)
 
-  const [problemUrl, setProblemUrl] = useState<string | null>(null)
-  const [answerUrl, setAnswerUrl] = useState<string | null>(null)
-
-  const [problemId, setProblemId] = useState<string | null>(null)
-  const [answerId, setAnswerId] = useState<string | null>(null)
-
+  // 匿名設定
+  const [isAnonymous, setIsAnonymous] = useState(false)
   const [uploading, setUploading] = useState(false)
-
-  /** ========================= */
 
   if (
     pathname === '/login' ||
@@ -52,8 +50,8 @@ export default function LayoutShell({ children }: Props) {
   }
 
   /** =========================
-   *  Step制御
-   *  ========================= */
+   * Step制御 & リセット
+   * ========================= */
 
   const openFlow = () => {
     setStep(1)
@@ -61,88 +59,87 @@ export default function LayoutShell({ children }: Props) {
 
   const reset = () => {
     setStep(0)
+    setRawFile(null)
     setProblemFile(null)
     setAnswerFile(null)
-    setProblemUrl(null)
-    setAnswerUrl(null)
-    setProblemId(null)
-    setAnswerId(null)
+    setUploading(false)
   }
 
   /** =========================
-   *  投稿処理
-   *  ========================= */
+   * 最終投稿処理（一括実行）
+   * ========================= */
 
-  const handlePostProblem = async (file: File) => {
+  const handleFinalSubmit = async (reactionData?: any) => {
+    if (!problemFile) return
     setUploading(true)
 
-    const url = await uploadImageToCloudinary(file)
-    const id = await createPostAndReturnId(url)
+    try {
+      // 1. 問題のアップロードと保存
+      const pUrl = await uploadImageToCloudinary(problemFile)
+      const pId = await createPostAndReturnId(pUrl, isAnonymous)
 
-    setProblemUrl(url)
-    setProblemId(id)
+      // 2. 解答がある場合
+      if (answerFile) {
+        const aUrl = await uploadImageToCloudinary(answerFile)
+        const aId = await createAnswerAndReturnId(aUrl, pId, isAnonymous)
 
-    setUploading(false)
+        // 3. リアクション（質問ピン）がある場合
+        if (reactionData) {
+          // ※ lib等に reaction 作成関数がある想定。ここではインラインで書くか別途 import してください
+          const { createClient } = await import('@supabase/supabase-js')
+          const supabase = createClient(
+            process.env.NEXT_PUBLIC_SUPABASE_URL!,
+            process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+          )
+          await supabase.from('reactions').insert({
+            post_id: aId,
+            user_id: (await supabase.auth.getUser()).data.user?.id,
+            type: reactionData.type,
+            comment: reactionData.comment,
+            x: reactionData.x,
+            y: reactionData.y,
+          })
+        }
+      }
 
-    // 次へ
-    setStep(2)
+      reset()
+      router.refresh()
+    } catch (error) {
+      console.error('Submit Error:', error)
+      alert('投稿に失敗しました。')
+    } finally {
+      setUploading(false)
+    }
   }
-
-  const handlePostAnswer = async (file: File) => {
-    if (!problemId) return
-
-    setUploading(true)
-
-    const url = await uploadImageToCloudinary(file)
-    const id = await createAnswerAndReturnId(url, problemId)
-
-    setAnswerUrl(url)
-    setAnswerId(id)
-
-    setUploading(false)
-
-    // 質問へ
-    setStep(3)
-  }
-
-  /** ========================= */
 
   return (
     <div style={styles.wrapper}>
-      {/* Header */}
       <header style={styles.header} onClick={() => router.push('/feed')}>
         <span style={styles.logo}>Magmathe</span>
       </header>
 
-      {/* Main */}
       <main style={styles.main}>{children}</main>
 
-      {/* Footer */}
       <footer style={styles.footer}>
         <button style={styles.icon} onClick={() => router.push('/feed')}>
           <Sparkles size={28} />
         </button>
-
         <button style={styles.icon} onClick={() => router.push('/search')}>
           <Search size={28} />
         </button>
-
-        {/* ★ 中央ボタン */}
         <button style={styles.plus} onClick={openFlow}>
           <HelpCircle size={22} />
         </button>
-
         <button style={styles.icon} onClick={() => router.push('/analysis')}>
           <BarChart3 size={28} />
         </button>
-
         <button style={styles.icon} onClick={() => router.push('/me')}>
           <UserRound size={28} />
         </button>
       </footer>
 
       {/* =========================
-          Step① 問題
+          Step① 問題選択・編集
       ========================= */}
       {step === 1 && (
         <>
@@ -153,38 +150,43 @@ export default function LayoutShell({ children }: Props) {
             hidden
             onChange={(e) => {
               const f = e.target.files?.[0]
-              if (f) setProblemFile(f)
+              if (f) setRawFile(f)
             }}
           />
 
-          {!problemFile && (
+          {!rawFile && (
             <div style={styles.overlay} onClick={reset}>
               <div style={styles.modal} onClick={(e) => e.stopPropagation()}>
-                <h3>① 問題文を撮影</h3>
-                <button onClick={() => cameraInputRef.current?.click()}>
+                <h3 style={{ marginBottom: 16 }}>① 問題文を撮影</h3>
+                <button 
+                  style={styles.selectBtn} 
+                  onClick={() => cameraInputRef.current?.click()}
+                >
                   画像を選択
                 </button>
               </div>
             </div>
           )}
 
-          {problemFile && (
-            
+          {rawFile && (
             <ImageEditorModal
-              file={problemFile}
-              uploading={uploading}
-              anonymous={false}
-              showAnonymous={false}
-              onAnonymousChange={() => {}}
+              file={rawFile}
+              anonymous={isAnonymous}
+              onAnonymousChange={setIsAnonymous}
               onCancel={reset}
-              onPost={handlePostProblem}
+              onConfirm={(editedFile) => {
+                setProblemFile(editedFile)
+                setRawFile(null) // 次のステップのためにクリア
+                setStep(2)
+              }}
+              showAnonymous={true}
             />
           )}
         </>
       )}
 
       {/* =========================
-          Step② 解答
+          Step② 解答選択・編集
       ========================= */}
       {step === 2 && (
         <>
@@ -195,68 +197,85 @@ export default function LayoutShell({ children }: Props) {
             hidden
             onChange={(e) => {
               const f = e.target.files?.[0]
-              if (f) setAnswerFile(f)
+              if (f) setRawFile(f)
             }}
           />
 
-          {!answerFile && (
+          {!rawFile && (
             <div style={styles.overlay} onClick={reset}>
               <div style={styles.modal} onClick={(e) => e.stopPropagation()}>
-                <h3>② 考え方を撮影</h3>
-                <button onClick={() => cameraInputRef.current?.click()}>
-                  画像を選択
-                </button>
-                <button
-                  onClick={() => {
-                    // スキップ → 即投稿
-                    reset()
-                    router.refresh()
-                  }}
-                >
-                  スキップ
-                </button>
+                <h3 style={{ marginBottom: 16 }}>② 考え方を撮影</h3>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                  <button 
+                    style={styles.selectBtn} 
+                    onClick={() => cameraInputRef.current?.click()}
+                  >
+                    画像を選択
+                  </button>
+                  <button
+                    style={{ ...styles.selectBtn, background: '#333' }}
+                    onClick={() => handleFinalSubmit()} // 即投稿
+                  >
+                    スキップして投稿
+                  </button>
+                </div>
               </div>
             </div>
           )}
 
-          {answerFile && (
+          {rawFile && (
             <ImageEditorModal
-              file={answerFile}
-              uploading={uploading}
-              anonymous={false}
-              showAnonymous={false}
-              onAnonymousChange={() => {}}
+              file={rawFile}
+              anonymous={isAnonymous}
+              onAnonymousChange={setIsAnonymous}
               onCancel={reset}
-              onPost={handlePostAnswer}
+              onConfirm={(editedFile) => {
+                setAnswerFile(editedFile)
+                setStep(3)
+              }}
+              showAnonymous={false}
             />
           )}
         </>
       )}
 
       {/* =========================
-          Step③ 質問（解答にのみ）
+          Step③ 質問ピン & 最終送信
       ========================= */}
-      {step === 3 && answerUrl && answerId && (
+      {step === 3 && answerFile && (
         <ReactionEditorModal
           open={true}
-          imageUrl={answerUrl}
-          postId={answerId}
+          imageUrl={URL.createObjectURL(answerFile)}
+          postId="temp"
           username={'me'}
-          onClose={() => {
-            reset()
-            router.refresh()
+          onClose={(reactionData) => {
+            // reactionData があればピンあり、なければピンなしで送信
+            handleFinalSubmit(reactionData)
           }}
         />
       )}
+
+      {/* 送信中オーバーレイ */}
+      {uploading && (
+        <div style={styles.loadingOverlay}>
+          <Loader2 size={48} className="animate-spin-custom" />
+          <p style={{ marginTop: 12 }}>アップロード中...</p>
+        </div>
+      )}
+
+      <style>{`
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .animate-spin-custom { animation: spin 1s linear infinite; }
+      `}</style>
     </div>
   )
 }
 
 /** =========================
- * ID返す用（重要）
+ * DB登録用
  * ========================= */
 
-async function createPostAndReturnId(imageUrl: string) {
+async function createPostAndReturnId(imageUrl: string, isAnonymous: boolean) {
   const { createClient } = await import('@supabase/supabase-js')
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -272,6 +291,7 @@ async function createPostAndReturnId(imageUrl: string) {
       user_id: user.id,
       type: 'problem',
       image_url: imageUrl,
+      is_anonymous: isAnonymous,
     })
     .select('id')
     .single()
@@ -286,7 +306,8 @@ async function createPostAndReturnId(imageUrl: string) {
 
 async function createAnswerAndReturnId(
   imageUrl: string,
-  problemId: string
+  problemId: string,
+  isAnonymous: boolean
 ) {
   const { createClient } = await import('@supabase/supabase-js')
   const supabase = createClient(
@@ -305,6 +326,7 @@ async function createAnswerAndReturnId(
       image_url: imageUrl,
       parent_id: problemId,
       root_id: problemId,
+      is_anonymous: isAnonymous,
     })
     .select('id')
     .single()
@@ -365,11 +387,15 @@ const styles: { [key: string]: CSSProperties } = {
     borderRadius: '50%',
     border: '3px solid #444',
     color: '#eee',
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 0,
   },
   overlay: {
     position: 'fixed',
     inset: 0,
-    background: '#000',
+    background: 'rgba(0,0,0,0.8)',
     zIndex: 3000,
     display: 'flex',
     justifyContent: 'center',
@@ -379,6 +405,30 @@ const styles: { [key: string]: CSSProperties } = {
     background: '#111',
     padding: 24,
     borderRadius: 12,
+    color: '#fff',
+    textAlign: 'center',
+    minWidth: 280,
+  },
+  selectBtn: {
+    background: '#00aaff',
+    color: '#fff',
+    border: 'none',
+    padding: '12px 24px',
+    borderRadius: 8,
+    fontWeight: 'bold',
+    fontSize: 16,
+    cursor: 'pointer',
+    width: '100%',
+  },
+  loadingOverlay: {
+    position: 'fixed',
+    inset: 0,
+    background: 'rgba(0,0,0,0.7)',
+    zIndex: 5000,
+    display: 'flex',
+    flexDirection: 'column',
+    justifyContent: 'center',
+    alignItems: 'center',
     color: '#fff',
   },
 }

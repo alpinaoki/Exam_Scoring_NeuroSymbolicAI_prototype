@@ -1,15 +1,14 @@
 import { useEffect, useRef, useState, useMemo } from 'react'
 import type { CSSProperties } from 'react'
-import { SendHorizontal, Loader2, RotateCw, Sun, Contrast } from 'lucide-react'
+import { ChevronRight, RotateCw, Sun, Contrast } from 'lucide-react'
 
 type Props = {
   file: File
-  uploading: boolean
   anonymous: boolean
   onAnonymousChange: (v: boolean) => void
   onCancel: () => void
-  onPost: (editedFile: File) => void
-  showAnonymous?: boolean   // ← 追加（省略時 true）
+  onConfirm: (editedFile: File) => void 
+  showAnonymous?: boolean
 }
 
 type Crop = { x: number; y: number; w: number; h: number }
@@ -17,11 +16,10 @@ type Handle = 'top' | 'right' | 'bottom' | 'left' | 'top-left' | 'top-right' | '
 
 export default function ImageEditorModal({
   file,
-  uploading,
   anonymous,
   onAnonymousChange,
   onCancel,
-  onPost,
+  onConfirm,
   showAnonymous = true,
 }: Props) {
   const imgRef = useRef<HTMLImageElement>(null)
@@ -29,7 +27,7 @@ export default function ImageEditorModal({
 
   const [rotation, setRotation] = useState(0)
   const [brightness, setBrightness] = useState(1)
-  const [contrast, setContrast] = useState(1) // コントラストの状態を追加
+  const [contrast, setContrast] = useState(1)
   const [crop, setCrop] = useState<Crop | null>(null)
   const [activeHandle, setActiveHandle] = useState<Handle | null>(null)
 
@@ -58,7 +56,7 @@ export default function ImageEditorModal({
     }
   }, [imageUrl])
 
-  /* -------- ドラッグ操作 (はみ出し防止ロジック) -------- */
+  /* -------- ドラッグ操作 -------- */
 
   const startDrag = (e: React.PointerEvent, h: Handle) => {
     e.preventDefault()
@@ -119,122 +117,94 @@ export default function ImageEditorModal({
     }
   }
 
-  /* -------- 投稿処理 (回転・明るさ・コントラスト反映) -------- */
+  /* -------- 確定処理 (親にFileを渡す) -------- */
 
-/* -------- 投稿処理 (明るさ・コントラストを確実にピクセルへ反映) -------- */
+  async function handleConfirm() {
+    if (!crop || !imgRef.current) return
 
-async function handlePost() {
-  if (!crop || !imgRef.current) return
-
-  const originalImg = imgRef.current
-
-  // --- 1. 解像度の自動調整 (Cloudinary対策) ---
-  const MAX_SIZE = 1200 // 長辺を最大1200pxに制限
-  let scale = originalImg.naturalWidth / originalImg.clientWidth
-  
-  let targetW = crop.w * scale
-  let targetH = crop.h * scale
-
-  // 切り抜き後のサイズが大きすぎる場合はリサイズ
-  if (targetW > MAX_SIZE || targetH > MAX_SIZE) {
-    const resizeRatio = MAX_SIZE / Math.max(targetW, targetH)
-    targetW *= resizeRatio
-    targetH *= resizeRatio
-    scale *= resizeRatio // 全体の計算用スケールも更新
-  }
-
-  const canvas = document.createElement('canvas')
-  canvas.width = targetW
-  canvas.height = targetH
-  const ctx = canvas.getContext('2d', { willReadFrequently: true })!
-
-  // --- 2. 回転・トリミングの描画 ---
-  ctx.save()
-  ctx.translate(canvas.width / 2, canvas.height / 2)
-  ctx.rotate((rotation * Math.PI) / 180)
-
-  // 表示上の中心点とクロップの中心点から、描画位置(dx, dy)を算出
-  const imgCenterX = originalImg.offsetLeft + originalImg.clientWidth / 2
-  const imgCenterY = originalImg.offsetTop + originalImg.clientHeight / 2
-  const cropCenterX = crop.x + crop.w / 2
-  const cropCenterY = crop.y + crop.h / 2
-
-  const dx = (imgCenterX - cropCenterX) * scale
-  const dy = (imgCenterY - cropCenterY) * scale
-
-  // 描画サイズも現在のスケールに合わせる
-  const drawW = originalImg.naturalWidth * (scale / (originalImg.naturalWidth / originalImg.clientWidth))
-  const drawH = originalImg.naturalHeight * (scale / (originalImg.naturalWidth / originalImg.clientWidth))
-
-  ctx.drawImage(originalImg, dx - drawW / 2, dy - drawH / 2, drawW, drawH)
-  ctx.restore()
-
-  // --- 3. 【最重要】ピクセル操作による色の反映 ---
-  // これでブラウザのバグを回避し、確実に明るさ・コントラストを適用します
-  try {
-    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height)
-    const data = imageData.data
+    const originalImg = imgRef.current
+    const MAX_SIZE = 1200
+    let scale = originalImg.naturalWidth / originalImg.clientWidth
     
-    // コントラスト計算用の係数
-    const intercept = 128 * (1 - contrast)
+    let targetW = crop.w * scale
+    let targetH = crop.h * scale
 
-    for (let i = 0; i < data.length; i += 4) {
-      for (let j = 0; j < 3; j++) { // R, G, B
-        let v = data[i + j]
-        // 明るさ (0.5 - 1.5倍)
-        v = v * brightness
-        // コントラスト
-        v = v * contrast + intercept
-        // 255の範囲にクランプ
-        data[i + j] = Math.max(0, Math.min(255, v))
-      }
+    if (targetW > MAX_SIZE || targetH > MAX_SIZE) {
+      const resizeRatio = MAX_SIZE / Math.max(targetW, targetH)
+      targetW *= resizeRatio
+      targetH *= resizeRatio
+      scale *= resizeRatio
     }
-    ctx.putImageData(imageData, 0, 0)
-  } catch (e) {
-    console.error("ImageDataの取得に失敗しました。CORSの設定を確認してください。", e)
-    // 失敗しても、最低限リサイズ済みの画像は投稿されるように fallback
+
+    const canvas = document.createElement('canvas')
+    canvas.width = targetW
+    canvas.height = targetH
+    const ctx = canvas.getContext('2d', { willReadFrequently: true })!
+
+    ctx.save()
+    ctx.translate(canvas.width / 2, canvas.height / 2)
+    ctx.rotate((rotation * Math.PI) / 180)
+
+    const imgCenterX = originalImg.offsetLeft + originalImg.clientWidth / 2
+    const imgCenterY = originalImg.offsetTop + originalImg.clientHeight / 2
+    const cropCenterX = crop.x + crop.w / 2
+    const cropCenterY = crop.y + crop.h / 2
+
+    const dx = (imgCenterX - cropCenterX) * scale
+    const dy = (imgCenterY - cropCenterY) * scale
+
+    const drawW = originalImg.naturalWidth * (scale / (originalImg.naturalWidth / originalImg.clientWidth))
+    const drawH = originalImg.naturalHeight * (scale / (originalImg.naturalWidth / originalImg.clientWidth))
+
+    ctx.drawImage(originalImg, dx - drawW / 2, dy - drawH / 2, drawW, drawH)
+    ctx.restore()
+
+    try {
+      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height)
+      const data = imageData.data
+      const intercept = 128 * (1 - contrast)
+
+      for (let i = 0; i < data.length; i += 4) {
+        for (let j = 0; j < 3; j++) {
+          let v = data[i + j]
+          v = v * brightness
+          v = v * contrast + intercept
+          data[i + j] = Math.max(0, Math.min(255, v))
+        }
+      }
+      ctx.putImageData(imageData, 0, 0)
+    } catch (e) {
+      console.error("ImageData error", e)
+    }
+
+    const blob = await new Promise<Blob>((resolve) =>
+      canvas.toBlob((b) => resolve(b!), 'image/jpeg', 0.8)
+    )
+
+    const optimizedFile = new File([blob], file.name.replace(/\.[^/.]+$/, "") + ".jpg", { 
+      type: 'image/jpeg' 
+    })
+
+    onConfirm(optimizedFile)
   }
-
-  // --- 4. 圧縮設定 (JPEG 0.8) ---
-  const blob = await new Promise<Blob>((resolve) =>
-    canvas.toBlob((b) => resolve(b!), 'image/jpeg', 0.8) // 0.8が容量と画質のベストバランス
-  )
-
-  // ファイル名を.jpgに統一して送信
-  const optimizedFile = new File([blob], file.name.replace(/\.[^/.]+$/, "") + ".jpg", { 
-    type: 'image/jpeg' 
-  })
-
-  onPost(optimizedFile)
-}
 
   return (
     <div style={styles.overlay} onClick={onCancel}>
-      <style>{`
-        @keyframes spin { to { transform: rotate(360deg); } }
-        .animate-spin-custom { animation: spin 1s linear infinite; }
-      `}</style>
-
       <div style={styles.modal} onClick={(e) => e.stopPropagation()}>
         <div style={styles.header}>
           <button onClick={onCancel} style={styles.closeBtn}>×</button>
-          <div style={{ display: 'flex', gap: 20 }}>
+          <div style={{ display: 'flex', gap: 12 }}>
             <button onClick={() => setRotation((r) => (r + 90) % 360)} style={styles.actionBtn}>
               <RotateCw size={24} />
             </button>
-            <button onClick={handlePost} disabled={uploading} style={styles.actionBtn}>
-              {uploading ? (
-                <Loader2 size={24} className="animate-spin-custom" />
-              ) : (
-                <SendHorizontal size={24} />
-              )}
+            <button onClick={handleConfirm} style={styles.confirmBtn}>
+              <span>次へ</span>
+              <ChevronRight size={24} />
             </button>
           </div>
         </div>
 
-        {/* コントロールパネルエリア */}
         <div style={styles.controlPanel}>
-          {/* 明るさ */}
           <div style={styles.controlRow}>
             <div style={styles.controlLabel}>
               <Sun size={18} />
@@ -254,7 +224,6 @@ async function handlePost() {
             </div>
           </div>
 
-          {/* コントラスト */}
           <div style={styles.controlRow}>
             <div style={styles.controlLabel}>
               <Contrast size={18} />
@@ -273,19 +242,19 @@ async function handlePost() {
               {Math.round(contrast * 100)}%
             </div>
           </div>
-          {/* controlPanel の一番下に追加 */}
-{showAnonymous && (
-  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 4 }}>
-    <input
-      type="checkbox"
-      checked={anonymous}
-      onChange={(e) => onAnonymousChange(e.target.checked)}
-    />
-    <span style={{ fontSize: 13, color: '#ccc' }}>
-      匿名で投稿
-    </span>
-  </div>
-)}
+
+          {showAnonymous && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 4 }}>
+              <input
+                type="checkbox"
+                checked={anonymous}
+                onChange={(e) => onAnonymousChange(e.target.checked)}
+              />
+              <span style={{ fontSize: 13, color: '#ccc' }}>
+                匿名で投稿
+              </span>
+            </div>
+          )}
         </div>
 
         <div ref={containerRef} style={styles.body}>
@@ -355,7 +324,19 @@ const styles: { [k: string]: CSSProperties } = {
     background: 'rgba(255,255,255,0.05)',
   },
   closeBtn: { background: 'none', border: 'none', color: '#fff', fontSize: 32 },
-  actionBtn: { background: 'none', border: 'none', color: '#fff' },
+  actionBtn: { background: 'none', border: 'none', color: '#fff', cursor: 'pointer' },
+  confirmBtn: {
+    background: '#00aaff',
+    border: 'none',
+    color: '#fff',
+    borderRadius: 20,
+    padding: '4px 12px',
+    display: 'flex',
+    alignItems: 'center',
+    gap: 4,
+    fontWeight: 'bold',
+    cursor: 'pointer'
+  },
   body: {
     flex: 1,
     position: 'relative',
@@ -363,17 +344,17 @@ const styles: { [k: string]: CSSProperties } = {
     justifyContent: 'center',
     alignItems: 'center',
     overflow: 'hidden',
-    touchAction: 'none', // ブラウザのスクロール等を無効化
+    touchAction: 'none',
   },
   crop: {
     position: 'absolute',
     border: '2px solid #00aaff',
     boxSizing: 'border-box',
-    boxShadow: '0 0 0 9999px rgba(0,0,0,0.5)', // 枠の外を暗くする
+    boxShadow: '0 0 0 9999px rgba(0,0,0,0.5)',
   },
   handleContainer: {
     position: 'absolute',
-    width: 44, // タッチしやすいようにヒットエリアを拡大
+    width: 44,
     height: 44,
     display: 'flex',
     justifyContent: 'center',
@@ -388,7 +369,6 @@ const styles: { [k: string]: CSSProperties } = {
     borderRadius: '50%',
     border: '2px solid #fff',
   },
-  // 既存の controls を controlPanel に変更（あるいは追加）
   controlPanel: {
     padding: '12px 20px',
     background: 'rgba(255,255,255,0.08)',
@@ -396,7 +376,6 @@ const styles: { [k: string]: CSSProperties } = {
     flexDirection: 'column',
     gap: '8px',
   },
-  // 1行ずつのレイアウト
   controlRow: {
     display: 'flex',
     alignItems: 'center',
@@ -406,7 +385,7 @@ const styles: { [k: string]: CSSProperties } = {
     display: 'flex',
     alignItems: 'center',
     gap: '8px',
-    minWidth: '100px', // 「コントラスト」の文字に合わせて少し広めに
+    minWidth: '100px',
   },
   slider: {
     flex: 1,
@@ -431,4 +410,4 @@ const handlePos: Record<Handle, CSSProperties> = {
   'top-right': { left: '100%', top: 0, transform: 'translate(-50%, -50%)' },
   'bottom-left': { left: 0, top: '100%', transform: 'translate(-50%, -50%)' },
   'bottom-right': { left: '100%', top: '100%', transform: 'translate(-50%, -50%)' },
-}   
+}
