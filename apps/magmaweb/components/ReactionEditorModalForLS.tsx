@@ -2,11 +2,10 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { Star, AlertTriangle, HelpCircle, X, Send, TouchpadOff } from 'lucide-react'
+import { HelpCircle, X, TouchpadOff } from 'lucide-react'
 
 type ReactionType = 'star' | 'exclamation' | 'question'
 
-// 型定義を修正：onClose が引数 (data) を受け取れるようにする
 interface Props {
   open: boolean
   imageUrl: string
@@ -22,7 +21,8 @@ export default function ReactionEditorModal({
   onClose,
 }: Props) {
   const [mounted, setMounted] = useState(false)
-  const [type, setType] = useState<ReactionType>('star')
+  // 質問固定にする
+  const type: ReactionType = 'question'
   const [comment, setComment] = useState('')
   const [pos, setPos] = useState<{ x: number; y: number } | null>(null)
   const [imgSize, setImgSize] = useState<{ width: number; height: number } | null>(null)
@@ -50,15 +50,12 @@ export default function ReactionEditorModal({
 
   if (!open || !mounted) return null
 
-  // submit 関数を修正：DB保存はせず、データを親(LayoutShell)に渡すだけにする
   const handleSubmit = () => {
     if (!pos) return
     
-    const finalComment = type === 'question'
-      ? JSON.stringify([{ username, content: comment }])
-      : comment
+    // 既存の question 形式（JSON文字列）を維持
+    const finalComment = JSON.stringify([{ username, content: comment }])
 
-    // データを親に渡して閉じる
     onClose({
       type,
       comment: finalComment,
@@ -68,15 +65,7 @@ export default function ReactionEditorModal({
   }
 
   const COLORS = {
-    star: '#FFD700',
-    exclamation: '#FF6B6B',
     question: '#4D96FF',
-  }
-
-  const iconMap = {
-    star: <Star size={24} fill={COLORS.star} stroke="#000" strokeWidth={1.5} />,
-    exclamation: <AlertTriangle size={24} fill={COLORS.exclamation} stroke="#000" strokeWidth={1.5} />,
-    question: <HelpCircle size={24} fill={COLORS.question} stroke="#000" strokeWidth={1.5} />,
   }
 
   return createPortal(
@@ -85,18 +74,8 @@ export default function ReactionEditorModal({
         {/* Header */}
         <div style={styles.header}>
           <button onClick={() => onClose()} style={styles.iconBtn}><X size={24} /></button>
-          <span style={styles.headerTitle}>位置を指定してリアクション</span>
-          <button
-            onClick={handleSubmit}
-            disabled={!pos}
-            style={{
-              ...styles.submitHeader,
-              opacity: !pos ? 0.4 : 1,
-              color: pos ? COLORS.question : '#666',
-            }}
-          >
-            <Send size={22} />
-          </button>
+          <span style={styles.headerTitle}>わからない箇所をタップ</span>
+          <div style={{ width: 40 }} /> {/* バランス用の空要素 */}
         </div>
 
         {/* Canvas Area */}
@@ -140,7 +119,7 @@ export default function ReactionEditorModal({
                     top: `${pos.y * 100}%`,
                   }}
                 >
-                  {iconMap[type]}
+                  <HelpCircle size={32} fill={COLORS.question} stroke="#000" strokeWidth={1.5} />
                 </div>
               </div>
             )}
@@ -149,23 +128,28 @@ export default function ReactionEditorModal({
 
         {/* Controls Area */}
         <div style={styles.controls}>
-          <div style={styles.typeRow}>
-            {(['star', 'exclamation', 'question'] as const).map((t) => (
-              <TypeButton key={t} active={type === t} onClick={() => setType(t)} type={t}>
-                {t === 'star' && <Star size={20} fill={type === t ? COLORS.star : 'transparent'} stroke={type === t ? '#000' : '#888'} />}
-                {t === 'exclamation' && <AlertTriangle size={20} fill={type === t ? COLORS.exclamation : 'transparent'} stroke={type === t ? '#000' : '#888'} />}
-                {t === 'question' && <HelpCircle size={20} fill={type === t ? COLORS.question : 'transparent'} stroke={type === t ? '#000' : '#888'} />}
-                <span style={styles.typeLabel}>{typeLabels[t]}</span>
-              </TypeButton>
-            ))}
-          </div>
           <div style={styles.inputWrapper}>
-            <input
-              placeholder="具体的に説明..."
+            <div style={styles.labelRow}>
+              <HelpCircle size={18} color={COLORS.question} />
+              <span style={styles.labelText}>質問内容</span>
+            </div>
+            <textarea
+              placeholder="ここがなぜこうなるのか教えてほしい、など"
               value={comment}
               onChange={(e) => setComment(e.target.value)}
-              style={styles.input}
+              style={styles.textarea}
+              rows={3}
             />
+            <button
+              onClick={handleSubmit}
+              disabled={!pos}
+              style={{
+                ...styles.finalSubmitBtn,
+                opacity: !pos ? 0.5 : 1,
+              }}
+            >
+              質問を送信
+            </button>
           </div>
         </div>
       </div>
@@ -174,36 +158,12 @@ export default function ReactionEditorModal({
   )
 }
 
-function TypeButton({ children, active, onClick, type }: any) {
-  const activeColors = {
-    star: 'rgba(255, 215, 0, 0.2)',
-    exclamation: 'rgba(255, 107, 107, 0.2)',
-    question: 'rgba(77, 150, 255, 0.2)',
-  }
-  return (
-    <button
-      onClick={onClick}
-      style={{
-        ...styles.typeButton,
-        background: active ? activeColors[type as ReactionType] : 'rgba(255,255,255,0.05)',
-        borderColor: active ? 'transparent' : 'rgba(255,255,255,0.1)',
-        color: active ? '#fff' : '#888',
-      }}
-    >
-      {children}
-    </button>
-  )
-}
-
-const typeLabels = { star: 'いいね！', exclamation: '指摘', question: '疑問・確認' }
-
 const styles: { [key: string]: React.CSSProperties } = {
   overlay: { position: 'fixed', inset: 0, zIndex: 999999, background: '#000' },
   container: { width: '100vw', height: '100dvh', display: 'flex', flexDirection: 'column', color: '#fff', overflow: 'hidden' },
   header: { flexShrink: 0, padding: '0 16px', height: '60px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#000', borderBottom: '1px solid rgba(255,255,255,0.1)' },
-  headerTitle: { fontSize: '14px', fontWeight: 500, color: '#ccc' },
+  headerTitle: { fontSize: '16px', fontWeight: 'bold', color: '#fff' },
   iconBtn: { background: 'none', border: 'none', color: '#fff', padding: '8px', cursor: 'pointer' },
-  submitHeader: { background: 'none', border: 'none', fontWeight: 700, fontSize: '16px', cursor: 'pointer', padding: '8px' },
   canvas: {
     flex: 1,
     display: 'flex',
@@ -235,10 +195,21 @@ const styles: { [key: string]: React.CSSProperties } = {
   marker: { position: 'absolute', transform: 'translate(-50%, -50%)', zIndex: 10 },
   tapHintOverlay: { position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' },
   tapHintBadge: { display: 'flex', alignItems: 'center', gap: '10px', background: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(10px)', WebkitBackdropFilter: 'blur(10px)', padding: '12px 20px', borderRadius: '100px', border: '1px solid rgba(255,255,255,0.2)', fontSize: '14px', color: '#fff' },
-  controls: { flexShrink: 0, padding: '20px 16px calc(20px + env(safe-area-inset-bottom))', background: '#000', borderTop: '1px solid rgba(255,255,255,0.1)' },
-  typeRow: { display: 'flex', justifyContent: 'center', gap: '12px', marginBottom: '20px' },
-  typeButton: { flex: 1, maxWidth: '100px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', padding: '12px 8px', borderRadius: '12px', border: '1px solid', fontSize: '12px', transition: 'all 0.2s ease', cursor: 'pointer' },
-  typeLabel: { fontWeight: 500 },
-  inputWrapper: { maxWidth: '500px', margin: '0 auto' },
-  input: { width: '100%', background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '14px', padding: '14px 18px', color: '#fff', fontSize: '16px', outline: 'none' },
+  controls: { flexShrink: 0, padding: '20px 16px calc(24px + env(safe-area-inset-bottom))', background: '#111', borderTop: '1px solid rgba(255,255,255,0.1)', borderRadius: '24px 24px 0 0' },
+  inputWrapper: { maxWidth: '500px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '12px' },
+  labelRow: { display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' },
+  labelText: { fontSize: '14px', fontWeight: 'bold', color: '#4D96FF' },
+  textarea: { width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', padding: '14px', color: '#fff', fontSize: '16px', outline: 'none', resize: 'none' },
+  finalSubmitBtn: { 
+    width: '100%', 
+    background: '#4D96FF', 
+    color: '#fff', 
+    border: 'none', 
+    borderRadius: '12px', 
+    padding: '16px', 
+    fontSize: '16px', 
+    fontWeight: 'bold', 
+    cursor: 'pointer',
+    marginTop: '8px'
+  },
 }
