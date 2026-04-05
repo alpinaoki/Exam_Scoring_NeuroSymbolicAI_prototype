@@ -307,7 +307,8 @@ const styles: { [k: string]: CSSProperties } = {
     position: 'fixed',
     inset: 0,
     background: '#000',
-    zIndex: 5000,
+    // レイアウトシェルの進捗バー(9999)の下に配置
+    zIndex: 9500,
   },
   modal: {
     position: 'absolute',
@@ -315,6 +316,8 @@ const styles: { [k: string]: CSSProperties } = {
     display: 'flex',
     flexDirection: 'column',
     color: '#fff',
+    // 上部の進捗バーと重ならないように余白を追加
+    paddingTop: '60px',
   },
   header: {
     height: 60,
