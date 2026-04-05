@@ -128,18 +128,15 @@ const styles: { [key: string]: React.CSSProperties } = {
   overlay: { 
     position: 'fixed', 
     inset: 0, 
-    zIndex: 5000, // LayoutShellのprogressContainer(10000)より低く、fullOverlay(3000)より高く
-    background: 'transparent',
-    pointerEvents: 'none'
+    zIndex: 10000, // バー(99999)より低い数値
+    background: '#000',
   }, 
   container: { 
     width: '100vw', 
     height: '100dvh', 
     display: 'flex', 
     flexDirection: 'column', 
-    background: '#000',
-    paddingTop: '60px', // LayoutShellのヘッダー高さ分を確保
-    pointerEvents: 'auto'
+    paddingTop: '60px', // バーが表示される領域を空ける
   },
   canvas: { flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#0a0a0a', padding: '20px', overflow: 'hidden' },
   imageContainer: { position: 'relative', maxWidth: '100%', maxHeight: '100%' },

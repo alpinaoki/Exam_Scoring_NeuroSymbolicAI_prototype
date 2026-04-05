@@ -1,7 +1,8 @@
 'use client'
 
 import { usePathname, useRouter } from 'next/navigation'
-import { useRef, useState } from 'react'
+import { useRef, useState, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import type { ReactNode, CSSProperties } from 'react'
 import { uploadImageToCloudinary } from '../lib/upload'
 import ImageEditorModal from './ImageEditorModalForLS'
@@ -24,6 +25,7 @@ export default function LayoutShell({ children }: Props) {
   const pathname = usePathname()
   const router = useRouter()
   const cameraInputRef = useRef<HTMLInputElement>(null)
+  const [mounted, setMounted] = useState(false)
 
   const [step, setStep] = useState<0 | 1 | 2 | 3>(0)
   const [direction, setDirection] = useState<'in' | 'out'>('in') 
@@ -32,6 +34,8 @@ export default function LayoutShell({ children }: Props) {
   const [answerFile, setAnswerFile] = useState<File | null>(null)
   const [isAnonymous, setIsAnonymous] = useState(false)
   const [uploading, setUploading] = useState(false)
+
+  useEffect(() => { setMounted(true) }, [])
 
   const goToStep = (next: 0 | 1 | 2 | 3) => {
     setDirection('out')
@@ -138,28 +142,31 @@ export default function LayoutShell({ children }: Props) {
 
       {step > 0 && (
         <div style={styles.fullOverlay}>
-          {/* 進捗バー：常に最前面 */}
-          <div style={styles.progressContainer}>
-            <button onClick={() => {
-                if (rawFile) setRawFile(null); 
-                else if (step > 1) goToStep((step - 1) as any);
-                else reset();
-            }} style={styles.navBtn}>
-              <X size={20} />
-            </button>
-            <div style={styles.progressBars}>
-              {[1, 2, 3].map((s) => (
-                <div key={s} style={styles.progressBarBase}>
-                  <div style={{
-                    ...styles.progressBarFill,
-                    width: step > s ? '100%' : step === s ? '10%' : '0%',
-                    opacity: step >= s ? 1 : 0.3
-                  }} />
-                </div>
-              ))}
-            </div>
-            <div style={{ width: 32 }} /> 
-          </div>
+          {/* 進捗バーを Portal で最前面に送る */}
+          {mounted && createPortal(
+            <div style={styles.portalProgressContainer}>
+              <button onClick={() => {
+                  if (rawFile) setRawFile(null); 
+                  else if (step > 1) goToStep((step - 1) as any);
+                  else reset();
+              }} style={styles.navBtn}>
+                <X size={20} />
+              </button>
+              <div style={styles.progressBars}>
+                {[1, 2, 3].map((s) => (
+                  <div key={s} style={styles.progressBarBase}>
+                    <div style={{
+                      ...styles.progressBarFill,
+                      width: step > s ? '100%' : step === s ? '10%' : '0%',
+                      opacity: step >= s ? 1 : 0.3
+                    }} />
+                  </div>
+                ))}
+              </div>
+              <div style={{ width: 32 }} /> 
+            </div>,
+            document.body
+          )}
 
           <div className={direction === 'in' ? 'slide-in' : 'slide-out'} style={styles.stepContent}>
             {step === 1 && (
@@ -243,22 +250,27 @@ const styles: { [key: string]: CSSProperties } = {
   footer: { position: 'fixed', bottom: 0, left: 0, right: 0, height: 54, display: 'flex', justifyContent: 'space-around', alignItems: 'center', background: '#111', zIndex: 1000 },
   icon: { background: 'none', border: 'none', color: '#eee', cursor: 'pointer' },
   plus: { width: 36, height: 36, borderRadius: '50%', border: '3px solid #444', color: '#eee', display: 'flex', justifyContent: 'center', alignItems: 'center', padding: 0, cursor: 'pointer' },
-  // zIndexを調整
   fullOverlay: { position: 'fixed', inset: 0, background: '#000', zIndex: 3000, display: 'flex', flexDirection: 'column', color: '#fff' },
-  progressContainer: { 
+  // Portal用のスタイル：zIndexを極限まで上げる
+  portalProgressContainer: { 
+    position: 'fixed',
+    top: 0,
+    left: 0,
+    right: 0,
     padding: '12px 16px', 
     display: 'flex', 
     gap: 12, 
     alignItems: 'center', 
     background: '#000', 
     borderBottom: '1px solid #222', 
-    zIndex: 10000 // 子要素の中でも絶対に一番上
+    zIndex: 99999,
+    color: '#fff'
   },
   progressBars: { flex: 1, display: 'flex', gap: 6 },
   navBtn: { background: 'none', border: 'none', color: '#fff', cursor: 'pointer', padding: 4 },
   progressBarBase: { flex: 1, height: 4, background: '#333', borderRadius: 2, overflow: 'hidden' },
   progressBarFill: { height: '100%', background: '#00aaff', transition: 'width 0.4s ease' },
-  stepContent: { flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', position: 'relative', zIndex: 1 },
+  stepContent: { flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', paddingTop: 60 }, // バーの高さ分確保
   stepContainer: { flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '0 32px', textAlign: 'center' },
   stepTitle: { fontSize: 26, fontWeight: 'bold', marginBottom: 12 },
   mainActionBtn: { width: '100%', background: '#00aaff', color: '#fff', border: 'none', padding: '20px', borderRadius: '18px', fontSize: 18, fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12, cursor: 'pointer' },
