@@ -79,7 +79,7 @@ export default function ReactionEditorModal({
               <div style={styles.tapHintOverlay}>
                 <div style={styles.tapHintBadge}>
                   <TouchpadOff size={18} />
-                  <span>画像をタップして位置を指定</span>
+                  <span>画像をタップして気になる位置を指定</span>
                 </div>
               </div>
             )}
@@ -97,10 +97,10 @@ export default function ReactionEditorModal({
           <div style={styles.inputWrapper}>
             <div style={styles.labelRow}>
               <HelpCircle size={18} color="#4D96FF" />
-              <span style={styles.labelText}>質問内容</span>
+              <span style={styles.labelText}>疑問の内容</span>
             </div>
             <textarea
-              placeholder="「ここがなぜこうなるのか」など"
+              placeholder="「...をなぜ???にするのか」など"
               value={comment}
               onChange={(e) => setComment(e.target.value)}
               style={styles.textarea}

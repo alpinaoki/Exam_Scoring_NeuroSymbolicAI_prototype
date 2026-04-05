@@ -199,12 +199,12 @@ export default function LayoutShell({ children }: Props) {
               <div style={styles.stepContainer}>
                 {!rawFile ? (
                   <>
-                    <h2 style={styles.stepTitle}>自分の考えを撮影</h2>
+                    <h2 style={styles.stepTitle}>考え方を撮影</h2>
                     <button style={styles.mainActionBtn} onClick={() => cameraInputRef.current?.click()}>
                       <Camera size={24} /> カメラを起動
                     </button>
                     <button style={styles.skipBtn} onClick={() => handleFinalSubmit()}>
-                      スキップして投稿
+                      スキップして問題のみで質問を投稿
                     </button>
                   </>
                 ) : (
