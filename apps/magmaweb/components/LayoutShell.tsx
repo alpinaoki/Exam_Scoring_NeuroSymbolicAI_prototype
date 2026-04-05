@@ -74,39 +74,80 @@ export default function LayoutShell({ children }: Props) {
     setUploading(true)
 
     try {
+      const { createClient } = await import('@supabase/supabase-js')
+      const supabase = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+      )
+
+      // ユーザー情報の取得（一回で済ませる）
+      const { data: userData, error: userError } = await supabase.auth.getUser()
+      if (userError || !userData.user) throw new Error('認証に失敗しました')
+      const userId = userData.user.id
+
       // 1. 問題のアップロードと保存
       const pUrl = await uploadImageToCloudinary(problemFile)
-      const pId = await createPostAndReturnId(pUrl, isAnonymous)
+      
+      const { data: pInserted, error: pError } = await supabase
+        .from('posts')
+        .insert({
+          user_id: userId,
+          type: 'problem',
+          image_url: pUrl,
+          is_anonymous: isAnonymous,
+        })
+        .select('id')
+        .single()
+
+      if (pError || !pInserted) throw pError
+      const pId = pInserted.id
+
+      // root_id を自分自身に更新
+      await supabase.from('posts').update({ root_id: pId }).eq('id', pId)
 
       // 2. 解答がある場合
       if (answerFile) {
         const aUrl = await uploadImageToCloudinary(answerFile)
-        const aId = await createAnswerAndReturnId(aUrl, pId, isAnonymous)
+        
+        const { data: aInserted, error: aError } = await supabase
+          .from('posts')
+          .insert({
+            user_id: userId,
+            type: 'answer',
+            image_url: aUrl,
+            parent_id: pId,
+            root_id: pId,
+            is_anonymous: isAnonymous,
+          })
+          .select('id')
+          .single()
+
+        if (aError || !aInserted) throw aError
+        const aId = aInserted.id
 
         // 3. リアクション（質問ピン）がある場合
         if (reactionData) {
-          // ※ lib等に reaction 作成関数がある想定。ここではインラインで書くか別途 import してください
-          const { createClient } = await import('@supabase/supabase-js')
-          const supabase = createClient(
-            process.env.NEXT_PUBLIC_SUPABASE_URL!,
-            process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-          )
-          await supabase.from('reactions').insert({
+          const { error: rError } = await supabase.from('reactions').insert({
             post_id: aId,
-            user_id: (await supabase.auth.getUser()).data.user?.id,
+            user_id: userId,
             type: reactionData.type,
             comment: reactionData.comment,
-            x: reactionData.x,
-            y: reactionData.y,
+            // カラム名を lib/posts.ts の getReactionsByPostId で使われている名前に合わせる
+            x_float: reactionData.x, 
+            y_float: reactionData.y,
           })
+          if (rError) throw rError
         }
       }
 
       reset()
       router.refresh()
+      // 成功したらフィードへ
+      router.push('/feed')
+      
     } catch (error) {
       console.error('Submit Error:', error)
-      alert('投稿に失敗しました。')
+      alert('投稿に失敗しました。詳細: ' + (error instanceof Error ? error.message : 'Unknown error'))
     } finally {
       setUploading(false)
     }
