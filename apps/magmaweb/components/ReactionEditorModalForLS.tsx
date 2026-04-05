@@ -133,7 +133,7 @@ const styles: { [key: string]: React.CSSProperties } = {
     display: 'flex', 
     flexDirection: 'column', 
     background: '#000',
-    paddingTop: '60px' // 進捗バー(zIndex 9999)のためのマージン
+    paddingTop: '60px' // LayoutShell側の進捗バーが表示される領域を確保
   },
   canvas: { flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#0a0a0a', padding: '20px', overflow: 'hidden' },
   imageContainer: { position: 'relative', maxWidth: '100%', maxHeight: '100%' },
