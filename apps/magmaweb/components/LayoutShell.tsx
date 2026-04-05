@@ -72,13 +72,16 @@ export default function LayoutShell({ children }: Props) {
       const userId = userData.user.id
 
       const pUrl = await uploadImageToCloudinary(problemFile)
+      
+      // 修正ポイント: label に '質問' を追加して投稿
       const { data: pInserted, error: pError } = await supabase
         .from('posts')
         .insert({
           user_id: userId,
           type: 'problem',
           image_url: pUrl,
-          anonymous: isAnonymous, 
+          anonymous: isAnonymous,
+          label: '質問', // ← ここで初期タグを設定
         })
         .select('id').single()
 
@@ -138,7 +141,6 @@ export default function LayoutShell({ children }: Props) {
       <footer style={styles.footer}>
         <button style={styles.icon} onClick={() => router.push('/feed')}><Sparkles size={28} /></button>
         <button style={styles.icon} onClick={() => router.push('/search')}><Search size={28} /></button>
-        {/* 背景円をなくし、他のボタンと同じスタイル(styles.icon)を適用 */}
         <button style={styles.icon} onClick={() => goToStep(1)}>
           <MessageCircleQuestionIcon size={28} />
         </button>
