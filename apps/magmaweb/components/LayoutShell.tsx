@@ -169,9 +169,9 @@ export default function LayoutShell({ children }: Props) {
           {/* 統一ヘッダー：ここですべての「戻る」「進む」を管理 */}
           <div style={styles.progressContainer}>
             <button onClick={() => {
-               if (rawFile) setRawFile(null); // 編集中の場合は選択画面に戻る
-               else if (step > 1) goToStep((step - 1) as any);
-               else reset();
+                if (rawFile) setRawFile(null); 
+                else if (step > 1) goToStep((step - 1) as any);
+                else reset();
             }} style={styles.navBtn}>
               <X size={20} />
             </button>
@@ -181,14 +181,14 @@ export default function LayoutShell({ children }: Props) {
                 <div key={s} style={styles.progressBarBase}>
                   <div style={{
                     ...styles.progressBarFill,
-                    width: step > s ? '100%' : step === s ? '100%' : '0%',
+                    // ここを修正：現在地は50%に留める
+                    width: step > s ? '100%' : step === s ? '50%' : '0%',
                     opacity: step >= s ? 1 : 0.3
                   }} />
                 </div>
               ))}
             </div>
 
-            {/* Step3（リアクション）の時だけ送信ボタンをヘッダーに出す等の調整が可能 */}
             <div style={{ width: 32 }} /> 
           </div>
 
