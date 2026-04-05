@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { Star, AlertTriangle, HelpCircle, TouchpadOff } from 'lucide-react'
+import { HelpCircle, TouchpadOff } from 'lucide-react'
 
 type ReactionType = 'star' | 'exclamation' | 'question'
 
@@ -21,7 +21,7 @@ export default function ReactionEditorModal({
   onClose,
 }: Props) {
   const [mounted, setMounted] = useState(false)
-  const [type, setType] = useState<ReactionType>('question') // デフォルトを質問に
+  const type: ReactionType = 'question'
   const [comment, setComment] = useState('')
   const [pos, setPos] = useState<{ x: number; y: number } | null>(null)
   const [imgSize, setImgSize] = useState<{ width: number; height: number } | null>(null)
@@ -49,36 +49,20 @@ export default function ReactionEditorModal({
 
   if (!open || !mounted) return null
 
-  const handleConfirm = () => {
+  const handleSubmit = () => {
     if (!pos) return
-    const finalComment = type === 'question'
-      ? JSON.stringify([{ username, content: comment }])
-      : comment
-
-    onClose({
-      type,
-      comment: finalComment,
-      x: pos.x,
-      y: pos.y,
-    })
+    const finalComment = JSON.stringify([{ username, content: comment }])
+    onClose({ type, comment: finalComment, x: pos.x, y: pos.y })
   }
 
-  const COLORS = {
-    star: '#FFD700',
-    exclamation: '#FF6B6B',
-    question: '#4D96FF',
-  }
-
-  const iconMap = {
-    star: <Star size={24} fill={COLORS.star} stroke="#000" strokeWidth={1.5} />,
-    exclamation: <AlertTriangle size={24} fill={COLORS.exclamation} stroke="#000" strokeWidth={1.5} />,
-    question: <HelpCircle size={24} fill={COLORS.question} stroke="#000" strokeWidth={1.5} />,
-  }
+  const COLORS = { question: '#4D96FF' }
 
   return createPortal(
     <div style={styles.overlay}>
       <div style={styles.container}>
-        {/* HeaderはLayoutShell側に任せるため削除 */}
+        {/* 【修正】LayoutShellのヘッダー（進捗バー）が見えるように、
+            モーダル内の独自ヘッダーを削除しました。
+         */}
 
         {/* Canvas Area */}
         <div style={styles.canvas}>
@@ -121,7 +105,7 @@ export default function ReactionEditorModal({
                     top: `${pos.y * 100}%`,
                   }}
                 >
-                  {iconMap[type]}
+                  <HelpCircle size={32} fill={COLORS.question} stroke="#000" strokeWidth={1.5} />
                 </div>
               </div>
             )}
@@ -130,40 +114,27 @@ export default function ReactionEditorModal({
 
         {/* Controls Area */}
         <div style={styles.controls}>
-          <div style={styles.typeRow}>
-            {(['star', 'exclamation', 'question'] as const).map((t) => (
-              <button
-                key={t}
-                onClick={() => setType(t)}
-                style={{
-                  ...styles.typeButton,
-                  background: type === t ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.05)',
-                  borderColor: type === t ? COLORS[t] : 'transparent',
-                }}
-              >
-                {t === 'star' && <Star size={20} fill={type === t ? COLORS.star : 'transparent'} stroke={type === t ? '#000' : '#888'} />}
-                {t === 'exclamation' && <AlertTriangle size={20} fill={type === t ? COLORS.exclamation : 'transparent'} stroke={type === t ? '#000' : '#888'} />}
-                {t === 'question' && <HelpCircle size={20} fill={type === t ? COLORS.question : 'transparent'} stroke={type === t ? '#000' : '#888'} />}
-              </button>
-            ))}
-          </div>
           <div style={styles.inputWrapper}>
-            <input
-              placeholder="具体的に説明..."
+            <div style={styles.labelRow}>
+              <HelpCircle size={18} color={COLORS.question} />
+              <span style={styles.labelText}>質問内容</span>
+            </div>
+            <textarea
+              placeholder="「ここがなぜこうなるのか」など"
               value={comment}
               onChange={(e) => setComment(e.target.value)}
-              style={styles.input}
+              style={styles.textarea}
+              rows={3}
             />
             <button
-              onClick={handleConfirm}
+              onClick={handleSubmit}
               disabled={!pos}
               style={{
                 ...styles.finalSubmitBtn,
                 opacity: !pos ? 0.5 : 1,
-                background: COLORS[type]
               }}
             >
-              投稿を完了する
+              質問を送信
             </button>
           </div>
         </div>
@@ -174,18 +145,10 @@ export default function ReactionEditorModal({
 }
 
 const styles: { [key: string]: React.CSSProperties } = {
-  // zIndexをLayoutShellのprogressContainer(4000)より低く設定
-  overlay: { position: 'fixed', inset: 0, zIndex: 3050, background: 'transparent' },
-  container: { 
-    width: '100vw', 
-    height: '100dvh', 
-    display: 'flex', 
-    flexDirection: 'column', 
-    color: '#fff', 
-    overflow: 'hidden',
-    background: '#000',
-    paddingTop: '60px' // 進捗バー(約50px〜)が被らないように余白を空ける
-  },
+  // z-index を 3000(Shell Overlay) より少し低くするか調整
+  // ここでは inset: 0 ですが背景を透過させないため Shell の上に重なります。
+  overlay: { position: 'fixed', inset: 0, zIndex: 3050, background: '#000' }, 
+  container: { width: '100vw', height: '100dvh', display: 'flex', flexDirection: 'column', color: '#fff', overflow: 'hidden', paddingTop: '60px' }, // 進捗バーを避けるための余白
   canvas: { flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#0a0a0a', padding: '20px', overflow: 'hidden' },
   imageContainer: { position: 'relative', maxWidth: '100%', maxHeight: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' },
   image: { width: '100%', height: '100%', objectFit: 'contain', display: 'block', userSelect: 'none' },
@@ -193,10 +156,10 @@ const styles: { [key: string]: React.CSSProperties } = {
   marker: { position: 'absolute', transform: 'translate(-50%, -50%)', zIndex: 10 },
   tapHintOverlay: { position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' },
   tapHintBadge: { display: 'flex', alignItems: 'center', gap: '10px', background: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(10px)', padding: '12px 20px', borderRadius: '100px', fontSize: '14px', color: '#fff' },
-  controls: { flexShrink: 0, padding: '20px 16px calc(20px + env(safe-area-inset-bottom))', background: '#000', borderTop: '1px solid rgba(255,255,255,0.1)' },
-  typeRow: { display: 'flex', justifyContent: 'center', gap: '20px', marginBottom: '20px' },
-  typeButton: { width: '50px', height: '50px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '12px', border: '2px solid', cursor: 'pointer', transition: 'all 0.2s' },
+  controls: { flexShrink: 0, padding: '20px 16px calc(24px + env(safe-area-inset-bottom))', background: '#111', borderTop: '1px solid rgba(255,255,255,0.1)', borderRadius: '24px 24px 0 0' },
   inputWrapper: { maxWidth: '500px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '12px' },
-  input: { width: '100%', background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '14px', padding: '14px 18px', color: '#fff', fontSize: '16px', outline: 'none' },
-  finalSubmitBtn: { width: '100%', color: '#000', border: 'none', borderRadius: '14px', padding: '16px', fontSize: '16px', fontWeight: 'bold', cursor: 'pointer' }
+  labelRow: { display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' },
+  labelText: { fontSize: '14px', fontWeight: 'bold', color: '#4D96FF' },
+  textarea: { width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', padding: '14px', color: '#fff', fontSize: '16px', outline: 'none', resize: 'none' },
+  finalSubmitBtn: { width: '100%', background: '#4D96FF', color: '#fff', border: 'none', borderRadius: '12px', padding: '16px', fontSize: '16px', fontWeight: 'bold', cursor: 'pointer', marginTop: '8px' },
 }
