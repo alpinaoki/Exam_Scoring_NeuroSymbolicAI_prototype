@@ -78,13 +78,13 @@ const styles = {
 
   // 🔥 タブバー
   tabBar: {
-  position: 'sticky',
-  top: 32,
-  zIndex: 500,
-  display: 'flex',
-  background: '#2C3E50', // ←統一
+    position: 'sticky' as const,
+    top: 32, // LayoutShellのheader分
+    zIndex: 500,
+    display: 'flex',
+background: '#2C3E50', // ←統一
   borderBottom: '1px solid #3d566e',
-},
+  },
 
   tabButton: {
     flex: 1,
