@@ -79,7 +79,7 @@ const styles = {
   // 🔥 タブバー
   tabBar: {
     position: 'sticky' as const,
-    top: 0, // LayoutShellのheader分
+    top: 32, // LayoutShellのheader分
     zIndex: 500,
     display: 'flex',
 background: '#2C3E50', // ←統一
