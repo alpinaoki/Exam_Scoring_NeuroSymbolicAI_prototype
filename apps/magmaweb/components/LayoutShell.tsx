@@ -261,7 +261,7 @@ const styles: { [key: string]: CSSProperties } = {
   header: { position: 'fixed', top: 0, left: 0, right: 0, height: 32, display: 'flex', alignItems: 'center', background: BASE_COLOR, zIndex: 1000, cursor: 'pointer', paddingLeft: 16 },
   logo: { fontWeight: 'bold', fontSize: 18, color: '#fff' },
   main: { paddingBottom: 16, 
-    marginTop: 32
+    marginTop: 0
   },
   footer: { position: 'fixed', bottom: 0, left: 0, right: 0, height: 54, display: 'flex', justifyContent: 'space-around', alignItems: 'center', background: BASE_COLOR, zIndex: 1000 },
   icon: { background: 'none', border: 'none', color: '#eee', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0 },
