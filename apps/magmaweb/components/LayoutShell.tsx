@@ -274,7 +274,7 @@ const styles: { [key: string]: CSSProperties } = {
     gap: 12, 
     alignItems: 'center', 
     background: BASE_COLOR, 
-    borderBottom: '1px solid ${BORDER_COLOR}', 
+    borderBottom: `1px solid ${BORDER_COLOR}`,, 
     zIndex: 99999,
     color: '#fff'
   },
