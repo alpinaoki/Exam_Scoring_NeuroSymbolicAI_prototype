@@ -22,7 +22,6 @@ type Props = {
   children: ReactNode
 }
 
-// 🎨 納戸色ベース
 const BASE_COLOR = '#2C3E50'     // メイン
 const SUB_COLOR = '#34495E'      // 少し明るい
 const BORDER_COLOR = '#3d566e'
@@ -48,7 +47,7 @@ export default function LayoutShell({ children }: Props) {
     setTimeout(() => {
       setStep(next)
       setDirection('in')
-    }, 250)
+    }, 250) 
   }
 
   const reset = () => {
@@ -72,12 +71,14 @@ export default function LayoutShell({ children }: Props) {
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
         process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
       )
-      const { data: userData } = await supabase.auth.getUser()
-      const userId = userData.user!.id
+      const { data: userData, error: userError } = await supabase.auth.getUser()
+      if (userError || !userData.user) throw new Error('認証に失敗しました')
+      const userId = userData.user.id
 
       const pUrl = await uploadImageToCloudinary(problemFile)
-
-      const { data: pInserted } = await supabase
+      
+      // 問題画像の投稿
+      const { data: pInserted, error: pError } = await supabase
         .from('posts')
         .insert({
           user_id: userId,
@@ -88,12 +89,13 @@ export default function LayoutShell({ children }: Props) {
         })
         .select('id').single()
 
-      const pId = pInserted!.id
+      if (pError || !pInserted) throw pError
+      const pId = pInserted.id
       await supabase.from('posts').update({ root_id: pId }).eq('id', pId)
 
       if (answerFile) {
         const aUrl = await uploadImageToCloudinary(answerFile)
-        const { data: aInserted } = await supabase
+        const { data: aInserted, error: aError } = await supabase
           .from('posts')
           .insert({
             user_id: userId,
@@ -105,24 +107,29 @@ export default function LayoutShell({ children }: Props) {
           })
           .select('id').single()
 
+        if (aError || !aInserted) throw aError
+        const aId = aInserted.id
+
         if (reactionData) {
-          await supabase.from('reactions').insert({
-            post_id: aInserted!.id,
+          const { error: rError } = await supabase.from('reactions').insert({
+            post_id: aId,
             user_id: userId,
             type: reactionData.type,
             comment: reactionData.comment,
-            x_float: reactionData.x,
+            x_float: reactionData.x, 
             y_float: reactionData.y,
           })
+          if (rError) throw rError
         }
       }
 
       reset()
       router.refresh()
+      // 修正ポイント: 投稿完了後、その問題の個別スレッドページへ移動
       router.push(`/threads/${pId}`)
-
-    } catch (e: any) {
-      alert(e.message)
+      
+    } catch (error: any) {
+      alert('投稿に失敗しました。\n' + (error.message || 'Unknown Error'))
     } finally {
       setUploading(false)
     }
@@ -153,42 +160,95 @@ export default function LayoutShell({ children }: Props) {
           {mounted && createPortal(
             <div style={styles.portalProgressContainer}>
               <button onClick={() => {
-                if (rawFile) setRawFile(null)
-                else if (step > 1) goToStep((step - 1) as any)
-                else reset()
+                  if (rawFile) setRawFile(null); 
+                  else if (step > 1) goToStep((step - 1) as any);
+                  else reset();
               }} style={styles.navBtn}>
                 {isInitialStep ? <X size={24} /> : <ChevronLeft size={28} />}
               </button>
-
               <div style={styles.progressBars}>
                 {[1, 2, 3].map((s) => (
                   <div key={s} style={styles.progressBarBase}>
                     <div style={{
                       ...styles.progressBarFill,
                       width: step > s ? '100%' : step === s ? '10%' : '0%',
+                      opacity: step >= s ? 1 : 0.3
                     }} />
                   </div>
                 ))}
               </div>
-
-              <div style={{ width: 32 }} />
+              <div style={{ width: 32 }} /> 
             </div>,
             document.body
           )}
 
-          <div style={styles.stepContent}>
-            {/* 省略（中身そのままでOK） */}
+          <div className={direction === 'in' ? 'slide-in' : 'slide-out'} style={styles.stepContent}>
+            {step === 1 && (
+              <div style={styles.stepContainer}>
+                {!rawFile ? (
+                  <>
+                    <h2 style={styles.stepTitle}>問題文を撮影</h2>
+                    <button style={styles.mainActionBtn} onClick={() => cameraInputRef.current?.click()}>
+                      <Camera size={24} /> カメラを起動
+                    </button>
+                  </>
+                ) : (
+                  <ImageEditorModal
+                    file={rawFile}
+                    anonymous={isAnonymous}
+                    onAnonymousChange={setIsAnonymous}
+                    onCancel={() => setRawFile(null)}
+                    onConfirm={(editedFile) => {
+                      setProblemFile(editedFile); setRawFile(null); goToStep(2);
+                    }}
+                  />
+                )}
+              </div>
+            )}
+
+            {step === 2 && (
+              <div style={styles.stepContainer}>
+                {!rawFile ? (
+                  <>
+                    <h2 style={styles.stepTitle}>考え方を撮影</h2>
+                    <button style={styles.mainActionBtn} onClick={() => cameraInputRef.current?.click()}>
+                      <Camera size={24} /> カメラを起動
+                    </button>
+                    <button style={styles.skipBtn} onClick={() => handleFinalSubmit()}>
+                      スキップして問題のみで質問を投稿
+                    </button>
+                  </>
+                ) : (
+                  <ImageEditorModal
+                    file={rawFile}
+                    anonymous={isAnonymous}
+                    onAnonymousChange={setIsAnonymous}
+                    onCancel={() => setRawFile(null)}
+                    onConfirm={(editedFile) => {
+                      setAnswerFile(editedFile); setRawFile(null); goToStep(3);
+                    }}
+                    showAnonymous={false}
+                  />
+                )}
+              </div>
+            )}
+
+            {step === 3 && answerFile && (
+              <ReactionEditorModal
+                open={true}
+                imageUrl={URL.createObjectURL(answerFile)}
+                postId="temp"
+                username="me"
+                onClose={(reactionData) => {
+                  if (reactionData) handleFinalSubmit(reactionData);
+                  else goToStep(2);
+                }}
+              />
+            )}
           </div>
 
-          <input
-            ref={cameraInputRef}
-            type="file"
-            accept="image/*"
-            hidden
-            onChange={(e) => {
-              const f = e.target.files?.[0]
-              if (f) setRawFile(f)
-            }}
+          <input ref={cameraInputRef} type="file" accept="image/*" hidden
+            onChange={(e) => { const f = e.target.files?.[0]; if (f) setRawFile(f); }}
           />
         </div>
       )}
@@ -197,87 +257,45 @@ export default function LayoutShell({ children }: Props) {
 }
 
 const styles: { [key: string]: CSSProperties } = {
-  wrapper: {
-    minHeight: '100vh',
-    paddingTop: 32,
-    paddingBottom: 54,
-    background: '#f9fafb', // ← 白ズレ防止
-  },
-
-  header: {
+  wrapper: { minHeight: '100vh', paddingTop: 32, paddingBottom: 54, background: '#fff' },
+  header: { position: 'fixed', top: 0, left: 0, right: 0, height: 32, display: 'flex', alignItems: 'center', background: BASE_COLOR, zIndex: 1000, cursor: 'pointer', paddingLeft: 16 },
+  logo: { fontWeight: 'bold', fontSize: 18, color: '#fff' },
+  main: { paddingBottom: 16 },
+  footer: { position: 'fixed', bottom: 0, left: 0, right: 0, height: 54, display: 'flex', justifyContent: 'space-around', alignItems: 'center', background: BASE_COLOR, zIndex: 1000 },
+  icon: { background: 'none', border: 'none', color: '#eee', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0 },
+  fullOverlay: { position: 'fixed', inset: 0, background: BASE_COLOR, zIndex: 3000, display: 'flex', flexDirection: 'column', color: '#fff' },
+  portalProgressContainer: { 
     position: 'fixed',
     top: 0,
     left: 0,
     right: 0,
-    height: 32,
-    display: 'flex',
-    alignItems: 'center',
-    background: BASE_COLOR,
-    zIndex: 1000,
-    paddingLeft: 16,
-  },
-
-  logo: { color: '#fff', fontWeight: 'bold' },
-
-  main: {
-    paddingBottom: 16,
-  },
-
-  footer: {
-    position: 'fixed',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    height: 54,
-    display: 'flex',
-    justifyContent: 'space-around',
-    alignItems: 'center',
-    background: BASE_COLOR,
-  },
-
-  icon: {
-    background: 'none',
-    border: 'none',
-    color: '#ddd',
-  },
-
-  fullOverlay: {
-    position: 'fixed',
-    inset: 0,
-    background: BASE_COLOR,
-    zIndex: 3000,
-  },
-
-  portalProgressContainer: {
-    position: 'fixed',
-    top: 0,
-    left: 0,
-    right: 0,
-    padding: '12px 16px',
-    display: 'flex',
-    alignItems: 'center',
-    background: BASE_COLOR,
-    borderBottom: `1px solid ${BORDER_COLOR}`,
+    padding: '12px 16px', 
+    display: 'flex', 
+    gap: 12, 
+    alignItems: 'center', 
+    background: BASE_COLOR, 
+    borderBottom: '1px solid ${BORDER_COLOR}', 
     zIndex: 99999,
+    color: '#fff'
   },
-
   progressBars: { flex: 1, display: 'flex', gap: 6 },
-
-  navBtn: { background: 'none', border: 'none', color: '#fff' },
-
-  progressBarBase: {
-    flex: 1,
-    height: 4,
-    background: SUB_COLOR,
-  },
-
-  progressBarFill: {
-    height: '100%',
-    background: '#00aaff',
-  },
-
-  stepContent: {
-    flex: 1,
-    paddingTop: 60,
+  navBtn: { background: 'none', border: 'none', color: '#fff', cursor: 'pointer', padding: 4, display: 'flex', alignItems: 'center', justifyContent: 'center' },
+  progressBarBase: { flex: 1, height: 4, background: '#333', borderRadius: 2, overflow: 'hidden' },
+  progressBarFill: { height: '100%', background: '#00aaff', transition: 'width 0.4s ease' },
+  stepContent: { flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', paddingTop: 60 },
+  stepContainer: { flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '0 32px', textAlign: 'center' },
+  stepTitle: { fontSize: 26, fontWeight: 'bold', marginBottom: 12 },
+  mainActionBtn: { width: '100%', background: '#00aaff', color: '#fff', border: 'none', padding: '20px', borderRadius: '18px', fontSize: 18, fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12, cursor: 'pointer' },
+  skipBtn: { 
+    background: 'rgba(255,255,255,0.05)', 
+    color: '#aaa', 
+    border: '1px solid #444', 
+    padding: '12px 24px',
+    borderRadius: '12px',
+    fontSize: 14, 
+    fontWeight: 'bold',
+    cursor: 'pointer', 
+    marginTop: '24px',
+    transition: 'all 0.2s'
   },
 }
