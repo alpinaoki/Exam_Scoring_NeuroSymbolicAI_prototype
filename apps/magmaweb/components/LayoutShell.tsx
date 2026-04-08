@@ -5,8 +5,8 @@ import { useRef, useState, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import type { ReactNode, CSSProperties } from 'react'
 import { uploadImageToCloudinary } from '../lib/upload'
-import { createPost } from '../lib/posts' // 以前の投稿用関数
-import ImageEditorModal from './ImageEditorModal' // 以前のシンプルなエディタ
+import { createPost } from '../lib/posts'
+import ImageEditorModal from './ImageEditorModal'
 import ImageEditorModalForLS from './ImageEditorModalForLS'
 import ReactionEditorModal from './ReactionEditorModalForLS'
 import {
@@ -18,25 +18,24 @@ import {
   X,
   ChevronLeft,
   Camera,
-  Plus
+  SquarePen // 「問題を書き記す・作成する」イメージのアイコン
 } from 'lucide-react'
 
 type Props = {
   children: ReactNode
 }
 
-const BASE_COLOR = '#2C3E50'     // メイン（納戸色系）
-const SUB_COLOR = '#34495E'      // 少し明るい
+const BASE_COLOR = '#2C3E50'
+const SUB_COLOR = '#34495E'
 const BORDER_COLOR = '#3d566e'
 
 export default function LayoutShell({ children }: Props) {
   const pathname = usePathname()
   const router = useRouter()
   const cameraInputRef = useRef<HTMLInputElement>(null)
-  const simplePostInputRef = useRef<HTMLInputElement>(null) // シンプル投稿用
+  const simplePostInputRef = useRef<HTMLInputElement>(null)
   const [mounted, setMounted] = useState(false)
 
-  // --- ステップ投稿（質問）用ステート ---
   const [step, setStep] = useState<0 | 1 | 2 | 3>(0)
   const [direction, setDirection] = useState<'in' | 'out'>('in') 
   const [rawFile, setRawFile] = useState<File | null>(null)
@@ -45,7 +44,6 @@ export default function LayoutShell({ children }: Props) {
   const [isAnonymous, setIsAnonymous] = useState(false)
   const [uploading, setUploading] = useState(false)
 
-  // --- シンプル投稿（以前の機能）用ステート ---
   const [simpleFile, setSimpleFile] = useState<File | null>(null)
   const [simpleUploading, setSimpleUploading] = useState(false)
 
@@ -71,7 +69,6 @@ export default function LayoutShell({ children }: Props) {
     return <>{children}</>
   }
 
-  // ステップ投稿の最終処理
   const handleFinalSubmit = async (reactionData?: any) => {
     if (!problemFile) return
     setUploading(true)
@@ -153,13 +150,14 @@ export default function LayoutShell({ children }: Props) {
 
       <main style={styles.main}>{children}</main>
 
-      {/* 「おすすめ(feed)」の時だけ表示されるプラスボタン */}
+      {/* 「おすすめ(feed)」の時だけ表示される、純粋な「問題投稿」ボタン */}
       {pathname === '/feed' && (
         <button 
           style={styles.floatingPlus} 
           onClick={() => simplePostInputRef.current?.click()}
         >
-          <Plus size={32} color="#fff" />
+          <SquarePen size={22} color="#fff" />
+          <span style={styles.floatingLabel}>問題を投稿</span>
         </button>
       )}
 
@@ -173,7 +171,6 @@ export default function LayoutShell({ children }: Props) {
         <button style={styles.icon} onClick={() => router.push('/me')}><UserRound size={28} /></button>
       </footer>
 
-      {/* --- ステップ投稿（質問）フロー --- */}
       {step > 0 && (
         <div style={styles.fullOverlay}>
           {mounted && createPortal(
@@ -272,7 +269,6 @@ export default function LayoutShell({ children }: Props) {
         </div>
       )}
 
-      {/* --- シンプル投稿用インプット & モーダル --- */}
       <input
         ref={simplePostInputRef}
         type="file"
@@ -322,22 +318,27 @@ const styles: { [key: string]: CSSProperties } = {
   footer: { position: 'fixed', bottom: 0, left: 0, right: 0, height: 54, display: 'flex', justifyContent: 'space-around', alignItems: 'center', background: BASE_COLOR, zIndex: 1000 },
   icon: { background: 'none', border: 'none', color: '#eee', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0 },
   
-  // 右下のフローティングプラスボタン
   floatingPlus: {
     position: 'fixed',
     right: 20,
-    bottom: 74, // フッター(54px)の上
-    width: 56,
-    height: 56,
-    borderRadius: '28px',
+    bottom: 74,
+    padding: '0 24px',
+    height: 54,
+    borderRadius: '27px',
     background: BASE_COLOR,
-    border: `2px solid ${BORDER_COLOR}`,
-    boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+    border: `1.5px solid ${BORDER_COLOR}`,
+    boxShadow: '0 4px 20px rgba(0,0,0,0.4)',
     display: 'flex',
     alignItems: 'center',
-    justifyContent: 'center',
+    gap: 10,
     zIndex: 2000,
     cursor: 'pointer'
+  },
+  floatingLabel: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+    letterSpacing: '0.05em'
   },
 
   fullOverlay: { position: 'fixed', inset: 0, background: BASE_COLOR, zIndex: 3000, display: 'flex', flexDirection: 'column', color: '#fff' },
