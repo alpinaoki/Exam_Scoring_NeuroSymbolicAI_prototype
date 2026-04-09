@@ -72,6 +72,41 @@ export async function createAnswer({
   if (error) throw error
 }
 
+export async function getQuestionThreads() {
+  const { data, error } = await supabase
+    .from('reactions')
+    .select(`
+      id,
+      type,
+      comment,
+      created_at,
+      post:posts!post_id (
+        id,
+        image_url,
+        type,
+        anonymous,
+        created_at,
+        user_id,
+        profiles ( username ),
+        parent:posts!parent_id (
+          id,
+          image_url,
+          type,
+          anonymous,
+          created_at,
+          label,
+          profiles ( username )
+        )
+      )
+    `)
+    .eq('type', 'question') // 🔥 質問リアクションのみ
+    .order('created_at', { ascending: false });
+
+  if (error) throw error;
+  return data;
+}
+
+
 /**
  * 問題（thread root）を1件取得（投稿者handle付き）
  */

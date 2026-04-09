@@ -5,12 +5,18 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@supabase/supabase-js'
 import LayoutShell from '../../components/LayoutShell'
 import ProblemFeed from '../../components/ProblemFeed'
+import QuestionCard from '../../components/QuestionCard' // 追加
+import { getQuestionThreads } from '../../lib/posts' // 先程追加した関数
 
 export default function FeedPage() {
   const router = useRouter()
 
   // 🔥 タブ状態
   const [tab, setTab] = useState<'recommend' | 'question'>('recommend')
+  
+  // 🔥 質問データ用の状態
+  const [questionThreads, setQuestionThreads] = useState<any[]>([])
+  const [loading, setLoading] = useState(false)
 
   useEffect(() => {
     const supabase = createClient(
@@ -24,6 +30,39 @@ export default function FeedPage() {
       }
     })
   }, [router])
+
+  // 🔥 質問タブが選択された時にデータをフェッチ
+  useEffect(() => {
+    if (tab === 'question') {
+      setLoading(true)
+      getQuestionThreads()
+        .then(data => {
+          // QuestionCardが使いやすい形に整形
+          const formatted = data.map((r: any) => ({
+            problem: {
+              id: r.post.parent.id,
+              image_url: r.post.parent.image_url,
+              username: r.post.parent.profiles?.username || 'unknown',
+              created_at: r.post.parent.created_at,
+              anonymous: r.post.parent.anonymous,
+              label: r.post.parent.label
+            },
+            answer: {
+              id: r.post.id,
+              image_url: r.post.image_url
+            },
+            reactions: [{
+              id: r.id,
+              comment: r.comment,
+              username: r.post.profiles?.username || 'unknown'
+            }]
+          }))
+          setQuestionThreads(formatted)
+        })
+        .catch(err => console.error(err))
+        .finally(() => setLoading(false))
+    }
+  }, [tab])
 
   return (
     <div style={styles.pageWrapper}>
@@ -59,8 +98,16 @@ export default function FeedPage() {
           )}
 
           {tab === 'question' && (
-            <div style={styles.emptyState}>
-              {/* とりあえず空（あとで実装） */}
+            <div style={{ paddingTop: '16px' }}>
+              {loading ? (
+                <div style={styles.emptyState}>読み込み中...</div>
+              ) : questionThreads.length > 0 ? (
+                questionThreads.map((data, idx) => (
+                  <QuestionCard key={idx} data={data} />
+                ))
+              ) : (
+                <div style={styles.emptyState}>進行中の質問はありません。</div>
+              )}
             </div>
           )}
         </div>
@@ -82,8 +129,8 @@ const styles = {
     top: 32, // LayoutShellのheader分
     zIndex: 500,
     display: 'flex',
-background: '#2C3E50', // ←統一
-  borderBottom: '1px solid #3d566e',
+    background: '#2C3E50', // ←統一
+    borderBottom: '1px solid #3d566e',
   },
 
   tabButton: {
@@ -93,7 +140,7 @@ background: '#2C3E50', // ←統一
     border: 'none',
     color: '#888',
     fontSize: 15,
-    fontWeight: 'bold',
+    fontWeight: 'bold' as const,
     cursor: 'pointer',
   },
 
@@ -110,5 +157,9 @@ background: '#2C3E50', // ←統一
 
   emptyState: {
     height: '60vh',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    color: '#999',
   }
 }
