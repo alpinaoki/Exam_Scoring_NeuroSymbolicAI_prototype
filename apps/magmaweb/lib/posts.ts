@@ -76,10 +76,37 @@ export async function createAnswer({
 export async function getQuestionThreads() {
   const { data, error } = await supabase
     .from('reactions')
-    .select('id, type') // リレーションを全部消してIDとタイプだけに
-    .eq('type', 'question'); // DBの値が'Question'ならここを書き換え
+    .select(`
+      id,
+      type,
+      comment,
+      created_at,
+      post:posts!post_id (
+        id,
+        image_url,
+        type,
+        anonymous,
+        created_at,
+        user_id,
+        profiles:profiles!posts_user_id_fkey ( handle ),
+        parent:posts!parent_id (
+          id,
+          image_url,
+          type,
+          anonymous,
+          created_at,
+          label,
+          profiles:profiles!posts_user_id_fkey ( handle )
+        )
+      )
+    `)
+    .eq('type', 'question')
+    .order('created_at', { ascending: false });
 
-  if (error) throw error;
+  if (error) {
+    console.error("Supabase Query Error:", error);
+    throw error;
+  }
   return data;
 }
 

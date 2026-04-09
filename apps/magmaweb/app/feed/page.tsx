@@ -31,39 +31,40 @@ export default function FeedPage() {
     if (tab === 'question') {
       setLoading(true)
       getQuestionThreads()
-        .then(data => {
-          // デバッグ用に生の応答を保存
-          setDebugRawData(data)
+        // feed/page.tsx の useEffect 内、formatted の作成部分を以下に差し替え
+.then(data => {
+  setDebugRawData(data)
+  if (!data) return
 
-          if (!data || data.length === 0) {
-            setQuestionThreads([])
-            return
-          }
-
-          const formatted = data
-            .filter((r: any) => r.post && r.post.parent)
-            .map((r: any) => ({
-              problem: {
-                id: r.post.parent.id,
-                image_url: r.post.parent.image_url,
-                username: r.post.parent.profiles?.handle || 'unknown',
-                created_at: r.post.parent.created_at,
-                anonymous: r.post.parent.anonymous,
-                label: r.post.parent.label
-              },
-              answer: {
-                id: r.post.id,
-                image_url: r.post.image_url
-              },
-              reactions: [{
-                id: r.id,
-                comment: r.comment,
-                username: r.post.profiles?.handle || 'unknown'
-              }]
-            }))
-          
-          setQuestionThreads(formatted)
-        })
+  const formatted = data
+    .filter((r: any) => {
+      // デバッグ：なぜ消えるのかをチェック
+      const hasPost = !!r.post;
+      const hasParent = !!r.post?.parent;
+      return hasPost && hasParent; 
+    })
+    .map((r: any) => ({
+      problem: {
+        id: r.post.parent.id,
+        image_url: r.post.parent.image_url,
+        username: r.post.parent.profiles?.handle || 'unknown',
+        created_at: r.post.parent.created_at,
+        anonymous: r.post.parent.anonymous,
+        label: r.post.parent.label
+      },
+      answer: {
+        id: r.post.id,
+        image_url: r.post.image_url
+      },
+      reactions: [{
+        id: r.id,
+        comment: r.comment,
+        username: r.post.profiles?.handle || 'unknown'
+      }]
+    }))
+  
+  setQuestionThreads(formatted)
+})
         .catch(err => console.error("Fetch Error:", err))
         .finally(() => setLoading(false))
     }
