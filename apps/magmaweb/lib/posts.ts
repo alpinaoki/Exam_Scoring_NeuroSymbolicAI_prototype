@@ -88,7 +88,7 @@ export async function getQuestionThreads() {
         anonymous,
         created_at,
         user_id,
-        profiles:profiles!posts_user_id_fkey ( handle ),
+        profiles:profiles!user_id ( handle ),
         parent:posts!parent_id (
           id,
           image_url,
@@ -96,7 +96,7 @@ export async function getQuestionThreads() {
           anonymous,
           created_at,
           label,
-          profiles:profiles!posts_user_id_fkey ( handle )
+          profiles:profiles!user_id ( handle )
         )
       )
     `)

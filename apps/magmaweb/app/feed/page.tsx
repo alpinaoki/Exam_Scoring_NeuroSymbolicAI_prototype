@@ -31,18 +31,16 @@ export default function FeedPage() {
     if (tab === 'question') {
       setLoading(true)
       getQuestionThreads()
-        // feed/page.tsx の useEffect 内、formatted の作成部分を以下に差し替え
+// useEffect 内の .then(data => { ... }) の中身をこちらに差し替え
 .then(data => {
-  setDebugRawData(data)
-  if (!data) return
+  setDebugRawData(data);
+  if (!data || data.length === 0) {
+    setQuestionThreads([]);
+    return;
+  }
 
   const formatted = data
-    .filter((r: any) => {
-      // デバッグ：なぜ消えるのかをチェック
-      const hasPost = !!r.post;
-      const hasParent = !!r.post?.parent;
-      return hasPost && hasParent; 
-    })
+    .filter((r: any) => r.post && r.post.parent) // 親(問題)と解答が両方取れたものだけ表示
     .map((r: any) => ({
       problem: {
         id: r.post.parent.id,
@@ -61,9 +59,9 @@ export default function FeedPage() {
         comment: r.comment,
         username: r.post.profiles?.handle || 'unknown'
       }]
-    }))
+    }));
   
-  setQuestionThreads(formatted)
+  setQuestionThreads(formatted);
 })
         .catch(err => console.error("Fetch Error:", err))
         .finally(() => setLoading(false))
