@@ -34,14 +34,14 @@ export default function FeedPage() {
 // useEffect 内の .then(data => { ... }) 部分
 // feed/page.tsx の .then(data => { ... }) 内
 .then(data => {
-  setDebugRawData(data);
+  setDebugRawData(data); // 念のためまだ残しておきます
   if (!data || data.length === 0) {
     setQuestionThreads([]);
     return;
   }
 
   const formatted = data
-    .filter((r: any) => r.post && r.post.parent) 
+    .filter((r: any) => r.post && r.post.parent) // ここで「post」がnullなら弾かれます
     .map((r: any) => ({
       problem: {
         id: r.post.parent.id,
