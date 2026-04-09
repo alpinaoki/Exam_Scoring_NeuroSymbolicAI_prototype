@@ -5,19 +5,20 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@supabase/supabase-js'
 import LayoutShell from '../../components/LayoutShell'
 import ProblemFeed from '../../components/ProblemFeed'
-import QuestionCard from '../../components/QuestionCard' // 追加
-import { getQuestionThreads } from '../../lib/posts' // 先程追加した関数
+import QuestionCard from '../../components/QuestionCard'
+import { getQuestionThreads } from '../../lib/posts'
 
 export default function FeedPage() {
   const router = useRouter()
 
-  // 🔥 タブ状態
+  // タブ状態
   const [tab, setTab] = useState<'recommend' | 'question'>('recommend')
   
-  // 🔥 質問データ用の状態
+  // 質問データ用の状態
   const [questionThreads, setQuestionThreads] = useState<any[]>([])
   const [loading, setLoading] = useState(false)
 
+  // 1. 認証チェック（現状維持）
   useEffect(() => {
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -31,35 +32,43 @@ export default function FeedPage() {
     })
   }, [router])
 
-  // 🔥 質問タブが選択された時にデータをフェッチ
+  // 2. 質問タブが選択された時にデータを取得
   useEffect(() => {
     if (tab === 'question') {
       setLoading(true)
       getQuestionThreads()
         .then(data => {
-          // QuestionCardが使いやすい形に整形
-          const formatted = data.map((r: any) => ({
-            problem: {
-              id: r.post.parent.id,
-              image_url: r.post.parent.image_url,
-              username: r.post.parent.profiles?.username || 'unknown',
-              created_at: r.post.parent.created_at,
-              anonymous: r.post.parent.anonymous,
-              label: r.post.parent.label
-            },
-            answer: {
-              id: r.post.id,
-              image_url: r.post.image_url
-            },
-            reactions: [{
-              id: r.id,
-              comment: r.comment,
-              username: r.post.profiles?.username || 'unknown'
-            }]
-          }))
+          if (!data) return
+
+          // Supabaseのネストされた構造を QuestionCard 用に整形
+          const formatted = data
+            .filter((r: any) => r.post && r.post.parent) // 親(問題)が存在するものだけに絞る
+            .map((r: any) => ({
+              problem: {
+                id: r.post.parent.id,
+                image_url: r.post.parent.image_url,
+                // username ではなく handle を参照するように修正
+                username: r.post.parent.profiles?.handle || 'unknown',
+                created_at: r.post.parent.created_at,
+                anonymous: r.post.parent.anonymous,
+                label: r.post.parent.label
+              },
+              answer: {
+                id: r.post.id,
+                image_url: r.post.image_url
+              },
+              reactions: [{
+                id: r.id,
+                comment: r.comment,
+                username: r.post.profiles?.handle || 'unknown'
+              }]
+            }))
+          
           setQuestionThreads(formatted)
         })
-        .catch(err => console.error(err))
+        .catch(err => {
+          console.error("Fetch Error:", err)
+        })
         .finally(() => setLoading(false))
     }
   }, [tab])
@@ -103,7 +112,7 @@ export default function FeedPage() {
                 <div style={styles.emptyState}>読み込み中...</div>
               ) : questionThreads.length > 0 ? (
                 questionThreads.map((data, idx) => (
-                  <QuestionCard key={idx} data={data} />
+                  <QuestionCard key={`${data.problem.id}-${idx}`} data={data} />
                 ))
               ) : (
                 <div style={styles.emptyState}>進行中の質問はありません。</div>
@@ -122,17 +131,14 @@ const styles = {
     backgroundColor: '#f9fafb',
     minHeight: '100vh',
   },
-
-  // 🔥 タブバー
   tabBar: {
     position: 'sticky' as const,
-    top: 32, // LayoutShellのheader分
+    top: 32, 
     zIndex: 500,
     display: 'flex',
-    background: '#2C3E50', // ←統一
+    background: '#2C3E50',
     borderBottom: '1px solid #3d566e',
   },
-
   tabButton: {
     flex: 1,
     padding: '12px 0',
@@ -143,18 +149,15 @@ const styles = {
     fontWeight: 'bold' as const,
     cursor: 'pointer',
   },
-
   activeTab: {
     color: '#fff',
     borderBottom: '2px solid #00aaff',
   },
-
   feedContainer: {
     maxWidth: '600px',
     margin: '0 auto',
     padding: '0 12px 100px 12px',
   },
-
   emptyState: {
     height: '60vh',
     display: 'flex',
