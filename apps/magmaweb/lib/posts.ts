@@ -81,7 +81,7 @@ export async function getQuestionThreads() {
       type,
       comment,
       created_at,
-      post:posts!post_id (
+      post:posts!reactions_post_id_fkey (
         id,
         image_url,
         type,
