@@ -32,35 +32,35 @@ export default function FeedPage() {
       setLoading(true)
       getQuestionThreads()
 // useEffect 内の .then(data => { ... }) 部分
+// feed/page.tsx の .then(data => { ... }) 内
 .then(data => {
-  console.log("Raw Data from DB:", data);
   setDebugRawData(data);
-
   if (!data || data.length === 0) {
     setQuestionThreads([]);
     return;
   }
 
-  // 結合が一部失敗していても、存在するデータだけでカードを作る
-  const formatted = data.map((r: any) => ({
-    problem: {
-      id: r.post?.parent?.id || 'no-id',
-      image_url: r.post?.parent?.image_url || '',
-      username: r.post?.parent?.profiles?.handle || 'unknown',
-      created_at: r.post?.parent?.created_at || r.created_at,
-      anonymous: r.post?.parent?.anonymous || false,
-      label: r.post?.parent?.label || '質問内容の取得失敗'
-    },
-    answer: {
-      id: r.post?.id || 'no-id',
-      image_url: r.post?.image_url || ''
-    },
-    reactions: [{
-      id: r.id,
-      comment: r.comment,
-      username: r.post?.profiles?.handle || 'unknown'
-    }]
-  }));
+  const formatted = data
+    .filter((r: any) => r.post && r.post.parent) 
+    .map((r: any) => ({
+      problem: {
+        id: r.post.parent.id,
+        image_url: r.post.parent.image_url,
+        username: r.post.parent.profiles?.handle || 'unknown',
+        created_at: r.post.parent.created_at,
+        anonymous: r.post.parent.anonymous,
+        label: r.post.parent.label
+      },
+      answer: {
+        id: r.post.id,
+        image_url: r.post.image_url
+      },
+      reactions: [{
+        id: r.id,
+        comment: r.comment,
+        username: r.post.profiles?.handle || 'unknown'
+      }]
+    }));
   
   setQuestionThreads(formatted);
 })

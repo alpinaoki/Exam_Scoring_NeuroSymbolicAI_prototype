@@ -74,34 +74,40 @@ export async function createAnswer({
 
 // lib/posts.ts (テスト用：これで件数が出るか確認)
 export async function getQuestionThreads() {
-  // 結合を一切せず、まずは reactions だけ取る
   const { data, error } = await supabase
     .from('reactions')
-    .select('*')
+    .select(`
+      id,
+      type,
+      comment,
+      created_at,
+      post:posts!post_id (
+        id,
+        image_url,
+        type,
+        anonymous,
+        created_at,
+        user_id,
+        profiles:profiles!posts_user_id_fkey ( handle ),
+        parent:posts!parent_id (
+          id,
+          image_url,
+          type,
+          anonymous,
+          created_at,
+          label,
+          profiles:profiles!posts_user_id_fkey ( handle )
+        )
+      )
+    `)
     .eq('type', 'question')
     .order('created_at', { ascending: false });
 
-  if (error) throw error;
-
-  // 各 reaction に紐づく post と parent を個別に追加取得する（確実な方法）
-  const enrichedData = await Promise.all(data.map(async (r) => {
-    const { data: post } = await supabase
-      .from('posts')
-      .select(`
-        *,
-        profiles:profiles!user_id ( handle ),
-        parent:posts!parent_id (
-          *,
-          profiles:profiles!user_id ( handle )
-        )
-      `)
-      .eq('id', r.post_id)
-      .single();
-    
-    return { ...r, post };
-  }));
-
-  return enrichedData;
+  if (error) {
+    console.error("Supabase Query Error:", error);
+    throw error;
+  }
+  return data;
 }
 
 
