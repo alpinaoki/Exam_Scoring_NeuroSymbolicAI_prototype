@@ -87,7 +87,7 @@ export async function getQuestionThreads() {
         anonymous,
         created_at,
         user_id,
-        profiles ( username ),
+        profiles:profiles!posts_user_id_fkey ( handle ),
         parent:posts!parent_id (
           id,
           image_url,
@@ -95,14 +95,17 @@ export async function getQuestionThreads() {
           anonymous,
           created_at,
           label,
-          profiles ( username )
+          profiles:profiles!posts_user_id_fkey ( handle )
         )
       )
     `)
-    .eq('type', 'question') // 🔥 質問リアクションのみ
+    .eq('type', 'question')
     .order('created_at', { ascending: false });
 
-  if (error) throw error;
+  if (error) {
+    console.error("Supabase Query Error:", error);
+    throw error;
+  }
   return data;
 }
 
