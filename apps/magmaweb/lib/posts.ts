@@ -74,40 +74,65 @@ export async function createAnswer({
 
 // lib/posts.ts (テスト用：これで件数が出るか確認)
 export async function getQuestionThreads() {
-  const { data, error } = await supabase
+  // ① まず reactions を取得（ここまでは確実に 7件 取れる）
+  const { data: reactions, error: rError } = await supabase
     .from('reactions')
-    .select(`
-      id,
-      type,
-      comment,
-      created_at,
-      post:posts!reactions_post_id_fkey (
-        id,
-        image_url,
-        type,
-        anonymous,
-        created_at,
-        user_id,
-        profiles:profiles!posts_user_id_fkey ( handle ),
-        parent:posts!parent_id (
-          id,
-          image_url,
-          type,
-          anonymous,
-          created_at,
-          label,
-          profiles:profiles!posts_user_id_fkey ( handle )
-        )
-      )
-    `)
+    .select('*')
     .eq('type', 'question')
     .order('created_at', { ascending: false });
 
-  if (error) {
-    console.error("Supabase Query Error:", error);
-    throw error;
-  }
-  return data;
+  if (rError) throw rError;
+  if (!reactions || reactions.length === 0) return [];
+
+  // ② 反応が付いている「解答投稿(post)」の情報をまとめて取得
+  // getProblemById などの select 文の書き方を参考にしています
+  const postIds = reactions.map(r => r.post_id);
+  const { data: posts, error: pError } = await supabase
+    .from('posts')
+    .select(`
+      id,
+      image_url,
+      type,
+      anonymous,
+      created_at,
+      user_id,
+      parent_id,
+      profiles ( handle )
+    `)
+    .in('id', postIds);
+
+  if (pError) throw pError;
+
+  // ③ 解答投稿の親である「問題投稿(parent)」をまとめて取得
+  const parentIds = posts?.map(p => p.parent_id).filter(Boolean) || [];
+  const { data: parents, error: parError } = await supabase
+    .from('posts')
+    .select(`
+      id,
+      image_url,
+      type,
+      anonymous,
+      created_at,
+      label,
+      profiles ( handle )
+    `)
+    .in('id', parentIds);
+
+  if (parError) throw parError;
+
+  // ④ 最後にJS側で、reaction -> post -> parent のツリーを作る
+  return reactions.map(r => {
+    const post = posts?.find(p => p.id === r.post_id);
+    const parent = parents?.find(p => p.id === post?.parent_id);
+    
+    return {
+      ...r,
+      post: post ? {
+        ...post,
+        parent: parent || null
+      } : null
+    };
+  });
 }
 
 
