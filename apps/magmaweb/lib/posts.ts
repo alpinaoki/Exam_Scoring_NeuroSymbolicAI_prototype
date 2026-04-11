@@ -73,19 +73,25 @@ export async function createAnswer({
 }
 
 // lib/posts.ts (テスト用：これで件数が出るか確認)
-export async function getQuestionThreads() {
-  // ① まず reactions を取得（ここまでは確実に 7件 取れる）
-  const { data: reactions, error: rError } = await supabase
+export async function getQuestionThreads(reactionId?: string) { // ★引数を追加
+  // ① まず reactions を取得
+  let query = supabase
     .from('reactions')
     .select('*')
-    .eq('type', 'question')
+    .eq('type', 'question');
+
+  // ★詳細ページ用のID指定があれば絞り込む
+  if (reactionId) {
+    query = query.eq('id', reactionId);
+  }
+
+  const { data: reactions, error: rError } = await query
     .order('created_at', { ascending: false });
 
   if (rError) throw rError;
   if (!reactions || reactions.length === 0) return [];
 
-  // ② 反応が付いている「解答投稿(post)」の情報をまとめて取得
-  // getProblemById などの select 文の書き方を参考にしています
+  // ② 解答投稿(post)の情報を取得（ここは既存のまま）
   const postIds = reactions.map(r => r.post_id);
   const { data: posts, error: pError } = await supabase
     .from('posts')
@@ -103,7 +109,7 @@ export async function getQuestionThreads() {
 
   if (pError) throw pError;
 
-  // ③ 解答投稿の親である「問題投稿(parent)」をまとめて取得
+  // ③ 解答投稿の親である「問題投稿(parent)」を取得（ここも既存のまま）
   const parentIds = posts?.map(p => p.parent_id).filter(Boolean) || [];
   const { data: parents, error: parError } = await supabase
     .from('posts')
@@ -120,7 +126,7 @@ export async function getQuestionThreads() {
 
   if (parError) throw parError;
 
-  // ④ 最後にJS側で、reaction -> post -> parent のツリーを作る
+  // ④ ツリー作成（ここも既存のまま）
   return reactions.map(r => {
     const post = posts?.find(p => p.id === r.post_id);
     const parent = parents?.find(p => p.id === post?.parent_id);
@@ -134,7 +140,6 @@ export async function getQuestionThreads() {
     };
   });
 }
-
 
 /**
  * 問題（thread root）を1件取得（投稿者handle付き）
