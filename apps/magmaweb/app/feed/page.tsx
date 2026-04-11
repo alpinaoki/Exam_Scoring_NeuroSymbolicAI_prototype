@@ -109,7 +109,7 @@ export default function FeedPage() {
 
 const styles = {
   pageWrapper: { backgroundColor: '#f9fafb', minHeight: '100vh' },
-  tabBar: { position: 'sticky' as const, top: 0, zIndex: 500, display: 'flex', background: '#2C3E50', borderBottom: '1px solid #3d566e' },
+  tabBar: { position: 'sticky' as const, top: 32, zIndex: 500, display: 'flex', background: '#2C3E50', borderBottom: '1px solid #3d566e' },
   tabButton: { flex: 1, padding: '12px 0', background: 'none', border: 'none', color: '#888', fontSize: 15, fontWeight: 'bold' as const, cursor: 'pointer', outline: 'none' },
   activeTab: { color: '#fff', borderBottom: '2px solid #00aaff' },
   feedContainer: { maxWidth: '600px', margin: '0 auto', padding: '0 12px 100px 12px' },
