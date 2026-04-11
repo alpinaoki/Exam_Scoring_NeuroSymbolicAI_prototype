@@ -2,6 +2,7 @@
 
 import { CSSProperties, useState, useEffect } from 'react'
 import { MessageCircle, ChevronRight, Tag } from 'lucide-react'
+import Link from 'next/link'
 import UserBadge from './UserBadge'
 import { formatDateTime } from '../lib/time'
 
@@ -37,13 +38,12 @@ export default function QuestionCard({ data }: Props) {
   const [firstMessage, setFirstMessage] = useState<QuestionMessage | null>(null)
 
   useEffect(() => {
-    // 最初の質問（reactions[0]）の最初のコメントを目立たせる
+    // 最初のリアクションの最初のコメントを目立たせる
     const firstReaction = reactions[0]
     if (firstReaction?.comment) {
       try {
         const json = JSON.parse(firstReaction.comment)
         if (Array.isArray(json) && json.length > 0) {
-          // 配列の先頭（最初の質問メッセージ）を取得
           setFirstMessage(json[0])
         }
       } catch (e) {
@@ -53,10 +53,11 @@ export default function QuestionCard({ data }: Props) {
   }, [reactions])
 
   const displayName = problem.anonymous ? 'Anonymous' : problem.username
+  const threadId = reactions[0]?.id
 
   return (
     <div style={styles.card}>
-      {/* 1. ヘッダー：ユーザー情報と控えめなタグ */}
+      {/* 1. ヘッダー：ユーザー情報 */}
       <div style={styles.header}>
         <div style={styles.userInfo}>
           <UserBadge username={displayName} size={18} />
@@ -71,7 +72,7 @@ export default function QuestionCard({ data }: Props) {
         )}
       </div>
 
-      {/* 2. 質問内容（ここを一番目立たせる） */}
+      {/* 2. 質問内容 */}
       <div style={styles.questionSection}>
         {firstMessage ? (
           <div style={styles.mainQuote}>
@@ -83,7 +84,7 @@ export default function QuestionCard({ data }: Props) {
         )}
       </div>
 
-      {/* 3. 画像：縦に並べる */}
+      {/* 3. 画像セクション */}
       <div style={styles.imageStack}>
         <div style={styles.imageWrapper}>
           <span style={styles.imageLabel}>問題</span>
@@ -95,13 +96,22 @@ export default function QuestionCard({ data }: Props) {
         </div>
       </div>
 
-      {/* 4. フッターアクション */}
+      {/* 4. フッターアクション：詳細ページへのリンク */}
       <div style={styles.footer}>
-        <button style={styles.moreBtn}>
-          <MessageCircle size={16} />
-          スレッドで詳しく見る・回答する 
-          <ChevronRight size={16} />
-        </button>
+        {threadId ? (
+          <Link href={`/question/${threadId}`} style={{ textDecoration: 'none' }}>
+            <button style={styles.moreBtn}>
+              <MessageCircle size={16} />
+              スレッドで詳しく見る・回答する 
+              <ChevronRight size={16} />
+            </button>
+          </Link>
+        ) : (
+          <div style={styles.disabledBtn}>
+            <MessageCircle size={16} />
+            スレッドを取得中...
+          </div>
+        )}
       </div>
     </div>
   )
@@ -124,5 +134,6 @@ const styles: { [key: string]: CSSProperties } = {
   img: { width: '100%', height: 'auto', display: 'block' },
   footer: { padding: '16px 20px' },
   moreBtn: { width: '100%', padding: '14px', background: '#4D96FF10', border: 'none', borderRadius: '16px', color: '#4D96FF', fontSize: '14px', fontWeight: '800', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, cursor: 'pointer', transition: '0.2s' },
+  disabledBtn: { width: '100%', padding: '14px', background: '#f5f5f5', borderRadius: '16px', color: '#ccc', fontSize: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 },
   noReaction: { fontSize: '13px', color: '#aaa' }
 }
