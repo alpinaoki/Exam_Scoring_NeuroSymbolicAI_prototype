@@ -16,19 +16,16 @@ export default function ThreadPage() {
 
   useEffect(() => {
     if (id) {
-      // 既存のロジックで取得（1件でも配列で返る）
       getQuestionThreads(id as string).then(results => {
         if (results && results.length > 0) {
           const item = results[0]
           setThreadItem(item)
           
-          // メッセージのパース
           try {
             const json = JSON.parse(item.comment || '[]')
             setMessages(Array.isArray(json) ? json : [])
           } catch {
-            // JSONじゃない場合（古いデータなど）のフォールバック
-            setMessages([{ username: item.post?.profiles?.handle || 'unknown', content: item.comment }])
+            setMessages([{ username: item.profiles?.handle || 'unknown', content: item.comment }])
           }
         }
       })
@@ -39,7 +36,6 @@ export default function ThreadPage() {
     return <div style={{ padding: '40px', textAlign: 'center', color: '#888' }}>スレッドを読み込み中...</div>
   }
 
-  // QuestionCard.tsx の Props 構造に合わせる
   const cardData = {
     problem: {
       id: threadItem.post.parent.id,
@@ -53,7 +49,11 @@ export default function ThreadPage() {
       id: threadItem.post.id,
       image_url: threadItem.post.image_url
     },
-    reactions: [threadItem]
+    reactions: [{
+      ...threadItem,
+      // ユーザー名を QuestionCard が期待するプロパティに合わせる
+      username: threadItem.profiles?.handle || 'unknown'
+    }]
   }
 
   const handleSend = async () => {

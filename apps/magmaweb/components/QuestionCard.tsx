@@ -40,8 +40,7 @@ export default function QuestionCard({ data }: Props) {
   const { problem, answer, reactions } = data
   const [firstMessage, setFirstMessage] = useState<QuestionMessage | null>(null)
 
-  // 起点となるリアクションデータ（ピンの座標はこのデータを使う）
-  const rootReaction = reactions[0]
+  const rootReaction = reactions && reactions.length > 0 ? reactions[0] : null
 
   useEffect(() => {
     if (rootReaction?.comment) {
@@ -51,27 +50,26 @@ export default function QuestionCard({ data }: Props) {
           setFirstMessage(json[0])
         }
       } catch (e) {
-        setFirstMessage({ username: rootReaction.username, content: rootReaction.comment })
+        setFirstMessage({ username: rootReaction.username || 'unknown', content: rootReaction.comment })
       }
     }
   }, [rootReaction])
 
-  const displayName = rootReaction?.username || 'unknown'
+  // ユーザー名の確定
+  const displayName = rootReaction?.username && rootReaction.username !== 'unknown' 
+    ? rootReaction.username 
+    : (problem.username || 'unknown')
+
   const createdAt = rootReaction?.created_at || problem.created_at
   const threadId = rootReaction?.id
 
-  const pinIcon = (
-    <HelpCircle 
-      size={20} 
-      fill="#99E6FF" 
-      stroke="#444" 
-      strokeWidth={1.2} 
-    />
-  )
+  // 座標の取得（数値に強制変換）
+  const x = rootReaction ? parseFloat(String(rootReaction.x_float)) : 0
+  const y = rootReaction ? parseFloat(String(rootReaction.y_float)) : 0
+  const hasValidPos = rootReaction && !isNaN(x) && !isNaN(y)
 
   return (
     <div style={styles.card}>
-      {/* 1. ヘッダー */}
       <div style={styles.header}>
         <div style={styles.userInfo}>
           <UserBadge username={displayName} size={20} />
@@ -88,7 +86,6 @@ export default function QuestionCard({ data }: Props) {
         )}
       </div>
 
-      {/* 2. 質問内容 */}
       <div style={styles.questionSection}>
         {firstMessage ? (
           <p style={styles.questionText}>{firstMessage.content}</p>
@@ -97,45 +94,29 @@ export default function QuestionCard({ data }: Props) {
         )}
       </div>
 
-      {/* 3. 画像セクション */}
       <div style={styles.imageStack}>
-        
-        {/* 問題画像：横幅いっぱい、余白なし */}
         <div style={styles.imageBlock}>
-          <div style={styles.labelRow}>
-            <span style={styles.imageLabel}>問題</span>
-          </div>
+          <div style={styles.labelRow}><span style={styles.imageLabel}>問題</span></div>
           <div style={styles.imageContainerFree}>
             <img src={problem.image_url} alt="Problem" style={styles.fullWidthImg} />
           </div>
         </div>
 
-        {/* 考え方画像：ピンの座標を画像に同期 */}
         <div style={styles.imageBlock}>
-          <div style={styles.labelRow}>
-            <span style={styles.imageLabel}>考え方（解答）</span>
-          </div>
-          
+          <div style={styles.labelRow}><span style={styles.imageLabel}>考え方（解答）</span></div>
           <div style={styles.imageContainerFree}>
             {threadId ? (
               <Link href={`/question/${threadId}`} style={styles.relativeLink}>
-                <img 
-                  src={answer.image_url} 
-                  alt="My Answer" 
-                  style={styles.fullWidthImg} 
-                  draggable={false} 
-                />
-                
-                {/* 画像に対して相対位置で配置 */}
-                {rootReaction && (
+                <img src={answer.image_url} alt="My Answer" style={styles.fullWidthImg} draggable={false} />
+                {hasValidPos && (
                   <div
                     style={{
                       ...styles.reactionPin,
-                      left: `${rootReaction.x_float * 100}%`,
-                      top: `${rootReaction.y_float * 100}%`,
+                      left: `${x * 100}%`,
+                      top: `${y * 100}%`,
                     }}
                   >
-                    {pinIcon}
+                    <HelpCircle size={20} fill="#99E6FF" stroke="#444" strokeWidth={1.2} />
                   </div>
                 )}
               </Link>
@@ -146,7 +127,6 @@ export default function QuestionCard({ data }: Props) {
         </div>
       </div>
 
-      {/* 4. フッター */}
       <div style={styles.footer}>
         {threadId ? (
           <Link href={`/question/${threadId}`} style={{ textDecoration: 'none' }}>
@@ -181,40 +161,10 @@ const styles: { [key: string]: CSSProperties } = {
   imageBlock: { display: 'flex', flexDirection: 'column', gap: '8px' },
   labelRow: { padding: '0 8px' },
   imageLabel: { background: '#f0f2f5', color: '#4d545d', fontSize: '11px', padding: '4px 10px', borderRadius: '8px', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.05em' },
-  
-  // 余白を消すため、高さを指定せず「中身（画像）なり」にする
-  imageContainerFree: { 
-    width: '100%', 
-    borderRadius: '16px', 
-    overflow: 'hidden', 
-    border: '1px solid #f0f0f0',
-    background: '#fff', // 背景を白にして黒帯を追放
-  },
-
-  // Linkを画像と全く同じサイズにする（ピンの座標計算のベース）
-  relativeLink: { 
-    position: 'relative', 
-    display: 'block', 
-    width: '100%',
-    textDecoration: 'none' 
-  },
-
-  // 画像を横幅マックスにし、高さはアスペクト比を維持
-  fullWidthImg: { 
-    width: '100%',
-    height: 'auto',
-    display: 'block'
-  },
-  
-  // ピン：親要素の Link に対して絶対座標で配置
-  reactionPin: { 
-    position: 'absolute', 
-    transform: 'translate(-50%, -50%)', 
-    zIndex: 10, 
-    filter: 'drop-shadow(0 2px 5px rgba(0,0,0,0.3))',
-    pointerEvents: 'none' // Linkのクリックを邪魔しない場合。クリックさせたければ削除
-  },
-
+  imageContainerFree: { width: '100%', borderRadius: '16px', overflow: 'hidden', border: '1px solid #f0f0f0', background: '#fff' },
+  relativeLink: { position: 'relative', display: 'block', width: '100%', textDecoration: 'none' },
+  fullWidthImg: { width: '100%', height: 'auto', display: 'block' },
+  reactionPin: { position: 'absolute', transform: 'translate(-50%, -50%)', zIndex: 10, filter: 'drop-shadow(0 2px 5px rgba(0,0,0,0.3))', pointerEvents: 'none' },
   footer: { padding: '16px 20px 20px' },
   moreBtn: { width: '100%', padding: '16px', background: '#4D96FF10', border: 'none', borderRadius: '18px', color: '#4D96FF', fontSize: '15px', fontWeight: '800', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, cursor: 'pointer' },
   btnArrow: { opacity: 0.7 },

@@ -14,7 +14,6 @@ export default function FeedPage() {
   const [questionThreads, setQuestionThreads] = useState<any[]>([])
   const [loading, setLoading] = useState(false)
 
-  // 1. 認証チェック
   useEffect(() => {
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -25,13 +24,12 @@ export default function FeedPage() {
     })
   }, [router])
 
-  // 2. 質問スレッドの取得
   useEffect(() => {
     if (tab === 'question') {
       setLoading(true)
       getQuestionThreads()
         .then(data => {
-          if (!data || data.length === 0) {
+          if (!data) {
             setQuestionThreads([])
             return
           }
@@ -54,7 +52,12 @@ export default function FeedPage() {
               reactions: [{
                 id: r.id,
                 comment: r.comment,
-                username: r.post.profiles?.handle || 'unknown'
+                // 正しいユーザー名をセット
+                username: r.post.profiles?.handle || 'unknown',
+                created_at: r.created_at,
+                // 座標もしっかり渡す
+                x_float: r.x_float,
+                y_float: r.y_float
               }]
             }))
           
@@ -68,7 +71,6 @@ export default function FeedPage() {
   return (
     <div style={styles.pageWrapper}>
       <LayoutShell>
-        {/* タブ切り替え */}
         <div style={styles.tabBar}>
           <button 
             onClick={() => setTab('recommend')} 
@@ -84,7 +86,6 @@ export default function FeedPage() {
           </button>
         </div>
 
-        {/* フィード本体 */}
         <div style={styles.feedContainer}>
           {tab === 'recommend' && <ProblemFeed />}
 
