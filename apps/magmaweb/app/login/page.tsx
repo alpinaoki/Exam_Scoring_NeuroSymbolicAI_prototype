@@ -14,6 +14,51 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
 
+  // ⭐ 数学系スライド
+  const slides = [
+    {
+      title: '他の人の解き方が見れる',
+      desc: 'いろんな考え方を知ることができる',
+      img: 'https://images.unsplash.com/photo-1635070041078-e363dbe005cb'
+    },
+    {
+      title: '間違いも価値になる',
+      desc: '誤答から弱点やクセが分かる',
+      img: 'https://images.unsplash.com/photo-1509228468518-180dd4864904'
+    },
+    {
+      title: 'どこが大事か分かる',
+      desc: '⭐︎・！・？でポイントが見える',
+      img: 'https://images.unsplash.com/photo-1516542076529-1ea3854896f2'
+    },
+    {
+      title: '自分の成長が見える',
+      desc: '過去の解答を振り返れる',
+      img: 'https://images.unsplash.com/photo-1526378722484-bd91ca387e72'
+    },
+  ]
+
+  const [current, setCurrent] = useState(0)
+  const [touchStart, setTouchStart] = useState<number | null>(null)
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    setTouchStart(e.touches[0].clientX)
+  }
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (touchStart === null) return
+    const touchEnd = e.changedTouches[0].clientX
+    const diff = touchStart - touchEnd
+
+    if (diff > 50 && current < slides.length - 1) {
+      setCurrent(current + 1)
+    } else if (diff < -50 && current > 0) {
+      setCurrent(current - 1)
+    }
+
+    setTouchStart(null)
+  }
+
   async function handleSubmit() {
     setError(null)
     setLoading(true)
@@ -33,55 +78,61 @@ export default function LoginPage() {
 
   return (
     <div style={styles.page}>
-      <style>{`
-        @keyframes flow {
-          0% { transform: translate(-10%, -10%) scale(1); opacity: 0.4; }
-          50% { transform: translate(10%, 15%) scale(1.1); opacity: 0.7; }
-          100% { transform: translate(-10%, -10%) scale(1); opacity: 0.4; }
-        }
-        @keyframes pulse {
-          0% { box-shadow: 0 0 15px rgba(255, 174, 0, 0.2); }
-          50% { box-shadow: 0 0 30px rgba(255, 0, 89, 0.23); }
-          100% { box-shadow: 0 0 15px rgba(255, 174, 0, 0.2); }
-        }
-      `}</style>
-
-      {/* 背景の動的な光の演出 */}
-      <div style={styles.blob}></div>
-      <div style={{...styles.blob, ...styles.blob2}}></div>
-      <div style={{...styles.blob, ...styles.blob3}}></div>
-
       <div style={styles.card}>
-        <header style={styles.header}>
-          <h1 style={styles.titleContainer}>
-            {"MAGMATHE".split("").map((char, i) => (
-              <span key={i} style={styles.titleChar}>{char}</span>
+
+        {/* スライド */}
+        <div
+          style={{
+            ...styles.slider,
+            backgroundImage: `
+              linear-gradient(rgba(0,0,0,0.55), rgba(0,0,0,0.8)),
+              url(${slides[current].img})
+            `
+          }}
+          onTouchStart={handleTouchStart}
+          onTouchEnd={handleTouchEnd}
+        >
+          <div style={styles.slideContent}>
+            <h2 style={styles.slideTitle}>{slides[current].title}</h2>
+            <p style={styles.slideDesc}>{slides[current].desc}</p>
+          </div>
+
+          <div style={styles.dots}>
+            {slides.map((_, i) => (
+              <span
+                key={i}
+                style={{
+                  ...styles.dot,
+                  opacity: i === current ? 1 : 0.3
+                }}
+                onClick={() => setCurrent(i)}
+              />
             ))}
-          </h1>
+          </div>
+        </div>
+
+        <header style={styles.header}>
+          <h1 style={styles.title}>MAGMATHE</h1>
           <p style={styles.subtitle}>
-            {mode === 'login' ? 'おかえりなさい' : 'サインアップ'}
+            {mode === 'login' ? '考え方を共有しよう' : 'サインアップ'}
           </p>
         </header>
 
         <div style={styles.form}>
-          <div style={styles.inputGroup}>
-            <input
-              placeholder="ユーザー名(半角英数字のみ)"
-              value={username}
-              onChange={e => setUsername(e.target.value)}
-              style={styles.input}
-            />
-          </div>
+          <input
+            placeholder="ユーザー名"
+            value={username}
+            onChange={e => setUsername(e.target.value)}
+            style={styles.input}
+          />
 
-          <div style={styles.inputGroup}>
-            <input
-              type="password"
-              placeholder="パスワード"
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-              style={styles.input}
-            />
-          </div>
+          <input
+            type="password"
+            placeholder="パスワード"
+            value={password}
+            onChange={e => setPassword(e.target.value)}
+            style={styles.input}
+          />
 
           {error && (
             <div style={styles.errorBox}>
@@ -90,10 +141,10 @@ export default function LoginPage() {
             </div>
           )}
 
-          <button 
-            onClick={handleSubmit} 
+          <button
+            onClick={handleSubmit}
             disabled={loading}
-            style={loading ? {...styles.button, opacity: 0.7} : styles.button}
+            style={loading ? { ...styles.button, opacity: 0.7 } : styles.button}
           >
             {loading ? '処理中...' : (
               <div style={styles.buttonInner}>
@@ -104,12 +155,12 @@ export default function LoginPage() {
           </button>
 
           {mode === 'signup' && (
-  <p style={styles.terms}>
-    登録することで、
-    <a href="/terms" style={styles.link}>利用規約</a>
-    に同意したことになります。
-  </p>
-)}
+            <p style={styles.terms}>
+              登録することで、
+              <a href="/terms" style={styles.link}>利用規約</a>
+              に同意したことになります。
+            </p>
+          )}
         </div>
 
         <button
@@ -134,110 +185,77 @@ const styles: { [key: string]: CSSProperties } = {
     display: 'flex',
     justifyContent: 'center',
     alignItems: 'center',
-    /* 真っ黒から深みのある赤褐色へのグラデーション */
-    background: 'radial-gradient(circle at center, #2c0520 0%, #0f0505 100%)',
-    color: '#eee',
-    position: 'relative',
-    overflow: 'hidden',
-  },
-  blob: {
-    position: 'absolute',
-    width: '100vw',
-    height: '100vw',
-    background: 'radial-gradient(circle, rgba(255, 0, 166, 0.15) 0%, transparent 70%)',
-    filter: 'blur(60px)',
-    top: '-30%',
-    left: '-10%',
-    zIndex: 0,
-    animation: 'flow 18s ease-in-out infinite',
-  },
-  blob2: {
-    top: '20%',
-    left: '40%',
-    background: 'radial-gradient(circle, rgba(139, 0, 67, 0.2) 0%, transparent 60%)',
-    animationDuration: '25s',
-    animationDirection: 'reverse',
-  },
-  blob3: {
-    bottom: '-20%',
-    right: '-10%',
-    background: 'radial-gradient(circle, rgba(255, 140, 0, 0.1) 0%, transparent 70%)',
-    animationDuration: '20s',
+    background: '#0f0505',
   },
   card: {
-    width: '92%',
+    width: '90%',
     maxWidth: '420px',
-    padding: '56px 32px',
-    borderRadius: '40px',
-    /* 背景を少し明るい半透明にして、背後の赤褐色を透かす */
-    background: 'rgba(30, 10, 10, 0.4)', 
-    backdropFilter: 'blur(25px)',
-    WebkitBackdropFilter: 'blur(25px)',
-    border: '1px solid rgba(255, 255, 255, 0.08)',
-    boxShadow: '0 20px 50px rgba(0, 0, 0, 0.6)',
-    zIndex: 1,
+    padding: '30px',
+    borderRadius: '20px',
+    background: '#1a1a1a',
+    color: '#fff',
     textAlign: 'center',
-    boxSizing: 'border-box',
-    animation: 'pulse 5s infinite ease-in-out',
   },
-  header: {
-    marginBottom: '40px',
+  slider: {
+    height: '180px',
+    borderRadius: '16px',
+    marginBottom: '20px',
+    backgroundSize: 'cover',
+    backgroundPosition: 'center',
+    display: 'flex',
+    flexDirection: 'column',
+    justifyContent: 'space-between',
+    padding: '16px',
   },
-  titleContainer: {
+  slideContent: {
+    textAlign: 'left',
+  },
+  slideTitle: {
+    fontSize: '18px',
+    fontWeight: 'bold',
+  },
+  slideDesc: {
+    fontSize: '14px',
+    color: '#ddd',
+  },
+  dots: {
     display: 'flex',
     justifyContent: 'center',
-    gap: '10px',
-    margin: '0 0 16px 0',
-    padding: '0',
-    width: '100%',
+    gap: '6px',
   },
-  titleChar: {
-    fontSize: '34px',
-    fontWeight: 200,
-    fontFamily: "'Inter', sans-serif",
-    /* ロゴが目立つように白からオレンジへのグラデーションを強調 */
-    background: 'linear-gradient(180deg, #ffffff 30%, #ff8c00 100%)',
-    WebkitBackgroundClip: 'text',
-    WebkitTextFillColor: 'transparent',
-    textShadow: '0 4px 10px rgba(0,0,0,0.3)',
+  dot: {
+    width: '8px',
+    height: '8px',
+    borderRadius: '50%',
+    background: '#fff',
+    cursor: 'pointer',
+  },
+  header: {
+    marginBottom: '20px',
+  },
+  title: {
+    fontSize: '28px',
   },
   subtitle: {
+    fontSize: '14px',
     color: '#aaa',
-    fontSize: '15px',
-    letterSpacing: '1px',
   },
   form: {
     display: 'flex',
     flexDirection: 'column',
-    gap: '20px',
-  },
-  inputGroup: {
-    width: '100%',
+    gap: '10px',
   },
   input: {
-    width: '100%',
-    padding: '16px 20px',
-    borderRadius: '16px',
-    border: '1px solid rgba(255, 255, 255, 0.1)',
-    background: 'rgba(0, 0, 0, 0.3)',
-    color: '#fff',
-    fontSize: '16px',
-    outline: 'none',
-    boxSizing: 'border-box',
-    transition: 'all 0.3s ease',
+    padding: '12px',
+    borderRadius: '10px',
+    border: 'none',
   },
   button: {
-    marginTop: '10px',
-    padding: '16px',
-    borderRadius: '16px',
-    border: 'none',
-    background: 'linear-gradient(135deg, #ad5a71, #b9a088)',
+    padding: '12px',
+    borderRadius: '10px',
+    background: '#ff6b6b',
     color: '#fff',
-    fontWeight: '700',
-    fontSize: '16px',
-    cursor: 'pointer',
-    boxShadow: '0 4px 15px rgba(255, 69, 0, 0.3)',
-    transition: 'transform 0.2s ease, box-shadow 0.2s ease',
+    border: 'none',
   },
   buttonInner: {
     display: 'flex',
@@ -246,35 +264,21 @@ const styles: { [key: string]: CSSProperties } = {
     gap: '10px',
   },
   errorBox: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '10px',
-    color: '#ff8a8a',
-    fontSize: '14px',
-    background: 'rgba(255, 0, 0, 0.15)',
-    padding: '12px',
-    borderRadius: '12px',
-    textAlign: 'left',
-    border: '1px solid rgba(255, 0, 0, 0.2)',
+    color: 'red',
+    fontSize: '12px',
   },
   switch: {
-    marginTop: '32px',
+    marginTop: '10px',
     background: 'none',
     border: 'none',
-    color: '#999',
-    fontSize: '14px',
-    cursor: 'pointer',
-    transition: 'color 0.2s',
+    color: '#aaa',
   },
   terms: {
     fontSize: '12px',
     color: '#777',
     marginTop: '16px',
-    lineHeight: '1.6',
   },
   link: {
     color: '#db63bb',
-    textDecoration: 'none',
-    fontWeight: '600',
   },
 }
