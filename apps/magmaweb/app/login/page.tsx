@@ -15,17 +15,19 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
 
-  // 🌿 やわらかチュートリアル
+  // ⭐ 機能＋使い方
   const slides = [
-    { title: '問題を探す', desc: 'タグで簡単に見つけられる' },
-    { title: '解いて投稿', desc: '写真を撮るだけでOK' },
-    { title: '他の人を見る', desc: 'いろんな解き方がわかる' },
-    { title: '評価しよう', desc: '⭐︎・！・？で反応できる' },
+    { title: '解き方を共有', desc: 'いろんな考え方を見て学べる', img: '/illust1.png' },
+    { title: '誤答にも価値', desc: '間違いから理解が深まる', img: '/illust2.png' },
+    { title: 'ポイントが見える', desc: '⭐︎・！・？で重要箇所が分かる', img: '/illust3.png' },
+
+    { title: '①問題を探す', desc: 'タグで解きたい問題を見つける', img: '/illust4.png' },
+    { title: '②解いて投稿', desc: '写真を撮ってそのまま投稿', img: '/illust5.png' },
+    { title: '③他の解答を見る', desc: '投稿すると閲覧できる', img: '/illust6.png' },
+    { title: '④リアクション', desc: '⭐︎・！・？でフィードバック', img: '/illust7.png' },
   ]
 
   const [current, setCurrent] = useState(0)
-
-  // スワイプ
   const [touchStart, setTouchStart] = useState<number | null>(null)
 
   const handleTouchStart = (e: React.TouchEvent) => {
@@ -41,7 +43,6 @@ export default function LoginPage() {
     } else if (diff < -50 && current > 0) {
       setCurrent(current - 1)
     }
-
     setTouchStart(null)
   }
 
@@ -64,73 +65,73 @@ export default function LoginPage() {
 
   return (
     <div style={styles.page}>
-      <div style={styles.card}>
+      {/* 左：チュートリアル */}
+      <div
+        style={styles.left}
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
+        onClick={() => setCurrent((current + 1) % slides.length)}
+      >
+        <img src={slides[current].img} style={styles.image} />
 
-        {/* 🌿 チュートリアルスライド */}
-        <div
-          style={styles.slide}
-          onTouchStart={handleTouchStart}
-          onTouchEnd={handleTouchEnd}
-          onClick={() => setCurrent((current + 1) % slides.length)}
-        >
-          <div style={styles.paper}>
-            <h2 style={styles.slideTitle}>{slides[current].title}</h2>
-            <p style={styles.slideDesc}>{slides[current].desc}</p>
-          </div>
-
-          <div style={styles.dots}>
-            {slides.map((_, i) => (
-              <span
-                key={i}
-                style={{
-                  ...styles.dot,
-                  opacity: i === current ? 1 : 0.3
-                }}
-              />
-            ))}
-          </div>
-
-          <div style={styles.hint}>← スワイプ / タップ →</div>
+        <div style={styles.textBox}>
+          <h2 style={styles.slideTitle}>{slides[current].title}</h2>
+          <p style={styles.slideDesc}>{slides[current].desc}</p>
         </div>
 
+        <div style={styles.dots}>
+          {slides.map((_, i) => (
+            <span
+              key={i}
+              style={{
+                ...styles.dot,
+                opacity: i === current ? 1 : 0.3
+              }}
+            />
+          ))}
+        </div>
+
+        <p style={styles.hint}>← スワイプ / タップ →</p>
+      </div>
+
+      {/* 右：ログイン */}
+      <div style={styles.right}>
         <h1 style={styles.title}>Magmathe</h1>
 
-        <div style={styles.form}>
-          <input
-            placeholder="ユーザー名"
-            value={username}
-            onChange={e => setUsername(e.target.value)}
-            style={styles.input}
-          />
+        <input
+          placeholder="ユーザー名"
+          value={username}
+          onChange={e => setUsername(e.target.value)}
+          style={styles.input}
+        />
 
-          <input
-            type="password"
-            placeholder="パスワード"
-            value={password}
-            onChange={e => setPassword(e.target.value)}
-            style={styles.input}
-          />
+        <input
+          type="password"
+          placeholder="パスワード"
+          value={password}
+          onChange={e => setPassword(e.target.value)}
+          style={styles.input}
+        />
 
-          {error && (
-            <div style={styles.errorBox}>
-              <AlertCircle size={16} />
-              <span>{error}</span>
+        {error && (
+          <div style={styles.errorBox}>
+            <AlertCircle size={16} />
+            <span>{error}</span>
+          </div>
+        )}
+
+        <button
+          onClick={handleSubmit}
+          disabled={loading}
+          style={styles.button}
+        >
+          {loading ? '処理中...' : (
+            <div style={styles.buttonInner}>
+              {mode === 'login' ? <LogIn size={18} /> : <UserPlus size={18} />}
+              <span>{mode === 'login' ? 'ログイン' : '登録'}</span>
             </div>
           )}
-
-          <button
-            onClick={handleSubmit}
-            disabled={loading}
-            style={styles.button}
-          >
-            {loading ? '処理中...' : (
-              <div style={styles.buttonInner}>
-                {mode === 'login' ? <LogIn size={18} /> : <UserPlus size={18} />}
-                <span>{mode === 'login' ? 'ログイン' : 'アカウント作成'}</span>
-              </div>
-            )}
-          </button>
-        </div>
+        </button>
 
         <button
           style={styles.switch}
@@ -150,87 +151,86 @@ export default function LoginPage() {
 
 const styles: { [key: string]: CSSProperties } = {
   page: {
-    height: '100vh',
     display: 'flex',
-    justifyContent: 'center',
-    alignItems: 'center',
-    background: '#f4f4f4',
+    height: '100vh',
+    fontFamily: 'sans-serif',
   },
 
-  card: {
-    width: '95%',
-    maxWidth: '420px',
-    padding: '20px',
-    borderRadius: '20px',
-    background: '#ffffff',
+  left: {
+    flex: 1,
+    background: '#e6edf2', // 統一カラー（淡すぎない）
+    display: 'flex',
+    flexDirection: 'column',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: '40px',
+  },
+
+  right: {
+    flex: 1,
+    display: 'flex',
+    flexDirection: 'column',
+    justifyContent: 'center',
+    padding: '40px',
+  },
+
+  image: {
+    width: '70%',
+    maxWidth: '320px',
+  },
+
+  textBox: {
+    marginTop: '20px',
     textAlign: 'center',
   },
 
-  slide: {
-    marginBottom: '20px',
-  },
-
-  paper: {
-    background: '#fafafa',
-    padding: '20px',
-    borderRadius: '16px',
-    border: '1px solid #ddd',
-    textAlign: 'left',
-  },
-
   slideTitle: {
-    fontSize: '18px',
+    fontSize: '22px',
     fontWeight: 'bold',
   },
 
   slideDesc: {
-    fontSize: '14px',
+    fontSize: '15px',
     marginTop: '6px',
+  },
+
+  dots: {
+    marginTop: '16px',
+    display: 'flex',
+    gap: '6px',
+  },
+
+  dot: {
+    width: '8px',
+    height: '8px',
+    borderRadius: '50%',
+    background: '#333',
   },
 
   hint: {
     fontSize: '12px',
-    color: '#999',
-    marginTop: '8px',
-  },
-
-  dots: {
-    display: 'flex',
-    justifyContent: 'center',
-    gap: '6px',
     marginTop: '10px',
-  },
-
-  dot: {
-    width: '6px',
-    height: '6px',
-    borderRadius: '50%',
-    background: '#555',
+    color: '#555',
   },
 
   title: {
-    fontSize: '26px',
-    marginBottom: '10px',
-  },
-
-  form: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '10px',
+    fontSize: '28px',
+    marginBottom: '20px',
   },
 
   input: {
     padding: '12px',
-    borderRadius: '10px',
+    marginBottom: '10px',
+    borderRadius: '8px',
     border: '1px solid #ccc',
   },
 
   button: {
     padding: '12px',
-    borderRadius: '10px',
     background: '#6c8ea4',
     color: '#fff',
     border: 'none',
+    borderRadius: '8px',
   },
 
   buttonInner: {
