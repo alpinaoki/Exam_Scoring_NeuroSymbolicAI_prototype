@@ -8,37 +8,24 @@ import { LogIn, UserPlus, AlertCircle } from 'lucide-react'
 
 export default function LoginPage() {
   const router = useRouter()
+
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [mode, setMode] = useState<'login' | 'signup'>('login')
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
 
-  // ⭐ 数学系スライド
+  // 🌿 やわらかチュートリアル
   const slides = [
-    {
-      title: '他の人の解き方が見れる',
-      desc: 'いろんな考え方を知ることができる',
-      img: 'https://images.unsplash.com/photo-1635070041078-e363dbe005cb'
-    },
-    {
-      title: '間違いも価値になる',
-      desc: '誤答から弱点やクセが分かる',
-      img: 'https://images.unsplash.com/photo-1509228468518-180dd4864904'
-    },
-    {
-      title: 'どこが大事か分かる',
-      desc: '⭐︎・！・？でポイントが見える',
-      img: 'https://images.unsplash.com/photo-1516542076529-1ea3854896f2'
-    },
-    {
-      title: '自分の成長が見える',
-      desc: '過去の解答を振り返れる',
-      img: 'https://images.unsplash.com/photo-1526378722484-bd91ca387e72'
-    },
+    { title: '問題を探す', desc: 'タグで簡単に見つけられる' },
+    { title: '解いて投稿', desc: '写真を撮るだけでOK' },
+    { title: '他の人を見る', desc: 'いろんな解き方がわかる' },
+    { title: '評価しよう', desc: '⭐︎・！・？で反応できる' },
   ]
 
   const [current, setCurrent] = useState(0)
+
+  // スワイプ
   const [touchStart, setTouchStart] = useState<number | null>(null)
 
   const handleTouchStart = (e: React.TouchEvent) => {
@@ -47,8 +34,7 @@ export default function LoginPage() {
 
   const handleTouchEnd = (e: React.TouchEvent) => {
     if (touchStart === null) return
-    const touchEnd = e.changedTouches[0].clientX
-    const diff = touchStart - touchEnd
+    const diff = touchStart - e.changedTouches[0].clientX
 
     if (diff > 50 && current < slides.length - 1) {
       setCurrent(current + 1)
@@ -80,19 +66,14 @@ export default function LoginPage() {
     <div style={styles.page}>
       <div style={styles.card}>
 
-        {/* スライド */}
+        {/* 🌿 チュートリアルスライド */}
         <div
-          style={{
-            ...styles.slider,
-            backgroundImage: `
-              linear-gradient(rgba(0,0,0,0.55), rgba(0,0,0,0.8)),
-              url(${slides[current].img})
-            `
-          }}
+          style={styles.slide}
           onTouchStart={handleTouchStart}
           onTouchEnd={handleTouchEnd}
+          onClick={() => setCurrent((current + 1) % slides.length)}
         >
-          <div style={styles.slideContent}>
+          <div style={styles.paper}>
             <h2 style={styles.slideTitle}>{slides[current].title}</h2>
             <p style={styles.slideDesc}>{slides[current].desc}</p>
           </div>
@@ -105,18 +86,14 @@ export default function LoginPage() {
                   ...styles.dot,
                   opacity: i === current ? 1 : 0.3
                 }}
-                onClick={() => setCurrent(i)}
               />
             ))}
           </div>
+
+          <div style={styles.hint}>← スワイプ / タップ →</div>
         </div>
 
-        <header style={styles.header}>
-          <h1 style={styles.title}>MAGMATHE</h1>
-          <p style={styles.subtitle}>
-            {mode === 'login' ? '考え方を共有しよう' : 'サインアップ'}
-          </p>
-        </header>
+        <h1 style={styles.title}>Magmathe</h1>
 
         <div style={styles.form}>
           <input
@@ -144,7 +121,7 @@ export default function LoginPage() {
           <button
             onClick={handleSubmit}
             disabled={loading}
-            style={loading ? { ...styles.button, opacity: 0.7 } : styles.button}
+            style={styles.button}
           >
             {loading ? '処理中...' : (
               <div style={styles.buttonInner}>
@@ -153,14 +130,6 @@ export default function LoginPage() {
               </div>
             )}
           </button>
-
-          {mode === 'signup' && (
-            <p style={styles.terms}>
-              登録することで、
-              <a href="/terms" style={styles.link}>利用規約</a>
-              に同意したことになります。
-            </p>
-          )}
         </div>
 
         <button
@@ -171,8 +140,8 @@ export default function LoginPage() {
           }}
         >
           {mode === 'login'
-            ? 'まだ登録がお済みでない方はこちら'
-            : '既にアカウントをお持ちの方はこちら'}
+            ? 'はじめての方はこちら'
+            : 'ログインはこちら'}
         </button>
       </div>
     </div>
@@ -185,100 +154,101 @@ const styles: { [key: string]: CSSProperties } = {
     display: 'flex',
     justifyContent: 'center',
     alignItems: 'center',
-    background: '#0f0505',
+    background: '#f4f4f4',
   },
+
   card: {
-    width: '90%',
+    width: '95%',
     maxWidth: '420px',
-    padding: '30px',
+    padding: '20px',
     borderRadius: '20px',
-    background: '#1a1a1a',
-    color: '#fff',
+    background: '#ffffff',
     textAlign: 'center',
   },
-  slider: {
-    height: '180px',
-    borderRadius: '16px',
+
+  slide: {
     marginBottom: '20px',
-    backgroundSize: 'cover',
-    backgroundPosition: 'center',
-    display: 'flex',
-    flexDirection: 'column',
-    justifyContent: 'space-between',
-    padding: '16px',
   },
-  slideContent: {
+
+  paper: {
+    background: '#fafafa',
+    padding: '20px',
+    borderRadius: '16px',
+    border: '1px solid #ddd',
     textAlign: 'left',
   },
+
   slideTitle: {
     fontSize: '18px',
     fontWeight: 'bold',
   },
+
   slideDesc: {
     fontSize: '14px',
-    color: '#ddd',
+    marginTop: '6px',
   },
+
+  hint: {
+    fontSize: '12px',
+    color: '#999',
+    marginTop: '8px',
+  },
+
   dots: {
     display: 'flex',
     justifyContent: 'center',
     gap: '6px',
+    marginTop: '10px',
   },
+
   dot: {
-    width: '8px',
-    height: '8px',
+    width: '6px',
+    height: '6px',
     borderRadius: '50%',
-    background: '#fff',
-    cursor: 'pointer',
+    background: '#555',
   },
-  header: {
-    marginBottom: '20px',
-  },
+
   title: {
-    fontSize: '28px',
+    fontSize: '26px',
+    marginBottom: '10px',
   },
-  subtitle: {
-    fontSize: '14px',
-    color: '#aaa',
-  },
+
   form: {
     display: 'flex',
     flexDirection: 'column',
     gap: '10px',
   },
+
   input: {
     padding: '12px',
     borderRadius: '10px',
-    border: 'none',
+    border: '1px solid #ccc',
   },
+
   button: {
     padding: '12px',
     borderRadius: '10px',
-    background: '#ff6b6b',
+    background: '#6c8ea4',
     color: '#fff',
     border: 'none',
   },
+
   buttonInner: {
     display: 'flex',
-    alignItems: 'center',
     justifyContent: 'center',
-    gap: '10px',
+    gap: '8px',
+    alignItems: 'center',
   },
+
   errorBox: {
     color: 'red',
     fontSize: '12px',
   },
+
   switch: {
     marginTop: '10px',
     background: 'none',
     border: 'none',
-    color: '#aaa',
-  },
-  terms: {
-    fontSize: '12px',
-    color: '#777',
-    marginTop: '16px',
-  },
-  link: {
-    color: '#db63bb',
+    color: '#666',
   },
 }
