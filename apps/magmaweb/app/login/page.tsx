@@ -35,148 +35,143 @@ export default function LoginPage() {
   return (
     <div style={styles.page}>
 
-      {/* ⭐ ビジュアル */}
-      <div style={styles.hero}>
-        <img src="/tutorial.png" style={styles.image} />
-      </div>
-
-      {/* ⭐ イラスト付きカード */}
+      {/* ===== スライド全体 ===== */}
       <div style={styles.slider}>
 
-        <div style={styles.card}>
-          <div style={styles.illus}>✍️</div>
-          <p>解き方が見れる</p>
+        {/* ① スタート（入力あり） */}
+        <div style={styles.slide}>
+          <img src="/illustration-main.png" style={styles.image}/>
+          <h2>Magmathe</h2>
+          <p>解き方でつながる</p>
+
+          <input
+            placeholder="ユーザー名"
+            value={username}
+            onChange={e => setUsername(e.target.value)}
+            style={styles.input}
+          />
+          <input
+            type="password"
+            placeholder="パスワード"
+            value={password}
+            onChange={e => setPassword(e.target.value)}
+            style={styles.input}
+          />
         </div>
 
-        <div style={styles.card}>
-          <div style={styles.illus}>❌</div>
+        {/* ② 機能 */}
+        <div style={styles.slide}>
+          <img src="/card1.png" style={styles.cardImg}/>
+          <p>他の人の解き方が見れる</p>
+        </div>
+
+        {/* ③ 機能 */}
+        <div style={styles.slide}>
+          <img src="/card2.png" style={styles.cardImg}/>
           <p>間違いも価値になる</p>
         </div>
 
-        <div style={styles.card}>
-          <div style={styles.illus}>⭐️</div>
-          <p>大事な部分が分かる</p>
+        {/* ④ 機能 */}
+        <div style={styles.slide}>
+          <img src="/card3.png" style={styles.cardImg}/>
+          <p>どこが大事か分かる</p>
+        </div>
+
+        {/* ⑤ 最後（入力＋ボタン） */}
+        <div style={styles.slide}>
+          <h2>{mode === 'login' ? 'ログイン' : '新規登録'}</h2>
+
+          <input
+            placeholder="ユーザー名"
+            value={username}
+            onChange={e => setUsername(e.target.value)}
+            style={styles.input}
+          />
+          <input
+            type="password"
+            placeholder="パスワード"
+            value={password}
+            onChange={e => setPassword(e.target.value)}
+            style={styles.input}
+          />
+
+          {error && (
+            <div style={styles.errorBox}>
+              <AlertCircle size={16}/>
+              <span>{error}</span>
+            </div>
+          )}
+
+          <button onClick={handleSubmit} style={styles.button}>
+            {loading ? '処理中...' : (
+              <div style={styles.buttonInner}>
+                {mode === 'login' ? <LogIn size={18}/> : <UserPlus size={18}/>}
+                <span>{mode === 'login' ? 'ログイン' : '登録'}</span>
+              </div>
+            )}
+          </button>
+
+          <button
+            style={styles.switch}
+            onClick={() => setMode(mode === 'login' ? 'signup' : 'login')}
+          >
+            切り替え
+          </button>
         </div>
 
       </div>
 
-      <div style={styles.hint}>← スワイプ →</div>
-
-      {/* ⭐ ログイン */}
-      <div style={styles.login}>
-        <h1 style={styles.title}>Magmathe</h1>
-
-        <input
-          placeholder="ユーザー名"
-          value={username}
-          onChange={e => setUsername(e.target.value)}
-          style={styles.input}
-        />
-
-        <input
-          type="password"
-          placeholder="パスワード"
-          value={password}
-          onChange={e => setPassword(e.target.value)}
-          style={styles.input}
-        />
-
-        {error && (
-          <div style={styles.errorBox}>
-            <AlertCircle size={16} />
-            <span>{error}</span>
-          </div>
-        )}
-
-        <button onClick={handleSubmit} style={styles.button}>
-          {loading ? '処理中...' : (
-            <div style={styles.buttonInner}>
-              {mode === 'login' ? <LogIn size={18} /> : <UserPlus size={18} />}
-              <span>{mode === 'login' ? 'ログイン' : '登録'}</span>
-            </div>
-          )}
-        </button>
-
-        <button
-          style={styles.switch}
-          onClick={() => setMode(mode === 'login' ? 'signup' : 'login')}
-        >
-          {mode === 'login'
-            ? 'はじめての方はこちら'
-            : 'ログインはこちら'}
-        </button>
-      </div>
+      <p style={styles.swipe}>← スワイプ →</p>
     </div>
   )
 }
 
 const styles: { [key: string]: CSSProperties } = {
+
   page: {
     height: '100vh',
+    background: '#eef3f6',
     display: 'flex',
     flexDirection: 'column',
-    background: '#eef3f6',
-    fontFamily: 'sans-serif',
-  },
-
-  hero: {
-    display: 'flex',
     justifyContent: 'center',
-    paddingTop: '20px',
-  },
-
-  image: {
-    width: '70%',
-    maxWidth: '280px',
   },
 
   slider: {
     display: 'flex',
     overflowX: 'auto',
-    gap: '12px',
-    padding: '16px',
+    scrollSnapType: 'x mandatory',
   },
 
-  card: {
-    minWidth: '140px',
-    padding: '14px',
+  slide: {
+    minWidth: '100%',
+    padding: '30px',
+    boxSizing: 'border-box',
+    textAlign: 'center',
+    scrollSnapAlign: 'start',
+  },
+
+  image: {
+    width: '70%',
+    maxWidth: '260px',
+    marginBottom: '10px',
+  },
+
+  cardImg: {
+    width: '80%',
     borderRadius: '12px',
-    background: '#f4f7f9',
-    textAlign: 'center',
-    flexShrink: 0,
-  },
-
-  illus: {
-    fontSize: '28px',
-    marginBottom: '8px',
-  },
-
-  hint: {
-    textAlign: 'center',
-    fontSize: '12px',
-    color: '#666',
-  },
-
-  login: {
-    padding: '20px',
-    background: '#fff',
-    marginTop: 'auto',
-  },
-
-  title: {
-    textAlign: 'center',
     marginBottom: '10px',
   },
 
   input: {
     width: '100%',
-    padding: '10px',
-    marginBottom: '10px',
+    padding: '12px',
+    marginTop: '10px',
     borderRadius: '8px',
     border: '1px solid #ccc',
   },
 
   button: {
+    marginTop: '12px',
     width: '100%',
     padding: '12px',
     background: '#6c8ea4',
@@ -194,12 +189,19 @@ const styles: { [key: string]: CSSProperties } = {
   errorBox: {
     color: 'red',
     fontSize: '12px',
+    marginTop: '8px',
   },
 
   switch: {
     marginTop: '10px',
     background: 'none',
     border: 'none',
-    width: '100%',
+  },
+
+  swipe: {
+    textAlign: 'center',
+    fontSize: '12px',
+    color: '#666',
+    marginTop: '10px',
   },
 }
