@@ -15,36 +15,6 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
 
-  // ⭐ 機能＋使い方
-  const slides = [
-    { title: '解き方を共有', desc: 'いろんな考え方を見て学べる', pos: 'center' },
-    { title: '誤答にも価値', desc: '間違いから理解が深まる', pos: 'top' },
-    { title: '①問題を探す', desc: 'タグで見つける', pos: 'left' },
-    { title: '②解いて投稿', desc: '写真で簡単投稿', pos: 'right' },
-    { title: '③他の解答を見る', desc: '投稿後に閲覧可能', pos: 'bottom' },
-    { title: '④リアクション', desc: '⭐︎・！・？で反応', pos: 'center' },
-  ]
-
-  const [current, setCurrent] = useState(0)
-  const [touchStart, setTouchStart] = useState<number | null>(null)
-
-  const handleTouchStart = (e: React.TouchEvent) => {
-    setTouchStart(e.touches[0].clientX)
-  }
-
-  const handleTouchEnd = (e: React.TouchEvent) => {
-    if (!touchStart) return
-    const diff = touchStart - e.changedTouches[0].clientX
-
-    if (diff > 50 && current < slides.length - 1) {
-      setCurrent(current + 1)
-    } else if (diff < -50 && current > 0) {
-      setCurrent(current - 1)
-    }
-
-    setTouchStart(null)
-  }
-
   async function handleSubmit() {
     setError(null)
     setLoading(true)
@@ -65,47 +35,32 @@ export default function LoginPage() {
   return (
     <div style={styles.page}>
 
-      {/* ⭐ チュートリアル */}
-      <div
-        style={styles.tutorial}
-        onTouchStart={handleTouchStart}
-        onTouchEnd={handleTouchEnd}
-        onClick={() => setCurrent((current + 1) % slides.length)}
-      >
-        {/* 画像（ズーム位置変える） */}
-        <img
-          src="/tutorial.png"
-          style={{
-            ...styles.image,
-            objectPosition: slides[current].pos === 'top' ? 'center top'
-              : slides[current].pos === 'bottom' ? 'center bottom'
-              : slides[current].pos === 'left' ? 'left center'
-              : slides[current].pos === 'right' ? 'right center'
-              : 'center'
-          }}
-        />
-
-        {/* テキスト */}
-        <div style={styles.overlay}>
-          <h2>{slides[current].title}</h2>
-          <p>{slides[current].desc}</p>
-        </div>
-
-        {/* ドット */}
-        <div style={styles.dots}>
-          {slides.map((_, i) => (
-            <span
-              key={i}
-              style={{
-                ...styles.dot,
-                opacity: i === current ? 1 : 0.3
-              }}
-            />
-          ))}
-        </div>
-
-        <p style={styles.hint}>スワイプ or タップ</p>
+      {/* ⭐ ビジュアル */}
+      <div style={styles.hero}>
+        <img src="/tutorial.png" style={styles.image} />
       </div>
+
+      {/* ⭐ イラスト付きカード */}
+      <div style={styles.slider}>
+
+        <div style={styles.card}>
+          <div style={styles.illus}>✍️</div>
+          <p>解き方が見れる</p>
+        </div>
+
+        <div style={styles.card}>
+          <div style={styles.illus}>❌</div>
+          <p>間違いも価値になる</p>
+        </div>
+
+        <div style={styles.card}>
+          <div style={styles.illus}>⭐️</div>
+          <p>大事な部分が分かる</p>
+        </div>
+
+      </div>
+
+      <div style={styles.hint}>← スワイプ →</div>
 
       {/* ⭐ ログイン */}
       <div style={styles.login}>
@@ -164,47 +119,40 @@ const styles: { [key: string]: CSSProperties } = {
     fontFamily: 'sans-serif',
   },
 
-  tutorial: {
-    flex: 1,
-    position: 'relative',
+  hero: {
     display: 'flex',
     justifyContent: 'center',
-    alignItems: 'center',
+    paddingTop: '20px',
   },
 
   image: {
-    width: '90%',
-    maxWidth: '420px',
-    height: 'auto',
-    objectFit: 'cover',
+    width: '70%',
+    maxWidth: '280px',
   },
 
-  overlay: {
-    position: 'absolute',
-    bottom: '20px',
-    background: 'rgba(255,255,255,0.95)',
+  slider: {
+    display: 'flex',
+    overflowX: 'auto',
+    gap: '12px',
+    padding: '16px',
+  },
+
+  card: {
+    minWidth: '140px',
     padding: '14px',
     borderRadius: '12px',
+    background: '#f4f7f9',
     textAlign: 'center',
+    flexShrink: 0,
   },
 
-  dots: {
-    position: 'absolute',
-    bottom: '80px',
-    display: 'flex',
-    gap: '6px',
-  },
-
-  dot: {
-    width: '8px',
-    height: '8px',
-    borderRadius: '50%',
-    background: '#333',
+  illus: {
+    fontSize: '28px',
+    marginBottom: '8px',
   },
 
   hint: {
-    position: 'absolute',
-    bottom: '0px',
+    textAlign: 'center',
     fontSize: '12px',
     color: '#666',
   },
@@ -212,6 +160,7 @@ const styles: { [key: string]: CSSProperties } = {
   login: {
     padding: '20px',
     background: '#fff',
+    marginTop: 'auto',
   },
 
   title: {
