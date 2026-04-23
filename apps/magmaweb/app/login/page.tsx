@@ -15,16 +15,14 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
 
-  // ⭐ 機能＋使い方
+  // ⭐ チュートリアル内容（機能＋使い方）
   const slides = [
-    { title: '解き方を共有', desc: 'いろんな考え方を見て学べる', img: '/illust1.png' },
-    { title: '誤答にも価値', desc: '間違いから理解が深まる', img: '/illust2.png' },
-    { title: 'ポイントが見える', desc: '⭐︎・！・？で重要箇所が分かる', img: '/illust3.png' },
-
-    { title: '①問題を探す', desc: 'タグで解きたい問題を見つける', img: '/illust4.png' },
-    { title: '②解いて投稿', desc: '写真を撮ってそのまま投稿', img: '/illust5.png' },
-    { title: '③他の解答を見る', desc: '投稿すると閲覧できる', img: '/illust6.png' },
-    { title: '④リアクション', desc: '⭐︎・！・？でフィードバック', img: '/illust7.png' },
+    { title: '解き方を共有', desc: 'いろんな考え方を見て学べる' },
+    { title: '誤答にも価値', desc: '間違いから理解が深まる' },
+    { title: '①問題を探す', desc: 'タグで簡単に見つける' },
+    { title: '②解いて投稿', desc: '写真を撮ってそのまま投稿' },
+    { title: '③他の解答を見る', desc: '投稿後に閲覧できる' },
+    { title: '④リアクション', desc: '⭐︎・！・？でフィードバック' },
   ]
 
   const [current, setCurrent] = useState(0)
@@ -65,20 +63,24 @@ export default function LoginPage() {
 
   return (
     <div style={styles.page}>
-      {/* 左：チュートリアル */}
+      
+      {/* ⭐ 左：チュートリアル */}
       <div
         style={styles.left}
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
         onClick={() => setCurrent((current + 1) % slides.length)}
       >
-        <img src={slides[current].img} style={styles.image} />
+        {/* 送ってくれたイラスト */}
+        <img src="/tutorial.png" style={styles.image} />
 
-        <div style={styles.textBox}>
+        {/* テキスト重ね */}
+        <div style={styles.overlayBox}>
           <h2 style={styles.slideTitle}>{slides[current].title}</h2>
           <p style={styles.slideDesc}>{slides[current].desc}</p>
         </div>
 
+        {/* ドット */}
         <div style={styles.dots}>
           {slides.map((_, i) => (
             <span
@@ -94,7 +96,7 @@ export default function LoginPage() {
         <p style={styles.hint}>← スワイプ / タップ →</p>
       </div>
 
-      {/* 右：ログイン */}
+      {/* ⭐ 右：ログイン */}
       <div style={styles.right}>
         <h1 style={styles.title}>Magmathe</h1>
 
@@ -158,12 +160,13 @@ const styles: { [key: string]: CSSProperties } = {
 
   left: {
     flex: 1,
-    background: '#e6edf2', // 統一カラー（淡すぎない）
+    background: '#e6edf2',
     display: 'flex',
     flexDirection: 'column',
     justifyContent: 'center',
     alignItems: 'center',
     padding: '40px',
+    position: 'relative',
   },
 
   right: {
@@ -175,23 +178,28 @@ const styles: { [key: string]: CSSProperties } = {
   },
 
   image: {
-    width: '70%',
-    maxWidth: '320px',
+    width: '90%',
+    maxWidth: '420px',
   },
 
-  textBox: {
-    marginTop: '20px',
+  overlayBox: {
+    position: 'absolute',
+    bottom: '80px',
+    background: 'rgba(255,255,255,0.95)',
+    padding: '16px 20px',
+    borderRadius: '14px',
     textAlign: 'center',
+    boxShadow: '0 6px 16px rgba(0,0,0,0.15)',
   },
 
   slideTitle: {
-    fontSize: '22px',
+    fontSize: '20px',
     fontWeight: 'bold',
   },
 
   slideDesc: {
-    fontSize: '15px',
-    marginTop: '6px',
+    fontSize: '14px',
+    marginTop: '4px',
   },
 
   dots: {
