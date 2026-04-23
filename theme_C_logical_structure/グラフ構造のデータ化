@@ -1,38 +1,129 @@
+#二次方程式x^2-2ax+a+2=0が次の解をもつような定数aの値の範囲を求めよ。（1）2解がともに正。
+
 {
   "nodes": [
-    {"id": "n1", "text": "x^2-2ax+a+2=0", "type": "box"},
-    {"id": "n2", "text": "(x-a)^2-a^2+a+2=0", "type": "box"},
-    {"id": "n3", "text": "① 2解をもつ", "type": "box"},
-    {"id": "n4", "text": "判別式 D ≧ 0", "type": "circle"},
-    {"id": "n5", "text": "D/4 = a^2-a-2 ≧ 0", "type": "box"},
-    {"id": "n6", "text": "(a-2)(a+1) ≧ 0", "type": "box"},
-    {"id": "n7", "text": "同符号またはどちらか0", "type": "circle"},
-    {"id": "n8", "text": "積が0以上", "type": "circle"},
-    {"id": "n9", "text": "(x-2)≧0 (a+1)≧0 または (x-2)≦0 (a+1)≦0", "type": "box"},
-    {"id": "n10", "text": "x ≦ -1, 2 ≦ x", "type": "box"},
-    {"id": "n11", "text": "② 解が正", "type": "box"},
-    {"id": "n12", "text": "軸が正", "type": "circle"},
-    {"id": "n13", "text": "a > 0", "type": "box"},
-    {"id": "n14", "text": "x=0のとき y>0", "type": "circle"},
-    {"id": "n15", "text": "xを代入すると a+2>0", "type": "box"},
-    {"id": "n16", "text": "a > -2", "type": "box"},
-    {"id": "n17", "text": "2 ≦ x", "type": "box"}
+    {
+     "id": "n1",
+     "text": "x^2-2ax+a+2=0",
+     "shape": "box",
+     "contentType": "equation"
+    },
+    {
+     "id": "n2",
+     "text": "(x-a)^2-a^2+a+2=0",
+     "shape": "box",
+     "contentType": "equation"
+    },
+    {
+     "id": "n3",
+     "text": "① 2解をもつ",
+     "shape": "box",
+     "contentType": "sentence"
+    },
+    {
+     "id": "n4",
+     "text": "判別式 D ≧ 0",
+     "shape": "circle",
+     "contentType": "condition"
+    },
+    {
+     "id": "n5",
+     "text": "D/4 = a^2-a-2 ≧ 0",
+     "shape": "box",
+     "contentType": "equation"
+    },
+    {
+     "id": "n6",
+     "text": "(a-2)(a+1) ≧ 0",
+     "shape": "box",
+     "contentType": "equation"
+    },
+    {
+     "id": "n7",
+     "text": "同符号またはどちらか0",
+     "shape": "circle",
+     "contentType": "sentence"
+    },
+    {
+     "id": "n8",
+     "text": "積が0以上",
+     "shape": "circle",
+     "contentType": "sentence"
+    },
+    {
+     "id": "n9",
+     "text": "(x-2)≧0 (a+1)≧0 または (x-2)≦0 (a+1)≦0",
+     "shape": "box",
+     "contentType": "condition"
+    },
+    {
+     "id": "n10",
+     "text": "x ≦ -1, 2 ≦ x",
+     "shape": "box",
+     "contentType": "condition"
+    },
+    {
+     "id": "n11",
+     "text": "② 解が正",
+     "shape": "box",
+     "contentType": "sentence"
+    },
+    {
+     "id": "n12",
+     "text": "軸が正",
+     "shape": "circle",
+     "contentType": "sentence"
+    },
+    {
+     "id": "n13",
+     "text": "a > 0",
+     "shape": "box",
+     "contentType": "condition"
+    },
+    {
+     "id": "n14",
+     "text": "x=0のとき y>0",
+     "shape": "circle",
+     "contentType": "condition"
+    },
+    {
+     "id": "n15",
+     "text": "xを代入すると a+2>0",
+     "shape": "box",
+     "contentType": "sentence"
+    },
+    {
+     "id": "n16",
+     "text": "a > -2",
+     "shape": "box",
+     "contentType": "condition"
+    },
+    {
+     "id": "n17",
+     "text": "2 ≦ x",
+     "shape": "box",
+     "contentType": "condition"
+    }
   ],
   "edges": [
     {"source": "n1", "target": "n2", "relation": "bidirectional_arrow"},
     {"source": "n3", "target": "n4", "relation": "line"},
-    {"source": "n4", "target": "n5", "relation": "arrow"},
+    {"source": "n4", "target": "n5", "relation": "line"},
     {"source": "n5", "target": "n6", "relation": "bidirectional_arrow"},
     {"source": "n6", "target": "n7", "relation": "line"},
     {"source": "n6", "target": "n8", "relation": "line"},
+    {"source": "n7", "target": "n9", "relation": "line"},
     {"source": "n8", "target": "n9", "relation": "line"},
     {"source": "n9", "target": "n10", "relation": "bidirectional_arrow"},
-    {"source": "n11", "target": "n12", "relation": "arrow"},
+    {"source": "n11", "target": "n12", "relation": "line"},
     {"source": "n12", "target": "n13", "relation": "line"},
-    {"source": "n14", "target": "n15", "relation": "arrow"},
+    {"source": "n11", "target": "n14", "relation": "line"},
+    {"source": "n14", "target": "n15", "relation": "line"},
     {"source": "n15", "target": "n16", "relation": "line"},
     {"source": "n10", "target": "n17", "relation": "arrow"},
     {"source": "n13", "target": "n17", "relation": "arrow"},
-    {"source": "n16", "target": "n17", "relation": "arrow"}
+    {"source": "n16", "target": "n17", "relation": "arrow"},
+    {"source": "n2", "target": "n13", "relation": "line"},
+    {"source": "n2", "target": "n15", "relation": "line"},
   ]
 }
