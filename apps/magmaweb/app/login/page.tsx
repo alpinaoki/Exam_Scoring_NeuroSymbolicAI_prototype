@@ -15,14 +15,14 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
 
-  // ⭐ チュートリアル内容（機能＋使い方）
+  // ⭐ 機能＋使い方
   const slides = [
-    { title: '解き方を共有', desc: 'いろんな考え方を見て学べる' },
-    { title: '誤答にも価値', desc: '間違いから理解が深まる' },
-    { title: '①問題を探す', desc: 'タグで簡単に見つける' },
-    { title: '②解いて投稿', desc: '写真を撮ってそのまま投稿' },
-    { title: '③他の解答を見る', desc: '投稿後に閲覧できる' },
-    { title: '④リアクション', desc: '⭐︎・！・？でフィードバック' },
+    { title: '解き方を共有', desc: 'いろんな考え方を見て学べる', pos: 'center' },
+    { title: '誤答にも価値', desc: '間違いから理解が深まる', pos: 'top' },
+    { title: '①問題を探す', desc: 'タグで見つける', pos: 'left' },
+    { title: '②解いて投稿', desc: '写真で簡単投稿', pos: 'right' },
+    { title: '③他の解答を見る', desc: '投稿後に閲覧可能', pos: 'bottom' },
+    { title: '④リアクション', desc: '⭐︎・！・？で反応', pos: 'center' },
   ]
 
   const [current, setCurrent] = useState(0)
@@ -33,7 +33,7 @@ export default function LoginPage() {
   }
 
   const handleTouchEnd = (e: React.TouchEvent) => {
-    if (touchStart === null) return
+    if (!touchStart) return
     const diff = touchStart - e.changedTouches[0].clientX
 
     if (diff > 50 && current < slides.length - 1) {
@@ -41,6 +41,7 @@ export default function LoginPage() {
     } else if (diff < -50 && current > 0) {
       setCurrent(current - 1)
     }
+
     setTouchStart(null)
   }
 
@@ -63,21 +64,31 @@ export default function LoginPage() {
 
   return (
     <div style={styles.page}>
-      
-      {/* ⭐ 左：チュートリアル */}
+
+      {/* ⭐ チュートリアル */}
       <div
-        style={styles.left}
+        style={styles.tutorial}
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
         onClick={() => setCurrent((current + 1) % slides.length)}
       >
-        {/* 送ってくれたイラスト */}
-        <img src="/tutorial.png" style={styles.image} />
+        {/* 画像（ズーム位置変える） */}
+        <img
+          src="/tutorial.png"
+          style={{
+            ...styles.image,
+            objectPosition: slides[current].pos === 'top' ? 'center top'
+              : slides[current].pos === 'bottom' ? 'center bottom'
+              : slides[current].pos === 'left' ? 'left center'
+              : slides[current].pos === 'right' ? 'right center'
+              : 'center'
+          }}
+        />
 
-        {/* テキスト重ね */}
-        <div style={styles.overlayBox}>
-          <h2 style={styles.slideTitle}>{slides[current].title}</h2>
-          <p style={styles.slideDesc}>{slides[current].desc}</p>
+        {/* テキスト */}
+        <div style={styles.overlay}>
+          <h2>{slides[current].title}</h2>
+          <p>{slides[current].desc}</p>
         </div>
 
         {/* ドット */}
@@ -93,11 +104,11 @@ export default function LoginPage() {
           ))}
         </div>
 
-        <p style={styles.hint}>← スワイプ / タップ →</p>
+        <p style={styles.hint}>スワイプ or タップ</p>
       </div>
 
-      {/* ⭐ 右：ログイン */}
-      <div style={styles.right}>
+      {/* ⭐ ログイン */}
+      <div style={styles.login}>
         <h1 style={styles.title}>Magmathe</h1>
 
         <input
@@ -122,11 +133,7 @@ export default function LoginPage() {
           </div>
         )}
 
-        <button
-          onClick={handleSubmit}
-          disabled={loading}
-          style={styles.button}
-        >
+        <button onClick={handleSubmit} style={styles.button}>
           {loading ? '処理中...' : (
             <div style={styles.buttonInner}>
               {mode === 'login' ? <LogIn size={18} /> : <UserPlus size={18} />}
@@ -137,10 +144,7 @@ export default function LoginPage() {
 
         <button
           style={styles.switch}
-          onClick={() => {
-            setError(null)
-            setMode(mode === 'login' ? 'signup' : 'login')
-          }}
+          onClick={() => setMode(mode === 'login' ? 'signup' : 'login')}
         >
           {mode === 'login'
             ? 'はじめての方はこちら'
@@ -153,57 +157,40 @@ export default function LoginPage() {
 
 const styles: { [key: string]: CSSProperties } = {
   page: {
-    display: 'flex',
     height: '100vh',
+    display: 'flex',
+    flexDirection: 'column',
+    background: '#eef3f6',
     fontFamily: 'sans-serif',
   },
 
-  left: {
+  tutorial: {
     flex: 1,
-    background: '#e6edf2',
+    position: 'relative',
     display: 'flex',
-    flexDirection: 'column',
     justifyContent: 'center',
     alignItems: 'center',
-    padding: '40px',
-    position: 'relative',
-  },
-
-  right: {
-    flex: 1,
-    display: 'flex',
-    flexDirection: 'column',
-    justifyContent: 'center',
-    padding: '40px',
   },
 
   image: {
     width: '90%',
     maxWidth: '420px',
+    height: 'auto',
+    objectFit: 'cover',
   },
 
-  overlayBox: {
+  overlay: {
     position: 'absolute',
-    bottom: '80px',
+    bottom: '20px',
     background: 'rgba(255,255,255,0.95)',
-    padding: '16px 20px',
-    borderRadius: '14px',
+    padding: '14px',
+    borderRadius: '12px',
     textAlign: 'center',
-    boxShadow: '0 6px 16px rgba(0,0,0,0.15)',
-  },
-
-  slideTitle: {
-    fontSize: '20px',
-    fontWeight: 'bold',
-  },
-
-  slideDesc: {
-    fontSize: '14px',
-    marginTop: '4px',
   },
 
   dots: {
-    marginTop: '16px',
+    position: 'absolute',
+    bottom: '80px',
     display: 'flex',
     gap: '6px',
   },
@@ -216,24 +203,32 @@ const styles: { [key: string]: CSSProperties } = {
   },
 
   hint: {
+    position: 'absolute',
+    bottom: '0px',
     fontSize: '12px',
-    marginTop: '10px',
-    color: '#555',
+    color: '#666',
+  },
+
+  login: {
+    padding: '20px',
+    background: '#fff',
   },
 
   title: {
-    fontSize: '28px',
-    marginBottom: '20px',
+    textAlign: 'center',
+    marginBottom: '10px',
   },
 
   input: {
-    padding: '12px',
+    width: '100%',
+    padding: '10px',
     marginBottom: '10px',
     borderRadius: '8px',
     border: '1px solid #ccc',
   },
 
   button: {
+    width: '100%',
     padding: '12px',
     background: '#6c8ea4',
     color: '#fff',
@@ -245,7 +240,6 @@ const styles: { [key: string]: CSSProperties } = {
     display: 'flex',
     justifyContent: 'center',
     gap: '8px',
-    alignItems: 'center',
   },
 
   errorBox: {
@@ -257,6 +251,6 @@ const styles: { [key: string]: CSSProperties } = {
     marginTop: '10px',
     background: 'none',
     border: 'none',
-    color: '#666',
+    width: '100%',
   },
 }
