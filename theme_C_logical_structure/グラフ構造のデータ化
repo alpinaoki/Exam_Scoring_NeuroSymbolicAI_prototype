@@ -127,3 +127,125 @@
     {"source": "n2", "target": "n15", "relation": "line"},
   ]
 }
+
+
+
+#Legend33　判別式の利用 https://photos.app.goo.gl/F4qrYVRvenWa3Jy96
+
+{
+  "nodes": [
+    {
+     "id": "n1",
+     "text": "x^2-2ax-3a+4=0",
+     "shape": "box",
+     "contentType": "equation"
+    },
+    {
+     "id": "n2",
+     "text": "判別式D>0",
+     "shape": "circle",
+     "contentType": "condition"
+    },
+    {
+     "id": "n3",
+     "text": "D/4=a^2+3a-4>0",
+     "shape": "box",
+     "contentType": "equation"
+    },
+    {
+     "id": "n4",
+     "text": "因数分解する",
+     "shape": "circle",
+     "contentType": "sentence"
+    },
+    {
+     "id": "n5",
+     "text": "(a+4)(a-1)>0",
+     "shape": "box",
+     "contentType": "equation"
+    },
+    {
+     "id": "n6",
+     "text": "aの範囲を決める",
+     "shape": "circle",
+     "contentType": "sentence"
+    },
+    {
+     "id": "n7",
+     "text": "a<-4,1<a",
+     "shape": "box",
+     "contentType": "condition"
+    },
+    {
+     "id": "n8",
+     "text": "x^2+2ax-a+6=0",
+     "shape": "box",
+     "contentType": "equation"
+    },
+    {
+     "id": "n9",
+     "text": "判別式D>0",
+     "shape": "circle",
+     "contentType": "condition"
+    },
+    {
+     "id": "n10",
+     "text": "D/4=a^2+a-6>0",
+     "shape": "box",
+     "contentType": "equation"
+    },
+    {
+     "id": "n11",
+     "text": "因数分解する",
+     "shape": "circle",
+     "contentType": "sentence"
+    },
+    {
+     "id": "n12",
+     "text": "(a+3)(a-2)>0",
+     "shape": "box",
+     "contentType": "equation"
+    },
+    {
+     "id": "n13",
+     "text": "aの範囲を決める",
+     "shape": "circle",
+     "contentType": "sentence"
+    },
+    {
+     "id": "n14",
+     "text": "a<-3,2<a",
+     "shape": "box",
+     "contentType": "condition"
+    },
+    {
+     "id": "n15",
+     "text": "二つの方程式がともに実数解をもつ",
+     "shape": "circle",
+     "contentType": "sentence"
+    },
+    {
+     "id": "n16",
+     "text": "a<-4,2<a",
+     "shape": "box",
+     "contentType": "condition"
+    }
+  ],
+  "edges": [
+    {"source": "n1", "target": "n2", "relation": "line"},
+    {"source": "n2", "target": "n3", "relation": "line"},
+    {"source": "n3", "target": "n4", "relation": "line"},
+    {"source": "n4", "target": "n5", "relation": "line"},
+    {"source": "n5", "target": "n6", "relation": "line"},
+    {"source": "n6", "target": "n7", "relation": "line"},
+    {"source": "n8", "target": "n9", "relation": "line"},
+    {"source": "n9", "target": "n10", "relation": "line"},
+    {"source": "n10", "target": "n11", "relation": "line"},
+    {"source": "n11", "target": "n12", "relation": "line"},
+    {"source": "n12", "target": "n13", "relation": "line"},
+    {"source": "n13", "target": "n14", "relation": "line"},
+    {"source": "n7", "target": "n15", "relation": "line"},
+    {"source": "n14", "target": "n15", "relation": "line"},
+    {"source": "n15", "target": "n16", "relation": "line"}
+  ]
+}
