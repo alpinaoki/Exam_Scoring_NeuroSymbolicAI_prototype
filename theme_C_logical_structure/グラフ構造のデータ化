@@ -249,3 +249,183 @@
     {"source": "n15", "target": "n16", "relation": "line"}
   ]
 }
+
+#Legend120　
+
+{
+  "nodes": [
+    {
+     "id": "n1",
+     "text": "放物線C : y=x^2",
+     "shape": "box",
+     "contentType": "equation"
+    },
+    {
+     "id": "n2",
+     "text": "求める点 (x,y)",
+     "shape": "box",
+     "contentType": "sentence"
+    },
+    {
+     "id": "n3",
+     "text": "接線①",
+     "shape": "box",
+     "contentType": "sentence"
+    },
+    {
+     "id": "n4",
+     "text": "接線②",
+     "shape": "box",
+     "contentType": "sentence"
+    },
+    {
+     "id": "n5",
+     "text": "Cの接線なのでy軸に平行でない",
+     "shape": "circle",
+     "contentType": "sentence"
+    },
+    {
+     "id": "n6",
+     "text": "y-Y=m(x-X)",
+     "shape": "box",
+     "contentType": "equation"
+    },
+    {
+     "id": "n7",
+     "text": "展開する",
+     "shape": "cilcle",
+     "contentType": "sentence"
+    },
+    {
+     "id": "n8",
+     "text": "mx-mX+Y-y=0",
+     "shape": "box",
+     "contentType": "equation"
+    },
+    {
+     "id": "n9",
+     "text": "C : y=x^2 を代入",
+     "shape": "circle",
+     "contentType": "sentence"
+    },
+    {
+     "id": "n10",
+     "text": "mx-mX+Y-x^2=0",
+     "shape": "box",
+     "contentType": "equation"
+    },
+    {
+     "id": "n11",
+     "text": "判別式 D=0",
+     "shape": "circle",
+     "contentType": "condition"
+    },
+    {
+     "id": "n12",
+     "text": "m^2-4mX+4Y=0",
+     "shape": "box",
+     "contentType": "equation"
+    },
+    {
+     "id": "n13",
+     "text": "解と係数の関係",
+     "shape": "circle",
+     "contentType": "sentence"
+    },
+    {
+     "id": "n14",
+     "text": "m[1]+m[2]=4X",
+     "shape": "box",
+     "contentType": "eqution"
+    },
+    {
+     "id": "n15",
+     "text": "式変形",
+     "shape": "circle",
+     "contentType": "sentence"
+    },
+    {
+     "id": "n16",
+     "text": "m[2]=4X-m[1]",
+     "shape": "box",
+     "contentType": "equation"
+    },
+    {
+     "id": "n17",
+     "text": "判別式 D>0",
+     "shape": "circle",
+     "contentType": "condition"
+    },
+    {
+     "id": "n18",
+     "text": "D/4=4X^2-4Y>0",
+     "shape": "box",
+     "contentType": "equation"
+    },
+    {
+     "id": "n19",
+     "text": "m[1]m[2]=4Y",
+     "shape": "box",
+     "contentType": "equation"
+    },
+    {
+     "id": "n20",
+     "text": "①と②は直行する",
+     "shape": "circle",
+     "contentType": "sentence"
+    },
+    {
+     "id": "n21",
+     "text": "4Y=-1",
+     "shape": "box",
+     "contentType": "equation"
+    },
+    {
+     "id": "n22",
+     "text": "式変形",
+     "shape": "circle",
+     "contentType": "sentence"
+    },
+    {
+     "id": "n23",
+     "text": "Y=-1/4",
+     "shape": "box",
+     "contentType": "equation"
+    },
+    {
+     "id": "n24",
+     "text": "直立",
+     "shape": "circle",
+     "contentType": "sentence"
+    },
+    {
+     "id": "n25",
+     "text": "D/4=4X^2+1>0",
+     "shape": "box",
+     "contentType": "equation"
+    },
+    {
+     "id": "n26",
+     "text": "すべてのXについて正",
+     "shape": "box",
+     "contentType": "sentence"
+    },
+  ],
+  "edges": [
+    {"source": "n3", "target": "n5", "relation": "line"},
+    {"source": "n5", "target": "n3", "relation": "line"},
+    {"source": "n6", "target": "n4", "relation": "line"},
+    {"source": "n7", "target": "n5", "relation": "line"},
+    {"source": "n8", "target": "n6", "relation": "line"},
+    {"source": "n9", "target": "n7", "relation": "line"},
+    {"source": "n10", "target": "n9", "relation": "line"},
+    {"source": "n11", "target": "n10", "relation": "line"},
+    {"source": "n12", "target": "n11", "relation": "line"},
+    {"source": "n13", "target": "n12", "relation": "line"},
+    {"source": "n14", "target": "n13", "relation": "line"},
+    {"source": "n15", "target": "n14", "relation": "line"},
+    {"source": "n12", "target": "n15", "relation": "line"},
+    {"source": "n17", "target": "n15", "relation": "line"},
+    {"source": "n18", "target": "n16", "relation": "line"}
+  ]
+}
