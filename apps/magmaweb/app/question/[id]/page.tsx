@@ -84,7 +84,8 @@ export default function ThreadPage() {
         </div>
 
         <div style={{ padding: '16px' }}>
-          <QuestionCard data={cardData} />
+          {/* showLink={false} を追加 */}
+          <QuestionCard data={cardData} showLink={false} />
         </div>
 
         <div style={styles.messageList}>

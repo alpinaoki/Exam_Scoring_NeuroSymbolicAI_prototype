@@ -34,9 +34,12 @@ type Props = {
       y_float: number
     }>
   }
+  // showLinkがfalseの場合、詳細ページへのリンクやボタンを非表示にします
+  showLink?: boolean
 }
 
-export default function QuestionCard({ data }: Props) {
+
+export default function QuestionCard({ data, showLink = true }: Props) {
   const { problem, answer, reactions } = data
   const [firstMessage, setFirstMessage] = useState<QuestionMessage | null>(null)
 
@@ -105,7 +108,8 @@ export default function QuestionCard({ data }: Props) {
         <div style={styles.imageBlock}>
           <div style={styles.labelRow}><span style={styles.imageLabel}>考え方（解答）</span></div>
           <div style={styles.imageContainerFree}>
-            {threadId ? (
+            {/* showLink かつ threadId がある場合のみリンクとして機能させる */}
+            {showLink && threadId ? (
               <Link href={`/question/${threadId}`} style={styles.relativeLink}>
                 <img src={answer.image_url} alt="My Answer" style={styles.fullWidthImg} draggable={false} />
                 {hasValidPos && (
@@ -121,28 +125,48 @@ export default function QuestionCard({ data }: Props) {
                 )}
               </Link>
             ) : (
-              <img src={answer.image_url} alt="My Answer" style={styles.fullWidthImg} />
+              /* 詳細ページ表示時などはリンクなしのプレーンな表示 */
+              <div style={styles.relativeLink}>
+                <img src={answer.image_url} alt="My Answer" style={styles.fullWidthImg} />
+                {hasValidPos && (
+                  <div
+                    style={{
+                      ...styles.reactionPin,
+                      left: `${x * 100}%`,
+                      top: `${y * 100}%`,
+                    }}
+                  >
+                    <HelpCircle size={20} fill="#99E6FF" stroke="#444" strokeWidth={1.2} />
+                  </div>
+                )}
+              </div>
             )}
           </div>
         </div>
       </div>
 
-      <div style={styles.footer}>
-        {threadId ? (
-          <Link href={`/question/${threadId}`} style={{ textDecoration: 'none' }}>
-            <button style={styles.moreBtn}>
+      {/* 
+        showLink が true の場合のみフッターを表示。
+        詳細ページ（question/[id]/page.tsx）では不要なため隠れる。
+      */}
+      {showLink && (
+        <div style={styles.footer}>
+          {threadId ? (
+            <Link href={`/question/${threadId}`} style={{ textDecoration: 'none' }}>
+              <button style={styles.moreBtn}>
+                <MessageCircle size={18} />
+                スレッドで詳しく見る・回答する 
+                <ChevronRight size={18} style={styles.btnArrow} />
+              </button>
+            </Link>
+          ) : (
+            <div style={styles.disabledBtn}>
               <MessageCircle size={18} />
-              スレッドで詳しく見る・回答する 
-              <ChevronRight size={18} style={styles.btnArrow} />
-            </button>
-          </Link>
-        ) : (
-          <div style={styles.disabledBtn}>
-            <MessageCircle size={18} />
-            スレッドを取得中...
-          </div>
-        )}
-      </div>
+              スレッドを取得中...
+            </div>
+          )}
+        </div>
+      )}
     </div>
   )
 }
