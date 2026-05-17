@@ -7,6 +7,9 @@ import Link from 'next/link'
 import { signIn, signUp } from '../../lib/auth'
 import { LogIn, UserPlus, AlertCircle } from 'lucide-react'
 
+// ★ 背景画像のURL
+const BACKGROUND_IMAGE_URL = 'url("https://res.cloudinary.com/dk8pvfpzx/image/upload/v1779023101/img_9848_720_eoufy3.jpg")'
+
 export default function LoginPage() {
   const router = useRouter()
 
@@ -33,11 +36,11 @@ export default function LoginPage() {
     }
   }
 
-  // 同意文言の共通コンポーネント化
-  const AgreementText = () => (
-    <p style={styles.agreement}>
+  // 同意文言の共通コンポーネント化（白背景用と暗い背景用のスタイルを切り替え）
+  const AgreementText = ({ whiteMode = false }: { whiteMode?: boolean }) => (
+    <p style={whiteMode ? styles.agreementWhite : styles.agreement}>
       続行することで、
-      <Link href="/terms" style={styles.agreementLink}>Magmatheの利用規約</Link>
+      <Link href="/terms" style={whiteMode ? styles.agreementLinkWhite : styles.agreementLink}>Magmatheの利用規約</Link>
       に同意し、Magmatheのプライバシーポリシーを読んだものとみなされます。
     </p>
   )
@@ -48,28 +51,38 @@ export default function LoginPage() {
       {/* ===== 縦方向のスライダコンテナ ===== */}
       <div style={styles.slider}>
 
-        {/* ① スタート */}
-        <div style={styles.slide}>
-          <div style={styles.contentCard}>
+        {/* ① スタート（カードなし・背景画像に白文字を載せる形式） */}
+        <div style={{ ...styles.slide, ...styles.imageSlide }}>
+          <div style={styles.fullContentContainer}>
             <img src="/illustration-main.png" style={styles.image}/>
-            <h1 style={styles.logoText}>Magmatheへようこそ！</h1>
-            <p style={styles.catchphrase}>解き方でつながる高校生のための数学SNS</p>
+            <h1 style={styles.logoTextWhite}>Magmatheへようこそ！</h1>
+            <p style={styles.catchphraseWhite}>解き方でつながる高校生のための数学SNS</p>
 
             <input
               placeholder="ユーザー名"
               value={username}
               onChange={e => setUsername(e.target.value)}
-              style={styles.input}
+              style={{ ...styles.input, ...styles.inputWhite }}
             />
             <input
               type="password"
               placeholder="パスワード"
               value={password}
               onChange={e => setPassword(e.target.value)}
-              style={styles.input}
+              style={{ ...styles.input, ...styles.inputWhite }}
             />
 
-            <AgreementText />
+            {/* ★ 1枚目にログインボタンを配置 */}
+            <button onClick={handleSubmit} style={styles.button}>
+              {loading ? '処理中...' : (
+                <div style={styles.buttonInner}>
+                  <LogIn size={18}/>
+                  <span>ログイン</span>
+                </div>
+              )}
+            </button>
+
+            <AgreementText whiteMode />
           </div>
         </div>
 
@@ -97,27 +110,27 @@ export default function LoginPage() {
           </div>
         </div>
 
-        {/* ⑤ 最後（フォーム完了） */}
-        <div style={styles.slide}>
-          <div style={styles.contentCard}>
-            <h2 style={styles.formTitle}>{mode === 'login' ? 'ログイン' : '新規登録'}</h2>
+        {/* ⑤ 最後（フォーム完了・カードなし・背景画像に白文字を載せる形式） */}
+        <div style={{ ...styles.slide, ...styles.imageSlide }}>
+          <div style={styles.fullContentContainer}>
+            <h2 style={styles.formTitleWhite}>{mode === 'login' ? 'ログイン' : '新規登録'}</h2>
 
             <input
               placeholder="ユーザー名"
               value={username}
               onChange={e => setUsername(e.target.value)}
-              style={styles.input}
+              style={{ ...styles.input, ...styles.inputWhite }}
             />
             <input
               type="password"
               placeholder="パスワード"
               value={password}
               onChange={e => setPassword(e.target.value)}
-              style={styles.input}
+              style={{ ...styles.input, ...styles.inputWhite }}
             />
 
             {error && (
-              <div style={styles.errorBox}>
+              <div style={styles.errorBoxWhite}>
                 <AlertCircle size={16}/>
                 <span>{error}</span>
               </div>
@@ -133,13 +146,13 @@ export default function LoginPage() {
             </button>
 
             <button
-              style={styles.switch}
+              style={{ ...styles.switch, ...styles.switchWhite }}
               onClick={() => setMode(mode === 'login' ? 'signup' : 'login')}
             >
               {mode === 'login' ? 'アカウントをお持ちでないですか？ 新規登録' : '既にアカウントをお持ちですか？ ログイン'}
             </button>
 
-            <AgreementText />
+            <AgreementText whiteMode />
           </div>
         </div>
 
@@ -174,7 +187,25 @@ const styles: { [key: string]: CSSProperties } = {
     padding: '20px',
     boxSizing: 'border-box',
     scrollSnapAlign: 'start',      
-    scrollSnapStop: 'always', // ★ どんなに強いスワイプでも、必ず1枚ずつ止まるように指定
+    scrollSnapStop: 'always', 
+  },
+
+  // ★ 追加：1枚目と5枚目の背景画像用（少し暗く落とすためにグラデーションを重ねる）
+  imageSlide: {
+    backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.75)), ${BACKGROUND_IMAGE_URL}`,
+    backgroundSize: 'cover',
+    backgroundPosition: 'center',
+  },
+
+  // ★ 追加：白カードの代わりに全体を受け止める透明なコンテナ
+  fullContentContainer: {
+    width: '100%',
+    maxWidth: '400px',
+    textAlign: 'center',
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 
   contentCard: {
@@ -199,10 +230,27 @@ const styles: { [key: string]: CSSProperties } = {
     letterSpacing: '-0.03em',
   },
 
+  // ★ 追加：背景画像上の白いロゴテキスト
+  logoTextWhite: {
+    fontSize: '32px',
+    fontWeight: '900',
+    color: '#fff',
+    margin: '12px 0 4px',
+    letterSpacing: '-0.03em',
+  },
+
   catchphrase: {
     fontSize: '15px',
     fontWeight: 'bold',
     color: '#7f8c8d',
+    marginBottom: '24px',
+  },
+
+  // ★ 追加：背景画像上の白いキャッチフレーズ
+  catchphraseWhite: {
+    fontSize: '15px',
+    fontWeight: 'bold',
+    color: '#e2e8f0',
     marginBottom: '24px',
   },
 
@@ -219,6 +267,14 @@ const styles: { [key: string]: CSSProperties } = {
     fontSize: '24px',
     fontWeight: '800',
     color: '#2c3e50',
+    marginBottom: '16px',
+  },
+
+  // ★ 追加：背景画像上の白いフォームタイトル
+  formTitleWhite: {
+    fontSize: '24px',
+    fontWeight: '800',
+    color: '#fff',
     marginBottom: '16px',
   },
 
@@ -244,6 +300,14 @@ const styles: { [key: string]: CSSProperties } = {
     fontSize: '16px',
     outline: 'none',
     boxSizing: 'border-box',
+  },
+
+  // ★ 追加：透過した白いインプットボックス
+  inputWhite: {
+    border: '1px solid rgba(255, 255, 255, 0.3)',
+    background: 'rgba(255, 255, 255, 0.15)',
+    color: '#fff',
+    backdropFilter: 'blur(8px)',
   },
 
   button: {
@@ -277,6 +341,17 @@ const styles: { [key: string]: CSSProperties } = {
     fontWeight: 'bold',
   },
 
+  // ★ 追加：白背景用のエラーボックス
+  errorBoxWhite: {
+    color: '#ff6b6b',
+    fontSize: '13px',
+    marginTop: '12px',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '6px',
+    fontWeight: 'bold',
+  },
+
   switch: {
     marginTop: '16px',
     background: 'none',
@@ -286,10 +361,22 @@ const styles: { [key: string]: CSSProperties } = {
     fontWeight: '600',
     cursor: 'pointer',
     textDecoration: 'underline',
-    marginBottom: '8px', // 同意文言との間に少しスペースを確保
+    marginBottom: '8px', 
   },
 
-  // ★ 追加したちっちゃめの同意文言スタイル
+  // ★ 追加：白い切替テキスト
+  switchWhite: {
+    marginTop: '16px',
+    background: 'none',
+    border: 'none',
+    color: '#cbd5e1',
+    fontSize: '13px',
+    fontWeight: '600',
+    cursor: 'pointer',
+    textDecoration: 'underline',
+    marginBottom: '8px',
+  },
+
   agreement: {
     fontSize: '11px',
     color: '#95a5a6',
@@ -299,9 +386,26 @@ const styles: { [key: string]: CSSProperties } = {
     wordBreak: 'break-all',
   },
 
-  // ★ 規約リンクのスタイル
+  // ★ 追加：背景画像上の白い同意テキスト
+  agreementWhite: {
+    fontSize: '11px',
+    color: '#94a3b8',
+    lineHeight: '1.5',
+    marginTop: '20px',
+    textAlign: 'center',
+    wordBreak: 'break-all',
+  },
+
   agreementLink: {
     color: '#7f8c8d',
+    textDecoration: 'underline',
+    fontWeight: 'bold',
+    margin: '0 2px',
+  },
+
+  // ★ 追加：背景画像上の白い同意リンク
+  agreementLinkWhite: {
+    color: '#f1f5f9',
     textDecoration: 'underline',
     fontWeight: 'bold',
     margin: '0 2px',
