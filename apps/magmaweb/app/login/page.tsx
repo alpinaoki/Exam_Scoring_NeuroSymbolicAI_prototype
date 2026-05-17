@@ -54,7 +54,6 @@ export default function LoginPage() {
         {/* ① スタート（カードなし・背景画像に白文字を載せる形式） */}
         <div style={{ ...styles.slide, ...styles.imageSlide }}>
           <div style={styles.fullContentContainer}>
-            <img src="/illustration-main.png" style={styles.image}/>
             <h1 style={styles.logoTextWhite}>Magmatheへようこそ！</h1>
             <p style={styles.catchphraseWhite}>解き方でつながる高校生のための数学SNS</p>
 
