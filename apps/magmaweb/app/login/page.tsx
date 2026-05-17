@@ -85,24 +85,24 @@ export default function LoginPage() {
           </div>
         </div>
 
-        {/* ② 機能 */}
-        <div style={styles.slide}>
+        {/* ② 機能（背景：深みのあるブルーグリーン） */}
+        <div style={{ ...styles.slide, backgroundColor: '#1e2d3b' }}>
           <div style={styles.contentCard}>
             <img src="/card1.png" style={styles.cardImg}/>
             <p style={styles.descText}>他の人の解き方が見れる</p>
           </div>
         </div>
 
-        {/* ③ 機能 */}
-        <div style={styles.slide}>
+        {/* ③ 機能（背景：知的なモスグリーン） */}
+        <div style={{ ...styles.slide, backgroundColor: '#24342f' }}>
           <div style={styles.contentCard}>
             <img src="/card2.png" style={styles.cardImg}/>
             <p style={styles.descText}>間違いも価値になる</p>
           </div>
         </div>
 
-        {/* ④ 機能 */}
-        <div style={styles.slide}>
+        {/* ④ 機能（背景：気品のあるディープパープル） */}
+        <div style={{ ...styles.slide, backgroundColor: '#2b2436' }}>
           <div style={styles.contentCard}>
             <img src="/card3.png" style={styles.cardImg}/>
             <p style={styles.descText}>どこが大事か分かる</p>
@@ -187,6 +187,7 @@ const styles: { [key: string]: CSSProperties } = {
     boxSizing: 'border-box',
     scrollSnapAlign: 'start',      
     scrollSnapStop: 'always', 
+    transition: 'background-color 0.4s ease', // スワイプ時の色変化を滑らかにする
   },
 
   // ★ 追加：1枚目と5枚目の背景画像用（少し暗く落とすためにグラデーションを重ねる）
