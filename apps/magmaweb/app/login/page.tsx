@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import type { CSSProperties } from 'react'
+import Link from 'next/link'
 import { signIn, signUp } from '../../lib/auth'
 import { LogIn, UserPlus, AlertCircle } from 'lucide-react'
 
@@ -32,6 +33,15 @@ export default function LoginPage() {
     }
   }
 
+  // 同意文言の共通コンポーネント化
+  const AgreementText = () => (
+    <p style={styles.agreement}>
+      続行することで、
+      <Link href="/terms" style={styles.agreementLink}>Magmatheの利用規約</Link>
+      に同意し、Magmatheのプライバシーポリシーを読んだものとみなされます。
+    </p>
+  )
+
   return (
     <div style={styles.page}>
 
@@ -42,8 +52,8 @@ export default function LoginPage() {
         <div style={styles.slide}>
           <div style={styles.contentCard}>
             <img src="/illustration-main.png" style={styles.image}/>
-            <h1 style={styles.logoText}>Magmathe</h1>
-            <p style={styles.catchphrase}>解き方でつながる</p>
+            <h1 style={styles.logoText}>Magmatheへようこそ！</h1>
+            <p style={styles.catchphrase}>解き方でつながる高校生のための数学SNS</p>
 
             <input
               placeholder="ユーザー名"
@@ -58,6 +68,8 @@ export default function LoginPage() {
               onChange={e => setPassword(e.target.value)}
               style={styles.input}
             />
+
+            <AgreementText />
           </div>
         </div>
 
@@ -126,6 +138,8 @@ export default function LoginPage() {
             >
               {mode === 'login' ? 'アカウントをお持ちでないですか？ 新規登録' : '既にアカウントをお持ちですか？ ログイン'}
             </button>
+
+            <AgreementText />
           </div>
         </div>
 
@@ -160,6 +174,7 @@ const styles: { [key: string]: CSSProperties } = {
     padding: '20px',
     boxSizing: 'border-box',
     scrollSnapAlign: 'start',      
+    scrollSnapStop: 'always', // ★ どんなに強いスワイプでも、必ず1枚ずつ止まるように指定
   },
 
   contentCard: {
@@ -185,7 +200,7 @@ const styles: { [key: string]: CSSProperties } = {
   },
 
   catchphrase: {
-    fontSize: '16px',
+    fontSize: '15px',
     fontWeight: 'bold',
     color: '#7f8c8d',
     marginBottom: '24px',
@@ -271,5 +286,24 @@ const styles: { [key: string]: CSSProperties } = {
     fontWeight: '600',
     cursor: 'pointer',
     textDecoration: 'underline',
+    marginBottom: '8px', // 同意文言との間に少しスペースを確保
+  },
+
+  // ★ 追加したちっちゃめの同意文言スタイル
+  agreement: {
+    fontSize: '11px',
+    color: '#95a5a6',
+    lineHeight: '1.5',
+    marginTop: '20px',
+    textAlign: 'center',
+    wordBreak: 'break-all',
+  },
+
+  // ★ 規約リンクのスタイル
+  agreementLink: {
+    color: '#7f8c8d',
+    textDecoration: 'underline',
+    fontWeight: 'bold',
+    margin: '0 2px',
   },
 }
