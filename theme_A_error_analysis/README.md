@@ -8,7 +8,10 @@
 <magmatheの現状でのファイル構成>（2/2更新）
 magmaweb/
 ーapp/
-｜ーanalysis/page.tsx
+｜ーanalysis/
+｜｜ーpage.tsx（←準備中のまま残す、または[id]への導線にする）
+｜｜ー[id]/
+｜｜｜ーpage.tsx（★新規作成：論理構造 診断書画面）
 ｜ーfeed/page.tsx
 ｜ーlogin/page.tsx
 ｜ーme/page.ts
@@ -40,6 +43,9 @@ magmaweb/
 ｜ーtime.ts
 ｜ーupload.ts
 ｜ーuserColor.ts
+｜ーapi/
+｜｜ーanalyze/
+｜｜｜ーroute.ts（★新規作成：Geminiを叩くエンドポイント）
 ーpublic
 ｜ーproblems/
 ｜｜ーsample1.jpg
