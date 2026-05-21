@@ -65,19 +65,26 @@ export default function AnalysisDetailPage() {
       </div>
 
       <div style={styles.contentLayout}>
-        {/* 左側：生徒のオリジナル解答画像 */}
-        <div style={styles.imageSection}>
-          <h3 style={styles.sectionTitle}>提出された答案</h3>
-          <div style={styles.imageWrapper}>
-            {loading ? (
-              <div style={styles.imagePlaceholder}>画像を読み込み中...</div>
-            ) : data?.imageUrl ? (
-              <img src={data.imageUrl} alt="student answer" style={styles.rawImage} />
-            ) : (
-              <div style={styles.imagePlaceholder}>画像がありません</div>
-            )}
-          </div>
-        </div>
+        {/* 左側：生徒のオリジナル解答画像（デバッグ用） */}
+<div style={styles.imageSection}>
+  <h3 style={styles.sectionTitle}>提出された答案</h3>
+  <div style={styles.imageWrapper}>
+    {loading ? (
+      <div style={styles.imagePlaceholder}>画像を読み込み中...</div>
+    ) : data?.imageUrl ? (
+      <div>
+        <p style={{ fontSize: '11px', color: '#666', wordBreak: 'break-all', padding: '8px' }}>
+          取得できたURL: {data.imageUrl}
+        </p>
+        <img src={data.imageUrl} alt="student answer" style={styles.rawImage} />
+      </div>
+    ) : (
+      <div style={styles.imagePlaceholder}>
+        画像URLが空です (ID: {answerId})
+      </div>
+    )}
+  </div>
+</div>
 
         {/* 右側：Geminiから返ってきた論理グラフの視覚化 */}
         <div style={styles.graphSection}>
