@@ -2,24 +2,23 @@ import { NextResponse } from 'next/server'
 import { GoogleGenAI } from '@google/genai'
 import { createClient } from '@supabase/supabase-js'
 
-// VercelのEnvironment Variablesからキーを自動取得
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY })
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
   const answerId = searchParams.get('answerId')
 
+  console.log('--- [API START] answerId:', answerId)
+
   if (!answerId) {
     return NextResponse.json({ error: 'Missing answerId' }, { status: 400 })
   }
 
-  // Vercel環境上の環境変数を使ってSupabaseを初期化
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY! // 特権キー（なければANONでも可）
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
   )
   
-  // postsテーブルから答案の画像URLを引く
   const { data: answer, error } = await supabase
     .from('posts')
     .select('image_url')
@@ -27,16 +26,19 @@ export async function GET(request: Request) {
     .single()
 
   if (error || !answer?.image_url) {
+    console.error('--- [Supabase Error] or Image missing:', error)
     return NextResponse.json({ error: 'Answer image not found' }, { status: 404 })
   }
 
+  console.log('--- [Supabase Success] image_url:', answer.image_url)
+
   try {
-    // 画像URLを一度サーバーサイドでfetchしてBase64にコンバート
     const imageRes = await fetch(answer.image_url)
     const arrayBuffer = await imageRes.arrayBuffer()
     const base64Image = Buffer.from(arrayBuffer).toString('base64')
 
-    // Gemini 1.5 Proへ最小限のDAG化プロンプトを投入
+    console.log('--- [Gemini Request] Sending image to Gemini...')
+
     const response = await ai.models.generateContent({
       model: 'gemini-1.5-pro',
       contents: [
@@ -65,20 +67,32 @@ export async function GET(request: Request) {
       ],
       config: {
         responseMimeType: 'application/json',
-        temperature: 0.0 // 決定論的に固定
+        temperature: 0.0
       }
     })
 
-    const graphData = JSON.parse(response.text)
+    console.log('--- [Gemini Raw Response]:', response.text)
+
+    // ここでパースエラーが起きやすいので安全に処理
+    let graphData
+    try {
+      // 稀に ```json が含まれてしまう場合の防衛策
+      const cleanText = response.text.replace(/```json|```/g, '').trim()
+      graphData = JSON.parse(cleanText)
+    } catch (parseErr) {
+      console.error('--- [JSON Parse Failed] Raw text was:', response.text)
+      throw new Error('Gemini output was not valid JSON')
+    }
     
-    // 画面側で画像も表示できるように、image_urlも一緒に返してあげる
+    console.log('--- [API SUCCESS] Parsed graphData successfully')
+
     return NextResponse.json({
       imageUrl: answer.image_url,
       graph: graphData
     })
 
   } catch (err) {
-    console.error('Gemini API Error:', err)
+    console.error('--- [Gemini API Error]:', err)
     return NextResponse.json({ error: 'Gemini processing failed' }, { status: 500 })
   }
 }
