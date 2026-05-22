@@ -1,12 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { GoogleGenAI } from '@google/genai'
-import { createClient } from '@supabase/supabase-js'
+// 既に完璧に動いている外部クライアントを直接マウント
+import { supabase } from '../../../lib/supabase'
 
-// APIキーが未設定の場合のビルドエラーを防ぐためフォールバックを設定
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || '' })
 
 export async function GET(request: NextRequest) {
-  // page.tsxのクエリパラメータ形式 (?answerId=) を正確に取得
   const { searchParams } = new URL(request.url)
   const answerId = searchParams.get('answerId')
 
@@ -14,20 +13,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Missing answerId (パラメータが空です)' }, { status: 400 })
   }
 
-  // Vercel上の環境変数を取得
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
-
-  if (!supabaseUrl || !supabaseServiceKey) {
-    return NextResponse.json({ 
-      error: '環境変数が設定されていません', 
-      details: 'NEXT_PUBLIC_SUPABASE_URL または SUPABASE_SERVICE_ROLE_KEY がVercel側で空です。' 
-    }, { status: 500 })
-  }
-
-  const supabase = createClient(supabaseUrl, supabaseServiceKey)
-  
-  // postsテーブルから画像URLを取得
+  // すでに確立されているクライアントからそのままpostsテーブルを叩く
   const { data: answer, error } = await supabase
     .from('posts')
     .select('image_url')
@@ -42,7 +28,6 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    // 画像をBase64に変換してGeminiに投げる
     const imageRes = await fetch(answer.image_url)
     const arrayBuffer = await imageRes.arrayBuffer()
     const base64Image = Buffer.from(arrayBuffer).toString('base64')
@@ -81,7 +66,6 @@ export async function GET(request: NextRequest) {
 
     const rawText = response.text
 
-    // page.tsxの受け皿に合わせてパース処理
     try {
       const cleanText = rawText.replace(/```json|```/g, '').trim()
       const graphData = JSON.parse(cleanText)
@@ -91,7 +75,6 @@ export async function GET(request: NextRequest) {
         graph: graphData
       })
     } catch (parseErr) {
-      // JSONパースに失敗した場合、page.tsxの debugRawText に流せる構造で返す
       return NextResponse.json({
         error: 'Geminiの出力データがJSONとして不適正です',
         rawText: rawText
