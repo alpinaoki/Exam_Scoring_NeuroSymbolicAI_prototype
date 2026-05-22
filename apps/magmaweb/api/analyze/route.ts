@@ -1,22 +1,33 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { GoogleGenAI } from '@google/genai'
 import { createClient } from '@supabase/supabase-js'
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY })
+// APIキーが未設定の場合のビルドエラーを防ぐためフォールバックを設定
+const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || '' })
 
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
+  // page.tsxのクエリパラメータ形式 (?answerId=) を正確に取得
   const { searchParams } = new URL(request.url)
   const answerId = searchParams.get('answerId')
 
   if (!answerId) {
-    return NextResponse.json({ error: 'Missing answerId (フロントからのIDが空です)' }, { status: 400 })
+    return NextResponse.json({ error: 'Missing answerId (パラメータが空です)' }, { status: 400 })
   }
 
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  )
+  // Vercel上の環境変数を取得
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+
+  if (!supabaseUrl || !supabaseServiceKey) {
+    return NextResponse.json({ 
+      error: '環境変数が設定されていません', 
+      details: 'NEXT_PUBLIC_SUPABASE_URL または SUPABASE_SERVICE_ROLE_KEY がVercel側で空です。' 
+    }, { status: 500 })
+  }
+
+  const supabase = createClient(supabaseUrl, supabaseServiceKey)
   
+  // postsテーブルから画像URLを取得
   const { data: answer, error } = await supabase
     .from('posts')
     .select('image_url')
@@ -26,11 +37,12 @@ export async function GET(request: Request) {
   if (error || !answer?.image_url) {
     return NextResponse.json({ 
       error: 'Supabaseから画像URLを取得できませんでした', 
-      details: error?.message || '画像URLが空です' 
+      details: error?.message || '該当する答案データに画像URLがありません。' 
     }, { status: 404 })
   }
 
   try {
+    // 画像をBase64に変換してGeminiに投げる
     const imageRes = await fetch(answer.image_url)
     const arrayBuffer = await imageRes.arrayBuffer()
     const base64Image = Buffer.from(arrayBuffer).toString('base64')
@@ -69,7 +81,7 @@ export async function GET(request: Request) {
 
     const rawText = response.text
 
-    // パースを試みる
+    // page.tsxの受け皿に合わせてパース処理
     try {
       const cleanText = rawText.replace(/```json|```/g, '').trim()
       const graphData = JSON.parse(cleanText)
@@ -79,16 +91,16 @@ export async function GET(request: Request) {
         graph: graphData
       })
     } catch (parseErr) {
-      // JSONパースに失敗した場合、生テキストを添えてフロントに200で無理やり返す（画面で見るため）
+      // JSONパースに失敗した場合、page.tsxの debugRawText に流せる構造で返す
       return NextResponse.json({
-        error: 'Geminiの出力が正しくJSONパースできませんでした',
+        error: 'Geminiの出力データがJSONとして不適正です',
         rawText: rawText
       })
     }
 
   } catch (err: any) {
     return NextResponse.json({ 
-      error: 'Gemini API自体の呼び出し、または画像fetchで致命的エラーが発生しました', 
+      error: 'Gemini APIへのリクエスト、または画像取得で致命的エラーが発生しました', 
       details: err?.message || String(err)
     }, { status: 500 })
   }
