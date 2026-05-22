@@ -33,7 +33,8 @@ export async function GET(request: NextRequest) {
     const base64Image = Buffer.from(arrayBuffer).toString('base64')
 
     const response = await ai.models.generateContent({
-      model: 'gemini-1.5-pro',
+      // 💡 'models/gemini-1.5-pro' からプレフィックスを除去した最新モデルに変更
+      model: 'gemini-2.5-flash', 
       contents: [
         {
           role: 'user',
