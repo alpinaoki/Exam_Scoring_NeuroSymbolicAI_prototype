@@ -8,10 +8,8 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
   const answerId = searchParams.get('answerId')
 
-  console.log('--- [API START] answerId:', answerId)
-
   if (!answerId) {
-    return NextResponse.json({ error: 'Missing answerId' }, { status: 400 })
+    return NextResponse.json({ error: 'Missing answerId (フロントからのIDが空です)' }, { status: 400 })
   }
 
   const supabase = createClient(
@@ -26,18 +24,16 @@ export async function GET(request: Request) {
     .single()
 
   if (error || !answer?.image_url) {
-    console.error('--- [Supabase Error] or Image missing:', error)
-    return NextResponse.json({ error: 'Answer image not found' }, { status: 404 })
+    return NextResponse.json({ 
+      error: 'Supabaseから画像URLを取得できませんでした', 
+      details: error?.message || '画像URLが空です' 
+    }, { status: 404 })
   }
-
-  console.log('--- [Supabase Success] image_url:', answer.image_url)
 
   try {
     const imageRes = await fetch(answer.image_url)
     const arrayBuffer = await imageRes.arrayBuffer()
     const base64Image = Buffer.from(arrayBuffer).toString('base64')
-
-    console.log('--- [Gemini Request] Sending image to Gemini...')
 
     const response = await ai.models.generateContent({
       model: 'gemini-1.5-pro',
@@ -71,28 +67,29 @@ export async function GET(request: Request) {
       }
     })
 
-    console.log('--- [Gemini Raw Response]:', response.text)
+    const rawText = response.text
 
-    // ここでパースエラーが起きやすいので安全に処理
-    let graphData
+    // パースを試みる
     try {
-      // 稀に ```json が含まれてしまう場合の防衛策
-      const cleanText = response.text.replace(/```json|```/g, '').trim()
-      graphData = JSON.parse(cleanText)
+      const cleanText = rawText.replace(/```json|```/g, '').trim()
+      const graphData = JSON.parse(cleanText)
+      
+      return NextResponse.json({
+        imageUrl: answer.image_url,
+        graph: graphData
+      })
     } catch (parseErr) {
-      console.error('--- [JSON Parse Failed] Raw text was:', response.text)
-      throw new Error('Gemini output was not valid JSON')
+      // JSONパースに失敗した場合、生テキストを添えてフロントに200で無理やり返す（画面で見るため）
+      return NextResponse.json({
+        error: 'Geminiの出力が正しくJSONパースできませんでした',
+        rawText: rawText
+      })
     }
-    
-    console.log('--- [API SUCCESS] Parsed graphData successfully')
 
-    return NextResponse.json({
-      imageUrl: answer.image_url,
-      graph: graphData
-    })
-
-  } catch (err) {
-    console.error('--- [Gemini API Error]:', err)
-    return NextResponse.json({ error: 'Gemini processing failed' }, { status: 500 })
+  } catch (err: any) {
+    return NextResponse.json({ 
+      error: 'Gemini API自体の呼び出し、または画像fetchで致命的エラーが発生しました', 
+      details: err?.message || String(err)
+    }, { status: 500 })
   }
 }
