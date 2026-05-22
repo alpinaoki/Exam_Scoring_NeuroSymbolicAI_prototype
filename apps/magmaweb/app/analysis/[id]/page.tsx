@@ -4,12 +4,21 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@supabase/supabase-js'
 import AnswerCard from '../../../components/AnswerCard'
-import { CircleArrowLeft, Sparkles } from 'lucide-react'
+import DagVisualizer from '../../../components/DagVisualizer' // 新設したコンポーネント
+import { CircleArrowLeft, Layers } from 'lucide-react'
+
+// 研究用グラフデータの型宣言
+type GraphData = {
+  nodes: Array<{ id: string; label: string; type: 'proposition' | 'inference' }>
+  edges: Array<{ from: string; to: string }>
+}
 
 export default function AnalysisPage({ params }: { params: { id: string } }) {
   const router = useRouter()
   const [answerData, setAnswerData] = useState<any>(null)
-  const [aiAnalysis, setAiAnalysis] = useState<string>('')
+  
+  // 厳密な構造化DAGデータをステートで持つ
+  const [graphData, setGraphData] = useState<GraphData | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -20,7 +29,7 @@ export default function AnalysisPage({ params }: { params: { id: string } }) {
           process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
         )
 
-        // ① 今うまくいっている MePage や AnswerCard と同じ方法で、posts から解答を1件直撃で取得
+        // ① posts から該当の答案データを取得
         const { data: post, error: pError } = await supabase
           .from('posts')
           .select(`
@@ -39,20 +48,21 @@ export default function AnalysisPage({ params }: { params: { id: string } }) {
         if (pError) throw pError
         setAnswerData(post)
 
-        // ② AIの分析診断書（テキスト）を取得するAPIを叩く
-        // ※ API側には画像URLではなく、このanswerId（params.id）だけを渡してテキストを生成させる仕様にします
-        const res = await fetch(`/api/analyze`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ answerId: params.id }),
+        // ② api/analyze/route.ts の仕様 (GET / ?answerId=) に完全に合わせる
+        const res = await fetch(`/api/analyze?answerId=${params.id}`, {
+          method: 'GET',
         })
 
-        if (!res.ok) throw new Error('分析の取得に失敗しました')
+        if (!res.ok) throw new Error('DAGデータの取得に失敗しました')
         const json = await res.json()
-        setAiAnalysis(json.analysis || '診断書がまだ作成されていません。')
+        
+        // APIから戻ってきた { imageUrl, graph } の構造から graph を抽出
+        if (json.graph) {
+          setGraphData(json.graph)
+        }
 
       } catch (e) {
-        console.error('診断書読み込みエラー:', e)
+        console.error('診断書データ同期エラー:', e)
       } finally {
         setLoading(false)
       }
@@ -62,7 +72,7 @@ export default function AnalysisPage({ params }: { params: { id: string } }) {
   }, [params.id])
 
   if (loading) {
-    return <div style={{ padding: 20, textAlign: 'center', color: '#666' }}>診断書を読み込み中…</div>
+    return <div style={{ padding: 20, textAlign: 'center', color: '#666' }}>論理構造の解析中…</div>
   }
 
   if (!answerData) {
@@ -71,16 +81,16 @@ export default function AnalysisPage({ params }: { params: { id: string } }) {
 
   return (
     <div style={styles.container}>
-      {/* ヘッダー・戻るボタン */}
+      {/* ヘッダーエリア */}
       <div style={styles.header}>
         <button onClick={() => router.back()} style={styles.backButton}>
           <CircleArrowLeft size={30} />
         </button>
-        <h1 style={styles.title}>AI数学診断書</h1>
+        <h1 style={styles.title}>論理構造 診断書</h1>
       </div>
 
       <div style={styles.mainGrid}>
-        {/* 左側、あるいは上側：完全に実績のある AnswerCard をそのままはめ込む */}
+        {/* 左側：答案カード */}
         <div style={styles.cardSection}>
           <AnswerCard
             image={answerData.image_url}
@@ -92,16 +102,20 @@ export default function AnalysisPage({ params }: { params: { id: string } }) {
           />
         </div>
 
-        {/* 右側、あるいは下側：AIの診断結果テキストを表示するエリア */}
+        {/* 右側：解析された論理のDAG構造可視化エリア */}
         <div style={styles.analysisSection}>
           <div style={styles.analysisHeader}>
-            <Sparkles size={20} color="#4D96FF" />
-            <span style={styles.analysisTitle}>添削・アドバイス</span>
+            <Layers size={20} color="#4D96FF" />
+            <span style={styles.analysisTitle}>解析された論理のDAG構造</span>
           </div>
           <div style={styles.analysisBody}>
-            {aiAnalysis.split('\n').map((line, index) => (
-              <p key={index} style={styles.textLine}>{line}</p>
-            ))}
+            {graphData ? (
+              <DagVisualizer graphData={graphData} />
+            ) : (
+              <div style={styles.errorText}>
+                論理構造のグラフデータを読み込めませんでした。
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -166,11 +180,12 @@ const styles = {
     color: '#333',
   },
   analysisBody: {
-    fontSize: 15,
-    color: '#444',
-    lineHeight: 1.7,
+    width: '100%',
   },
-  textLine: {
-    marginBottom: 8,
+  errorText: {
+    color: '#ff6b6b',
+    fontSize: '14px',
+    textAlign: 'center' as const,
+    padding: '20px 0',
   },
 }
