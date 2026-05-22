@@ -1,0 +1,22 @@
+{
+  "theorems": [
+    {
+      "id": "thm_vieta_quadratic",
+      "name": "解と係数の関係(2次)",
+      "input_type": {
+        "structure": "a*x^2 + b*x + c = 0",
+        "constraints": ["a != 0", "has_roots(alpha, beta)"]
+      },
+      "output_type": [
+        { "relation": "alpha + beta", "expected": "-b/a" },
+        { "relation": "alpha * beta", "expected": "c/a" }
+      ]
+    },
+    {
+      "id": "thm_transposition",
+      "name": "移項",
+      "input_type": { "structure": "A = B + C" },
+      "output_type": [{ "structure": "A - C = B" }]
+    }
+  ]
+}
