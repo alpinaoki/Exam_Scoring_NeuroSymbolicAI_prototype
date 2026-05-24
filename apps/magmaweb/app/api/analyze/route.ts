@@ -96,7 +96,15 @@ export async function GET(request: NextRequest) {
     const rawText = response.text
 
     try {
-      const cleanText = rawText.replace(/```json|```/g, '').trim()
+      // 1. 前後の空白や、万が一混入したマークアップをトリミング
+      let cleanText = rawText.trim()
+      if (cleanText.startsWith('```json')) {
+        cleanText = cleanText.replace(/^```json/, '').replace(/```$/, '').trim()
+      } else if (cleanText.startsWith('```')) {
+        cleanText = cleanText.replace(/^```/, '').replace(/```$/, '').trim()
+      }
+
+      // 2. 特殊な改行コードやエスケープの乱れをパース前に最小限にケア
       const graphData = JSON.parse(cleanText)
       
       return NextResponse.json({
@@ -104,10 +112,22 @@ export async function GET(request: NextRequest) {
         graph: graphData
       })
     } catch (parseErr) {
-      return NextResponse.json({
-        error: 'Geminiの出力データがJSONとして不適正です',
-        rawText: rawText
-      })
+      // パースに失敗した場合、文字列の不正なエスケープを強制置換してリトライするセーフティネット
+      try {
+        const fixedText = rawText
+          .replace(/\\/g, '\\\\') // バックスラッシュをエスケープ
+          .replace(/\\\\"|\\\\'|\\\\n/g, (match) => match.substring(2)) // 必要な制御文字は戻す
+        const graphData = JSON.parse(fixedText)
+        return NextResponse.json({
+          imageUrl: answer.image_url,
+          graph: graphData
+        })
+      } catch (innerErr) {
+        return NextResponse.json({
+          error: 'Geminiの出力データがJSONとして不適正です',
+          rawText: rawText
+        })
+      }
     }
 
   } catch (err: any) {

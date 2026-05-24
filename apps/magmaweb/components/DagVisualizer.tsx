@@ -1,7 +1,18 @@
 'use client'
 
-import React from 'react'
-import { ArrowDown, HelpCircle } from 'lucide-react'
+import React, { useMemo } from 'react'
+import {
+  ReactFlow,
+  Background,
+  Controls,
+  MiniMap,
+  Node,
+  Edge,
+  MarkerType,
+} from '@xyflow/react'
+
+// React Flowの標準スタイルシートをインポート
+import '@xyflow/react/dist/style.css'
 
 type GraphNode = {
   id: string
@@ -22,47 +33,88 @@ type DagVisualizerProps = {
 }
 
 export default function DagVisualizer({ graphData }: DagVisualizerProps) {
-  const { nodes, edges } = graphData
+  const { nodes: rawNodes, edges: rawEdges } = graphData
 
-  // 簡易的にトポロジカルソート順、もしくはID順でノードを縦に並べる
-  // 今後の検証フェーズで、エッジの接続関係から正しい階層を計算するロジックに拡張可能
+  // --- 💡 React Flow 用のノードデータ変換 ---
+  const flowNodes = useMemo<Node[]>(() => {
+    // 完全に重なるのを防ぐため、インデックスに応じて初期配置のXYを簡易計算
+    return rawNodes.map((node, index) => {
+      const isProposition = node.type === 'proposition'
+      
+      // 命題ノードと推論ノードを視覚的に少し左右に散らし、上から順に並べる
+      const x = isProposition ? 120 + (index % 2) * 40 : 360
+      const y = index * 110 // 各ステップが被らないように縦の距離を確保
+
+      return {
+        id: node.id,
+        type: 'default',
+        position: { x, y },
+        data: {
+          label: (
+            <div style={styles.nodeContent}>
+              <div style={styles.nodeHeader}>
+                <span style={isProposition ? styles.propositionBadge : styles.inferenceBadge}>
+                  {isProposition ? '命題' : '推論'}
+                </span>
+                <span style={styles.nodeId}>{node.id}</span>
+              </div>
+              <div style={styles.nodeLabel}>{node.label}</div>
+            </div>
+          ),
+        },
+        style: {
+          background: isProposition ? '#ffffff' : '#f8fafc',
+          borderColor: isProposition ? '#4D96FF' : '#6BCB77',
+          borderWidth: '2px',
+          borderLeft: isProposition ? '6px solid #4D96FF' : '6px solid #6BCB77',
+          borderRadius: '10px',
+          color: '#1e293b',
+          boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)',
+          width: 300,
+          textAlign: 'left' as const,
+          padding: '12px',
+        },
+      }
+    })
+  }, [rawNodes])
+
+  // --- 💡 React Flow 用のエッジ（矢印の線）データ変換 ---
+  const flowEdges = useMemo<Edge[]>(() => {
+    return rawEdges.map((edge, index) => {
+      return {
+        id: `e-${edge.from}-${edge.to}-${index}`,
+        source: edge.from,
+        target: edge.to,
+        animated: true, // 動くアニメーション線にして論理の流れを可視化
+        style: { stroke: '#94a3b8', strokeWidth: 2 },
+        markerEnd: {
+          type: MarkerType.ArrowClosed, // 閉じられた綺麗な矢印
+          color: '#94a3b8',
+        },
+      }
+    })
+  }, [rawEdges])
+
   return (
     <div style={styles.container}>
-      <div style={styles.flowList}>
-        {nodes.map((node, index) => {
-          const isProposition = node.type === 'proposition'
-          
-          return (
-            <div key={node.id} style={styles.nodeWrapper}>
-              {/* 各ノードのカード */}
-              <div
-                style={{
-                  ...styles.nodeCard,
-                  ...(isProposition ? styles.propositionCard : styles.inferenceCard),
-                }}
-              >
-                <div style={styles.nodeHeader}>
-                  <span style={isProposition ? styles.propositionBadge : styles.inferenceBadge}>
-                    {isProposition ? '命題' : '推論・適用ルール'}
-                  </span>
-                  <span style={styles.nodeId}>{node.id}</span>
-                </div>
-                
-                <div style={styles.nodeLabel}>
-                  {/* 今後 KaTeX 等を導入した際はここで数式レンダリングを行う */}
-                  {node.label}
-                </div>
-              </div>
-
-              {/* 最後のノード以外で、次のノードへの接続がある場合に矢印を描画 */}
-              {index < nodes.length - 1 && (
-                <div style={styles.arrowContainer}>
-                  <ArrowDown size={18} color="#999" />
-                </div>
-              )}
-            </div>
-          )
-        })}
+      <h3 style={styles.title}>論理構造 DAG モニター (React Flow 版)</h3>
+      <div style={styles.canvasWrapper}>
+        <ReactFlow
+          nodes={flowNodes}
+          edges={flowEdges}
+          fitView
+          attributionPosition="bottom-right"
+        >
+          {/* 背景のドットグリッドパターン */}
+          <Background color="#cbd5e1" gap={16} size={1} />
+          {/* 左下の拡大・縮小・リセット用コントローラー */}
+          <Controls />
+          {/* 右下のナビゲーション用ミニマップ */}
+          <MiniMap 
+            nodeStrokeColor={(n) => n.style?.borderColor as string} 
+            nodeColor={(n) => n.style?.background as string} 
+          />
+        </ReactFlow>
       </div>
     </div>
   )
@@ -71,76 +123,61 @@ export default function DagVisualizer({ graphData }: DagVisualizerProps) {
 const styles = {
   container: {
     width: '100%',
-    padding: '10px 0',
-  },
-  flowList: {
     display: 'flex',
     flexDirection: 'column' as const,
-    alignItems: 'center',
   },
-  nodeWrapper: {
-    display: 'flex',
-    flexDirection: 'column' as const,
-    alignItems: 'center',
+  title: {
+    fontSize: '16px',
+    fontWeight: 'bold' as const,
+    color: '#334155',
+    marginBottom: '12px',
+    marginTop: 0,
+  },
+  canvasWrapper: {
     width: '100%',
-  },
-  nodeCard: {
-    width: '100%',
-    maxWidth: '450px',
-    borderRadius: '12px',
-    padding: '14px 16px',
-    border: '1px solid',
-    boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
-    transition: 'all 0.2s ease',
-  },
-  propositionCard: {
-    backgroundColor: '#ffffff',
-    borderColor: '#e2e8f0',
-    borderLeft: '5px solid #4D96FF', // 命題は青のアクセント
-  },
-  inferenceCard: {
+    height: '680px', // 複雑な長い数式グラフを動かすのに最適な作業領域の高さ
     backgroundColor: '#f8fafc',
-    borderColor: '#e2e8f0',
-    borderLeft: '5px solid #6BCB77', // 推論ルールは緑のアクセント
+    borderRadius: '16px',
+    border: '1px solid #e2e8f0',
+    overflow: 'hidden' as const,
+  },
+  nodeContent: {
+    display: 'flex',
+    flexDirection: 'column' as const,
+    gap: '6px',
   },
   nodeHeader: {
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: '8px',
   },
   propositionBadge: {
-    fontSize: '11px',
+    fontSize: '10px',
     fontWeight: 'bold' as const,
     color: '#4D96FF',
     backgroundColor: '#edf4ff',
-    padding: '2px 8px',
-    borderRadius: '20px',
+    padding: '1px 6px',
+    borderRadius: '4px',
   },
   inferenceBadge: {
-    fontSize: '11px',
+    fontSize: '10px',
     fontWeight: 'bold' as const,
     color: '#6BCB77',
     backgroundColor: '#eefaf0',
-    padding: '2px 8px',
-    borderRadius: '20px',
+    padding: '1px 6px',
+    borderRadius: '4px',
   },
   nodeId: {
-    fontSize: '11px',
+    fontSize: '10px',
     color: '#94a3b8',
     fontFamily: 'monospace',
   },
   nodeLabel: {
-    fontSize: '14px',
-    color: '#1e293b',
+    fontSize: '12px',
     fontWeight: 500,
     whiteSpace: 'pre-wrap' as const,
-    fontFamily: 'Consolas, Monaco, monospace', // LaTeXコードが読みやすいフォント
-  },
-  arrowContainer: {
-    margin: '8px 0',
-    display: 'flex',
-    justifyContent: 'center',
-    alignItems: 'center',
+    fontFamily: 'Consolas, Monaco, monospace',
+    wordBreak: 'break-all' as const,
+    lineHeight: 1.4,
   },
 }
