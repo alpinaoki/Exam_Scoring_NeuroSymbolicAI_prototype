@@ -48,29 +48,14 @@ export default function LoginPage() {
   return (
     <div style={styles.page}>
 
-<<<<<<< HEAD
-      {/* ===== スライド ===== */}
-=======
       {/* ===== 縦方向のスライダコンテナ ===== */}
->>>>>>> f0fe5bb261e0b813e9dc78a24a94f1c3e1180fc0
       <div style={styles.slider}>
 
-<<<<<<< HEAD
-        {/* ① 最初（入力あり） */}
-        <div style={styles.slide}>
-          <img
-            src="https://images.unsplash.com/photo-1584697964358-3e14ca57658b?q=80&w=400"
-            style={styles.mainImage}
-          />
-          <h2>Magmathe</h2>
-          <p>解き方でつながる</p>
-=======
         {/* ① スタート（カードなし・背景画像に白文字を載せる形式） */}
         <div style={{ ...styles.slide, ...styles.imageSlide }}>
           <div style={styles.fullContentContainer}>
             <h1 style={styles.logoTextWhite}>Magmatheへようこそ！</h1>
             <p style={styles.catchphraseWhite}>解き方でつながる高校生のための数学SNS</p>
->>>>>>> f0fe5bb261e0b813e9dc78a24a94f1c3e1180fc0
 
             <input
               placeholder="ユーザー名"
@@ -100,70 +85,41 @@ export default function LoginPage() {
           </div>
         </div>
 
-        {/* ② */}
-        <div style={styles.slide}>
-          <img
-            src="https://images.unsplash.com/photo-1588072432836-e10032774350?q=80&w=400"
-            style={styles.cardImg}
-          />
-          <p>他の人の解き方が見れる</p>
-{/* ② 機能（背景：深みのあるブルーグリーン） */}
-<div style={{ ...styles.slide, backgroundColor: '#1e2d3b' }}>
-  <div style={styles.contentCard}>
-    <img
-      src="/problems/images/IMG_6457.jpg"
-      style={styles.cardImg}
-    />
-    <p style={styles.descText}>他の人の解き方が見れる</p>
-  </div>
-</div>
+        {/* ② 機能（背景：深みのあるブルーグリーン） */}
+        <div style={{ ...styles.slide, backgroundColor: '#1e2d3b' }}>
+          <div style={styles.contentCard}>
+            <img src="/card1.png" style={styles.cardImg}/>
+            <p style={styles.descText}>他の人の解き方が見れる</p>
+          </div>
+        </div>
 
-<<<<<<< HEAD
-        {/* ③ */}
-        <div style={styles.slide}>
-          <img
-            src="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=80&w=400"
-            style={styles.cardImg}
-          />
-          <p>間違いも価値になる</p>
-=======
         {/* ③ 機能（背景：知的なモスグリーン） */}
         <div style={{ ...styles.slide, backgroundColor: '#24342f' }}>
           <div style={styles.contentCard}>
             <img src="/card2.png" style={styles.cardImg}/>
             <p style={styles.descText}>間違いも価値になる</p>
           </div>
->>>>>>> f0fe5bb261e0b813e9dc78a24a94f1c3e1180fc0
         </div>
 
-<<<<<<< HEAD
-        {/* ④ */}
-        <div style={styles.slide}>
-          <img
-            src="https://images.unsplash.com/photo-1519389950473-47ba0277781c?q=80&w=400"
-            style={styles.cardImg}
-          />
-          <p>どこが大事か分かる</p>
-=======
+        <div style={{ ...styles.slide, backgroundColor: '#24342f' }}>
+          <div style={styles.contentCard}>
+            <img src="/card2.png" style={styles.cardImg}/>
+            <p style={styles.descText}>高校生</p>
+          </div>
+        </div>
+
         {/* ④ 機能（背景：気品のあるディープパープル） */}
         <div style={{ ...styles.slide, backgroundColor: '#2b2436' }}>
           <div style={styles.contentCard}>
             <img src="/card3.png" style={styles.cardImg}/>
             <p style={styles.descText}>どこが大事か分かる</p>
           </div>
->>>>>>> f0fe5bb261e0b813e9dc78a24a94f1c3e1180fc0
         </div>
 
-<<<<<<< HEAD
-        {/* ⑤ 最後（ログイン） */}
-        <div style={styles.slide}>
-          <h2>{mode === 'login' ? 'ログイン' : '新規登録'}</h2>
-=======
         {/* ⑤ 最後（フォーム完了・カードなし・背景画像に白文字を載せる形式） */}
         <div style={{ ...styles.slide, ...styles.imageSlide }}>
           <div style={styles.fullContentContainer}>
             <h2 style={styles.formTitleWhite}>{mode === 'login' ? 'ログイン' : '新規登録'}</h2>
->>>>>>> f0fe5bb261e0b813e9dc78a24a94f1c3e1180fc0
 
             <input
               placeholder="ユーザー名"
@@ -259,13 +215,6 @@ const styles: { [key: string]: CSSProperties } = {
     justifyContent: 'center',
   },
 
-<<<<<<< HEAD
-  mainImage: {
-    width: '80%',
-    maxWidth: '260px',
-    borderRadius: '12px',
-    marginBottom: '10px',
-=======
   contentCard: {
     background: '#fff',
     padding: '40px 30px',
@@ -340,7 +289,6 @@ const styles: { [key: string]: CSSProperties } = {
     width: '60%',
     maxWidth: '180px',
     height: 'auto',
->>>>>>> f0fe5bb261e0b813e9dc78a24a94f1c3e1180fc0
   },
 
   cardImg: {
