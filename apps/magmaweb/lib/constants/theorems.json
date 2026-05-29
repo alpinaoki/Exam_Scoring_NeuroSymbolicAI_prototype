@@ -1,23 +1,340 @@
 {
   "theorems": [
     {
-      "id": "thm_vieta_quadratic",
-      "name": "解と係数の関係(2次)",
-      "input_type": {
-        "structure": "a*x^2 + b*x + c = 0",
-        "constraints": ["a != 0", "has_roots(alpha, beta)"]
-      },
-      "output_type": [
-        { "relation": "alpha + beta", "expected": "-b/a" },
-        { "relation": "alpha * beta", "expected": "c/a" }
+  "version": "0.1",
+  "rule_groups": [
+    {
+      "group_id": "general_arithmetic",
+      "name": "四則計算の基本規則",
+      "rules": [
+        {
+          "id": "rule_add_commutative",
+          "name": "加法の交換法則",
+          "level": ["elementary", "middle", "high"],
+          "before": "a + b",
+          "after": "b + a",
+          "conditions": ["a,b are numbers or expressions"]
+        },
+        {
+          "id": "rule_mul_commutative",
+          "name": "乗法の交換法則",
+          "level": ["elementary", "middle", "high"],
+          "before": "a * b",
+          "after": "b * a",
+          "conditions": ["a,b are numbers or expressions"]
+        },
+        {
+          "id": "rule_add_associative",
+          "name": "加法の結合法則",
+          "level": ["elementary", "middle", "high"],
+          "before": "(a + b) + c",
+          "after": "a + (b + c)"
+        },
+        {
+          "id": "rule_mul_associative",
+          "name": "乗法の結合法則",
+          "level": ["elementary", "middle", "high"],
+          "before": "(a * b) * c",
+          "after": "a * (b * c)"
+        },
+        {
+          "id": "rule_distributive_expand",
+          "name": "分配法則（展開）",
+          "level": ["elementary", "middle", "high"],
+          "before": "a * (b + c)",
+          "after": "a*b + a*c"
+        },
+        {
+          "id": "rule_distributive_factor",
+          "name": "分配法則（くくり出し）",
+          "level": ["middle", "high"],
+          "before": "a*b + a*c",
+          "after": "a*(b + c)"
+        }
       ]
     },
     {
-      "id": "thm_transposition",
-      "name": "移項",
-      "input_type": { "structure": "A = B + C" },
-      "output_type": [{ "structure": "A - C = B" }]
+      "group_id": "fraction_rules",
+      "name": "分数の変形規則",
+      "rules": [
+        {
+          "id": "rule_fraction_reduce",
+          "name": "約分",
+          "level": ["elementary", "middle", "high"],
+          "before": "(a*c)/(b*c)",
+          "after": "a/b",
+          "conditions": ["c != 0"]
+        },
+        {
+          "id": "rule_fraction_expand",
+          "name": "通分のための分母分子同倍",
+          "level": ["elementary", "middle", "high"],
+          "before": "a/b",
+          "after": "(a*c)/(b*c)",
+          "conditions": ["b != 0", "c != 0"]
+        },
+        {
+          "id": "rule_fraction_add_same_denominator",
+          "name": "同分母分数の加法",
+          "level": ["elementary", "middle", "high"],
+          "before": "a/c + b/c",
+          "after": "(a+b)/c",
+          "conditions": ["c != 0"]
+        },
+        {
+          "id": "rule_fraction_add_common_denominator",
+          "name": "異分母分数の加法",
+          "level": ["elementary", "middle", "high"],
+          "before": "a/b + c/d",
+          "after": "(a*d + b*c)/(b*d)",
+          "conditions": ["b != 0", "d != 0"]
+        },
+        {
+          "id": "rule_fraction_division",
+          "name": "分数の除法",
+          "level": ["elementary", "middle", "high"],
+          "before": "(a/b) / (c/d)",
+          "after": "(a/b) * (d/c)",
+          "conditions": ["b != 0", "c != 0", "d != 0"]
+        }
+      ]
+    },
+    {
+      "group_id": "equation_rules",
+      "name": "等式変形規則",
+      "rules": [
+        {
+          "id": "rule_add_both_sides",
+          "name": "両辺に同じ式を加える",
+          "level": ["middle", "high"],
+          "before": "A = B",
+          "after": "A + C = B + C"
+        },
+        {
+          "id": "rule_subtract_both_sides",
+          "name": "両辺から同じ式を引く",
+          "level": ["middle", "high"],
+          "before": "A = B",
+          "after": "A - C = B - C"
+        },
+        {
+          "id": "rule_multiply_both_sides",
+          "name": "両辺に同じ式を掛ける",
+          "level": ["middle", "high"],
+          "before": "A = B",
+          "after": "A*C = B*C"
+        },
+        {
+          "id": "rule_divide_both_sides",
+          "name": "両辺を同じ式で割る",
+          "level": ["middle", "high"],
+          "before": "A = B",
+          "after": "A/C = B/C",
+          "conditions": ["C != 0"]
+        },
+        {
+          "id": "rule_transposition_add",
+          "name": "移項（加法）",
+          "level": ["middle", "high"],
+          "before": "A + C = B",
+          "after": "A = B - C"
+        },
+        {
+          "id": "rule_transposition_subtract",
+          "name": "移項（減法）",
+          "level": ["middle", "high"],
+          "before": "A - C = B",
+          "after": "A = B + C"
+        },
+        {
+          "id": "rule_clear_denominator",
+          "name": "分母を払う",
+          "level": ["middle", "high"],
+          "before": "A/b = C/d",
+          "after": "d*A = b*C",
+          "conditions": ["b != 0", "d != 0"]
+        }
+      ]
+    },
+    {
+      "group_id": "inequality_rules",
+      "name": "不等式変形規則",
+      "rules": [
+        {
+          "id": "rule_inequality_add_both_sides",
+          "name": "不等式の両辺に同じ式を加える",
+          "level": ["middle", "high"],
+          "before": "A < B",
+          "after": "A + C < B + C"
+        },
+        {
+          "id": "rule_inequality_multiply_positive",
+          "name": "不等式の両辺に正の数を掛ける",
+          "level": ["middle", "high"],
+          "before": "A < B",
+          "after": "A*C < B*C",
+          "conditions": ["C > 0"]
+        },
+        {
+          "id": "rule_inequality_multiply_negative",
+          "name": "不等式の両辺に負の数を掛ける",
+          "level": ["middle", "high"],
+          "before": "A < B",
+          "after": "A*C > B*C",
+          "conditions": ["C < 0"]
+        },
+        {
+          "id": "rule_inequality_reciprocal_positive",
+          "name": "正数の逆数による不等号反転",
+          "level": ["high"],
+          "before": "0 < A < B",
+          "after": "1/A > 1/B",
+          "conditions": ["A > 0", "B > 0"]
+        }
+      ]
+    },
+    {
+      "group_id": "power_root_rules",
+      "name": "累乗・根号の変形規則",
+      "rules": [
+        {
+          "id": "rule_power_product",
+          "name": "累乗の積",
+          "level": ["middle", "high"],
+          "before": "a^m * a^n",
+          "after": "a^(m+n)"
+        },
+        {
+          "id": "rule_power_quotient",
+          "name": "累乗の商",
+          "level": ["middle", "high"],
+          "before": "a^m / a^n",
+          "after": "a^(m-n)",
+          "conditions": ["a != 0"]
+        },
+        {
+          "id": "rule_power_of_power",
+          "name": "累乗の累乗",
+          "level": ["middle", "high"],
+          "before": "(a^m)^n",
+          "after": "a^(m*n)"
+        },
+        {
+          "id": "rule_root_square",
+          "name": "平方根と2乗",
+          "level": ["middle", "high"],
+          "before": "sqrt(a^2)",
+          "after": "|a|"
+        },
+        {
+          "id": "rule_rationalize_denominator",
+          "name": "分母の有理化",
+          "level": ["middle", "high"],
+          "before": "a/sqrt(b)",
+          "after": "a*sqrt(b)/b",
+          "conditions": ["b > 0"]
+        }
+      ]
+    },
+    {
+      "group_id": "factorization_expansion",
+      "name": "展開・因数分解",
+      "rules": [
+        {
+          "id": "rule_expand_square_sum",
+          "name": "平方の展開",
+          "level": ["middle", "high"],
+          "before": "(a+b)^2",
+          "after": "a^2 + 2*a*b + b^2"
+        },
+        {
+          "id": "rule_expand_square_difference",
+          "name": "差の平方の展開",
+          "level": ["middle", "high"],
+          "before": "(a-b)^2",
+          "after": "a^2 - 2*a*b + b^2"
+        },
+        {
+          "id": "rule_expand_sum_difference",
+          "name": "和と差の積の展開",
+          "level": ["middle", "high"],
+          "before": "(a+b)(a-b)",
+          "after": "a^2 - b^2"
+        },
+        {
+          "id": "rule_factor_square_sum",
+          "name": "平方公式による因数分解",
+          "level": ["middle", "high"],
+          "before": "a^2 + 2*a*b + b^2",
+          "after": "(a+b)^2"
+        },
+        {
+          "id": "rule_factor_square_difference",
+          "name": "差の平方公式による因数分解",
+          "level": ["middle", "high"],
+          "before": "a^2 - 2*a*b + b^2",
+          "after": "(a-b)^2"
+        },
+        {
+          "id": "rule_factor_difference_of_squares",
+          "name": "平方差の因数分解",
+          "level": ["middle", "high"],
+          "before": "a^2 - b^2",
+          "after": "(a+b)(a-b)"
+        }
+      ]
+    },
+    {
+      "group_id": "quadratic_rules",
+      "name": "二次式・二次方程式の変形",
+      "rules": [
+        {
+          "id": "rule_complete_square",
+          "name": "平方完成",
+          "level": ["high"],
+          "before": "a*x^2 + b*x + c",
+          "after": "a*(x + b/(2*a))^2 + c - b^2/(4*a)",
+          "conditions": ["a != 0"]
+        },
+        {
+          "id": "rule_quadratic_formula",
+          "name": "解の公式の適用",
+          "level": ["middle", "high"],
+          "before": "a*x^2 + b*x + c = 0",
+          "after": "x = (-b ± sqrt(b^2 - 4*a*c))/(2*a)",
+          "conditions": ["a != 0"]
+        },
+        {
+          "id": "rule_zero_product_property",
+          "name": "積が0なら少なくとも一方が0",
+          "level": ["middle", "high"],
+          "before": "A*B = 0",
+          "after": "A = 0 or B = 0"
+        }
+      ]
+    },
+    {
+      "group_id": "substitution_rules",
+      "name": "代入・置換",
+      "rules": [
+        {
+          "id": "rule_substitution",
+          "name": "代入",
+          "level": ["elementary", "middle", "high"],
+          "before": "A, x = B",
+          "after": "A[x := B]"
+        },
+        {
+          "id": "rule_variable_replacement",
+          "name": "文字置換",
+          "level": ["middle", "high"],
+          "before": "A(x), t = f(x)",
+          "after": "A rewritten by t"
+        }
+      ]
     }
+  ]
+}
    
   ]
 }
