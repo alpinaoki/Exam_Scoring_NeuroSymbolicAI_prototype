@@ -18,5 +18,6 @@
       "input_type": { "structure": "A = B + C" },
       "output_type": [{ "structure": "A - C = B" }]
     }
+   
   ]
 }
