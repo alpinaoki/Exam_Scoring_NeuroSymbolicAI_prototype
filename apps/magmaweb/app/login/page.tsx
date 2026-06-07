@@ -97,14 +97,14 @@ export default function LoginPage() {
         <div style={{ ...styles.slide, backgroundColor: '#24342f' }}>
           <div style={styles.contentCard}>
             <img src="/card2.png" style={styles.cardImg}/>
-            <p style={styles.descText}>間違いも価値になる</p>
+            <p style={styles.descText}>解きたい分野がすぐに見つかる</p>
           </div>
         </div>
 
         <div style={{ ...styles.slide, backgroundColor: '#24342f' }}>
           <div style={styles.contentCard}>
             <img src="/card2.png" style={styles.cardImg}/>
-            <p style={styles.descText}>高校生</p>
+            <p style={styles.descText}>☆・！・？のリアクション</p>
           </div>
         </div>
 
@@ -112,7 +112,7 @@ export default function LoginPage() {
         <div style={{ ...styles.slide, backgroundColor: '#2b2436' }}>
           <div style={styles.contentCard}>
             <img src="/card3.png" style={styles.cardImg}/>
-            <p style={styles.descText}>どこが大事か分かる</p>
+            <p style={styles.descText}>過去に投稿した問題を見直せる</p>
           </div>
         </div>
 
