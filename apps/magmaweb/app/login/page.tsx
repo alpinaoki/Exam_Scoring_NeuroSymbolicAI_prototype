@@ -101,18 +101,11 @@ export default function LoginPage() {
           </div>
         </div>
 
-        <div style={{ ...styles.slide, backgroundColor: '#24342f' }}>
-          <div style={styles.contentCard}>
-            <img src="/card2.png" style={styles.cardImg}/>
-            <p style={styles.descText}>☆・！・？のリアクション</p>
-          </div>
-        </div>
-
         {/* ④ 機能（背景：気品のあるディープパープル） */}
         <div style={{ ...styles.slide, backgroundColor: '#2b2436' }}>
           <div style={styles.contentCard}>
             <img src="/card3.png" style={styles.cardImg}/>
-            <p style={styles.descText}>間違いも価値に</p>
+            <p style={styles.descText}>どこが大事かわかる</p>
           </div>
         </div>
 
