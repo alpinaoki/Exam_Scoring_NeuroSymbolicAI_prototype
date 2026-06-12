@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { GoogleGenAI } from '@google/genai'
 // 既に完璧に動いている外部クライアントを直接マウント
 import { supabase } from '../../../lib/supabase'
+// 1. theorems.jsonを読み込む
+import theorems from '@/lib/constants/theorems.json';
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || '' })
 
@@ -27,6 +29,8 @@ export async function GET(request: NextRequest) {
     }, { status: 404 })
   }
 
+  // 2. 定理の名前のリストを文字列にする
+const theoremListString = theorems.map(t => `- ${t.name}`).join('\n');
   try {
     const imageRes = await fetch(answer.image_url)
     const arrayBuffer = await imageRes.arrayBuffer()
