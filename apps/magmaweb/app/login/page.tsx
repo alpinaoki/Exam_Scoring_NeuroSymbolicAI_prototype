@@ -89,7 +89,7 @@ export default function LoginPage() {
         <div style={{ ...styles.slide, backgroundColor: '#1e2d3b' }}>
           <div style={styles.contentCard}>
             <img src="/card1.png" style={styles.cardImg}/>
-            <p style={styles.descText}>他の人の解き方が見れる</p>
+            <p style={styles.descText}>１つの問題、たくさんの考え方</p>
           </div>
         </div>
 
@@ -112,7 +112,7 @@ export default function LoginPage() {
         <div style={{ ...styles.slide, backgroundColor: '#2b2436' }}>
           <div style={styles.contentCard}>
             <img src="/card3.png" style={styles.cardImg}/>
-            <p style={styles.descText}>過去に投稿した問題を見直せる</p>
+            <p style={styles.descText}>間違いも価値に</p>
           </div>
         </div>
 
