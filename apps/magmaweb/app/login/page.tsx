@@ -105,7 +105,7 @@ export default function LoginPage() {
         <div style={{ ...styles.slide, backgroundColor: '#2b2436' }}>
           <div style={styles.contentCard}>
             <img src="/card3.png" style={styles.cardImg}/>
-            <p style={styles.descText}>どこが大事かわかる</p>
+            <p style={styles.descText}>リアクションから新たな発見を</p>
           </div>
         </div>
 
