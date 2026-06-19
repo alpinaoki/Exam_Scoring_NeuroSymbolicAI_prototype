@@ -3,7 +3,7 @@ import { GoogleGenAI } from '@google/genai'
 // 既に完璧に動いている外部クライアントを直接マウント
 import { supabase } from '../../../lib/supabase'
 // 1. theorems.jsonを読み込む
-import theorems from '@/lib/constants/theorems.json';
+import theorems from '../../../lib/constants/theorems.json';
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || '' })
 
@@ -29,8 +29,31 @@ export async function GET(request: NextRequest) {
     }, { status: 404 })
   }
 
-  // 2. 定理の名前のリストを文字列にする
-const theoremListString = theorems.map(t => `- ${t.name}`).join('\n');
+  // 2. 定理の名前のリストを文字列にする（TypeScriptの型エラーを回避する万能版）
+  let theoremListString = "";
+  const data: any = theorems; // TypeScriptの厳密なチェックを無効化
+  
+  try {
+    if (data?.theorems?.rule_groups) {
+      // パターンA: { theorems: { rule_groups: [...] } } の場合
+      theoremListString = data.theorems.rule_groups
+        .flatMap((g: any) => g.rules || [])
+        .map((r: any) => `- ${r.name}`)
+        .join('\n');
+    } else if (data?.rule_groups) {
+      // パターンB: { rule_groups: [...] } の場合
+      theoremListString = data.rule_groups
+        .flatMap((g: any) => g.rules || [])
+        .map((r: any) => `- ${r.name}`)
+        .join('\n');
+    } else if (Array.isArray(data)) {
+      // パターンC: 単なる配列 [...] の場合
+      theoremListString = data.map((r: any) => `- ${r.name}`).join('\n');
+    }
+  } catch (err) {
+    console.error("定理データの展開に失敗しましたが、空のまま続行します", err);
+  }
+  
   try {
     const imageRes = await fetch(answer.image_url)
     const arrayBuffer = await imageRes.arrayBuffer()
@@ -45,6 +68,7 @@ const theoremListString = theorems.map(t => `- ${t.name}`).join('\n');
           parts: [
             { inlineData: { mimeType: 'image/jpeg', data: base64Image } },
             {
+              // 👇 ここから修正：内部のバッククォート(`)を完全に排除しました！
               text: `
                 [役割]
                 あなたは数学教育の専門家であり、論理構造解析に特化したAIアシスタントです。
@@ -58,13 +82,13 @@ const theoremListString = theorems.map(t => `- ${t.name}`).join('\n');
                 2. 命題（proposition）ノード（純粋な数式の抽出と視認性の確保）:
                    - 答案に書かれている数式、条件、結論のみを正確に抽出してください。
                    - 「よって」「ゆえに」「〜を代入すると」といった日本語のテキストは命題ノードには一切含めないでください。
-                   - 数式は基本的にテキストフォーマットとしますが、視認性を高めるため、ルート、大なりイコール、ノットイコールなどはLaTeXコマンド（\sqrt, \geq, \neqなど）を使わず、必ず「√」「≧」「≦」「≠」「±」などの環境依存しない文字記号を直接使用してください（例：\sqrt{5} ではなく √5）。
+                   - 数式は基本的にテキストフォーマットとしますが、視認性を高めるため、ルート、大なりイコール、ノットイコールなどはLaTeXコマンド（\\sqrt, \\geq, \\neqなど）を使わず、必ず「√」「≧」「≦」「≠」「±」などの環境依存しない文字記号を直接使用してください（例：\\sqrt{5} ではなく √5）。
                    - 乗算・除算記号も適宜「×」「÷」を使用して構いませんが、分数は「a/b」のようにスラッシュで表現してください。
                 3. 推論（inference）ノードと定理の判定:
                    - 生徒が次の命題を導くための論理・計算を簡潔に言語化し、日本語テキストはここに吸収してください。
-                   - 定理や公式、定義が使われている場合、プロンプト末尾の `[利用可能な定理ライブラリ]` と照合してください。
-                   - ライブラリに存在する場合は、ノードに `"applied_theorem": "定理名"` と `"is_in_library": true` を追加してください。
-                   - ライブラリに存在しない定理が使われていると判断した場合は、`"applied_theorem": "定理名"` と `"is_in_library": false` を追加してください。
+                   - 定理や公式、定義が使われている場合、プロンプト末尾の [利用可能な定理ライブラリ] と照合してください。
+                   - ライブラリに存在する場合は、ノードに "applied_theorem": "定理名" と "is_in_library": true を追加してください。
+                   - ライブラリに存在しない定理が使われていると判断した場合は、"applied_theorem": "定理名" と "is_in_library": false を追加してください。
                 4. 複数の式の合流（連立方程式など）の扱い:
                    - 複数の命題（数式）を組み合わせて新しい命題を導いている場合、それらの複数の「命題ノード」から、1つの「推論ノード」に向かってエッジを繋げてください。
                 5. 論理の飛躍と暗算の補完:
@@ -77,8 +101,8 @@ const theoremListString = theorems.map(t => `- ${t.name}`).join('\n');
 
                 [出力フォーマット（厳守）]
                 - 以下のJSONスキーマに厳密に従って出力してください。
-                - 挨拶、説明、Markdownのコードブロック（\`\`\`json など）などの余分なテキストは一切含めず、パース可能な生のJSON文字列のみを返してください。
-                - "new_theorems" 配列には、"is_in_library": false となった定理のみを、以下のキー構造に従って生成してください。追加がない場合は空配列 `[]` にしてください。
+                - 挨拶、説明、Markdownのコードブロックなどの余分なテキストは一切含めず、パース可能な生のJSON文字列のみを返してください。
+                - "new_theorems" 配列には、"is_in_library": false となった定理のみを、以下のキー構造に従って生成してください。追加がない場合は空配列 [] にしてください。
                   - "id": 任意のユニークなID (例: "rule_...")
                   - "name": 定理やルールの名前
                   - "level": 適用される学習段階の推測 (["elementary", "middle", "high"]のいずれか1つ以上の配列)
@@ -113,6 +137,13 @@ const theoremListString = theorems.map(t => `- ${t.name}`).join('\n');
                     }
                   ]
                 }
+                
+                [利用可能な定理ライブラリ]
+                ${theoremListString}
+              ` // 👈 最後に文字列を正しく閉じます
+            }
+          ]
+        }
       ],
       config: {
         responseMimeType: 'application/json',
