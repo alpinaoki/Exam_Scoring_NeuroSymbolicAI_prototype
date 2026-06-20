@@ -88,7 +88,7 @@ export default function LoginPage() {
         {/* ② 機能（背景：深みのあるブルーグリーン） */}
         <div style={{ ...styles.slide, backgroundColor: '#1e2d3b' }}>
           <div style={styles.contentCard}>
-            <img src="/card1.png" style={styles.cardImg}/>
+            <img src='url("https://res.cloudinary.com/dk8pvfpzx/image/upload/v1781970858/IMG_0198_wrsijb.jpg") style={styles.cardImg}/>
             <p style={styles.descText}>１つの問題、たくさんの考え方</p>
           </div>
         </div>
@@ -96,7 +96,7 @@ export default function LoginPage() {
         {/* ③ 機能（背景：知的なモスグリーン） */}
         <div style={{ ...styles.slide, backgroundColor: '#24342f' }}>
           <div style={styles.contentCard}>
-            <img src="/card2.png" style={styles.cardImg}/>
+            <img src='url("https://res.cloudinary.com/dk8pvfpzx/image/upload/v1781970858/IMG_0196_p6z6di.jpg")' style={styles.cardImg}/>
             <p style={styles.descText}>解きたい分野がすぐに見つかる</p>
           </div>
         </div>
@@ -104,7 +104,7 @@ export default function LoginPage() {
         {/* ④ 機能（背景：気品のあるディープパープル） */}
         <div style={{ ...styles.slide, backgroundColor: '#2b2436' }}>
           <div style={styles.contentCard}>
-            <img src="/card3.png" style={styles.cardImg}/>
+            <img src='url("https://res.cloudinary.com/dk8pvfpzx/image/upload/v1781970858/IMG_0197_lbuuys.jpg")' style={styles.cardImg}/>
             <p style={styles.descText}>リアクションから新たな発見を</p>
           </div>
         </div>
