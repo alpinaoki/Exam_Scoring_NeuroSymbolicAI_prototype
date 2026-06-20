@@ -12,6 +12,7 @@ const BACKGROUND_IMAGE_URL = 'url("https://res.cloudinary.com/dk8pvfpzx/image/up
 
 export default function LoginPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
 
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
@@ -28,7 +29,14 @@ export default function LoginPage() {
       } else {
         await signUp(username, password)
       }
-      router.push('/feed')
+      
+      // ★ クエリパラメータに 'next'（戻り先URL）があるかチェック
+      const nextPath = searchParams.get('next')
+      if (nextPath) {
+        router.push(nextPath) // 元々見ようとしていた投稿へ戻る
+      } else {
+        router.push('/feed') // 通常はフィードへ
+      }
     } catch (e: any) {
       setError(e.message ?? 'エラーが発生しました')
     } finally {

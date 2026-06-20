@@ -46,8 +46,11 @@ export default function ThreadPage({
       setProblem(p)
       setAnswers(a)
 
+      // ★ 未ログイン時は、現在の投稿URLを保持してログイン画面へ強制リダイレクト
       if (!user) {
         setCanViewAnswers(false)
+        const currentPath = window.location.pathname
+        router.push(`/login?next=${encodeURIComponent(currentPath)}`)
         return
       }
 
@@ -155,7 +158,7 @@ export default function ThreadPage({
                 background: 'rgba(255,255,255,0.6)',
                 borderRadius: 12,
                 fontSize: 15,
-                lineHeight: 1.6, // 読みやすさのため少し追加
+                lineHeight: 1.6,
               }}
             >
               {randomMessage}
