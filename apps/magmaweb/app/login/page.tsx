@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import type { CSSProperties } from 'react'
 import Link from 'next/link'
 import { signIn, signUp } from '../../lib/auth'
-import { LogIn, UserPlus, AlertCircle } from 'lucide-react'
+import { LogIn, UserPlus, AlertCircle, ChevronDown } from 'lucide-react'
 
 const BACKGROUND_IMAGE_URL = 'url("https://res.cloudinary.com/dk8pvfpzx/image/upload/v1779023101/img_9848_720_eoufy3.jpg")'
 
@@ -54,11 +54,13 @@ function LoginForm() {
     <div style={styles.page}>
       <div style={styles.slider}>
 
-        {/* ① スタート */}
-        <div style={{ ...styles.slide, ...styles.imageSlide }}>
+        {/* ① スタート（5枚目とUIを完全に統合） */}
+        <div style={{ ...styles.slide, ...styles.imageSlide, position: 'relative' }}>
           <div style={styles.fullContentContainer}>
             <h1 style={styles.logoTextWhite}>Magmatheへようこそ！</h1>
             <p style={styles.catchphraseWhite}>解き方でつながる高校生のための数学SNS</p>
+
+            <h2 style={styles.formTitleWhite}>{mode === 'login' ? 'ログイン' : '新規登録'}</h2>
 
             <input
               placeholder="ユーザー名"
@@ -74,16 +76,36 @@ function LoginForm() {
               style={{ ...styles.input, ...styles.inputWhite }}
             />
 
+            {error && (
+              <div style={styles.errorBoxWhite}>
+                <AlertCircle size={16}/>
+                <span>{error}</span>
+              </div>
+            )}
+
             <button onClick={handleSubmit} style={styles.button}>
               {loading ? '処理中...' : (
                 <div style={styles.buttonInner}>
-                  <LogIn size={18}/>
-                  <span>ログイン</span>
+                  {mode === 'login' ? <LogIn size={18}/> : <UserPlus size={18}/>}
+                  <span>{mode === 'login' ? 'ログイン' : '登録'}</span>
                 </div>
               )}
             </button>
 
+            <button
+              style={styles.switchWhite}
+              onClick={() => setMode(mode === 'login' ? 'signup' : 'login')}
+            >
+              {mode === 'login' ? 'アカウントをお持ちでないですか？ 新規登録' : '既にアカウントをお持ちですか？ ログイン'}
+            </button>
+
             <AgreementText whiteMode />
+          </div>
+
+          {/* 下へのスクロールを促すナビゲーション */}
+          <div style={styles.scrollIndicator}>
+            <span style={styles.scrollText}>特徴を見る</span>
+            <ChevronDown size={24} style={styles.scrollIconAnimated} />
           </div>
         </div>
 
@@ -170,6 +192,14 @@ function LoginForm() {
         </div>
 
       </div>
+
+      {/* スクリプト注入による簡易的な矢印上下アニメーションの適用 */}
+      <style dangerouslySetInnerHTML={{__html: `
+        @keyframes bounce {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(6px); }
+        }
+      `}} />
     </div>
   )
 }
@@ -240,7 +270,7 @@ const styles: { [key: string]: CSSProperties } = {
     fontSize: '15px',
     fontWeight: 'bold',
     color: '#e2e8f0',
-    marginBottom: '24px',
+    marginBottom: '16px',
   },
 
   descTextWhite: {
@@ -254,10 +284,11 @@ const styles: { [key: string]: CSSProperties } = {
   },
 
   formTitleWhite: {
-    fontSize: '24px',
+    fontSize: '20px',
     fontWeight: '800',
     color: '#fff',
-    marginBottom: '16px',
+    marginBottom: '8px',
+    opacity: 0.9,
   },
 
   input: {
@@ -352,5 +383,29 @@ const styles: { [key: string]: CSSProperties } = {
     textDecoration: 'underline',
     fontWeight: 'bold',
     margin: '0 2px',
+  },
+
+  scrollIndicator: {
+    position: 'absolute',
+    bottom: '20px',
+    left: '50%',
+    transform: 'translateX(-50%)',
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: '4px',
+    color: 'rgba(255, 255, 255, 0.6)',
+    cursor: 'default',
+    pointerEvents: 'none',
+  },
+
+  scrollText: {
+    fontSize: '11px',
+    fontWeight: '600',
+    letterSpacing: '0.05em',
+  },
+
+  scrollIconAnimated: {
+    animation: 'bounce 2s infinite ease-in-out',
   },
 }
