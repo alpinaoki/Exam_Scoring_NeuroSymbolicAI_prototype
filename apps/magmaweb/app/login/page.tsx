@@ -88,7 +88,7 @@ export default function LoginPage() {
         {/* ② 機能（背景：深みのあるブルーグリーン） */}
         <div style={{ ...styles.slide, backgroundColor: '#1e2d3b' }}>
           <div style={styles.contentCard}>
-            <img src='url("https://res.cloudinary.com/dk8pvfpzx/image/upload/v1781970858/IMG_0198_wrsijb.jpg") style={styles.cardImg}/>
+            <img src='url("https://res.cloudinary.com/dk8pvfpzx/image/upload/v1781970858/IMG_0198_wrsijb.jpg")' style={styles.cardImg}/>
             <p style={styles.descText}>１つの問題、たくさんの考え方</p>
           </div>
         </div>
