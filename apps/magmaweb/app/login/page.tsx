@@ -85,27 +85,39 @@ export default function LoginPage() {
           </div>
         </div>
 
-        {/* ② 機能（背景：深みのあるブルーグリーン） */}
-        <div style={{ ...styles.slide, backgroundColor: '#1e2d3b' }}>
-          <div style={styles.contentCard}>
-            <img src='url("https://res.cloudinary.com/dk8pvfpzx/image/upload/v1781970858/IMG_0198_wrsijb.jpg")' style={styles.cardImg}/>
-            <p style={styles.descText}>１つの問題、たくさんの考え方</p>
+        {/* ② 機能（背景：指定画像を全画面＆ブルーグリーンを乗算） */}
+        <div style={{ 
+          ...styles.slide, 
+          backgroundImage: 'linear-gradient(rgba(30, 45, 59, 0.75), rgba(30, 45, 59, 0.85)), url("https://res.cloudinary.com/dk8pvfpzx/image/upload/v1781970858/IMG_0198_wrsijb.jpg")',
+          backgroundSize: 'cover',
+          backgroundPosition: 'center'
+        }}>
+          <div style={styles.fullContentContainer}>
+            <p style={styles.descTextWhite}>１つの問題、たくさんの考え方</p>
           </div>
         </div>
 
-        {/* ③ 機能（背景：知的なモスグリーン） */}
-        <div style={{ ...styles.slide, backgroundColor: '#24342f' }}>
-          <div style={styles.contentCard}>
-            <img src='url("https://res.cloudinary.com/dk8pvfpzx/image/upload/v1781970858/IMG_0196_p6z6di.jpg")' style={styles.cardImg}/>
-            <p style={styles.descText}>解きたい分野がすぐに見つかる</p>
+        {/* ③ 機能（背景：指定画像を全画面＆モスグリーンを乗算） */}
+        <div style={{ 
+          ...styles.slide, 
+          backgroundImage: 'linear-gradient(rgba(36, 52, 47, 0.75), rgba(36, 52, 47, 0.85)), url("https://res.cloudinary.com/dk8pvfpzx/image/upload/v1781970858/IMG_0196_p6z6di.jpg")',
+          backgroundSize: 'cover',
+          backgroundPosition: 'center'
+        }}>
+          <div style={styles.fullContentContainer}>
+            <p style={styles.descTextWhite}>解きたい分野がすぐに見つかる</p>
           </div>
         </div>
 
-        {/* ④ 機能（背景：気品のあるディープパープル） */}
-        <div style={{ ...styles.slide, backgroundColor: '#2b2436' }}>
-          <div style={styles.contentCard}>
-            <img src='url("https://res.cloudinary.com/dk8pvfpzx/image/upload/v1781970858/IMG_0197_lbuuys.jpg")' style={styles.cardImg}/>
-            <p style={styles.descText}>リアクションから新たな発見を</p>
+        {/* ④ 機能（背景：指定画像を全画面＆ディープパープルを乗算） */}
+        <div style={{ 
+          ...styles.slide, 
+          backgroundImage: 'linear-gradient(rgba(43, 36, 54, 0.75), rgba(43, 36, 54, 0.85)), url("https://res.cloudinary.com/dk8pvfpzx/image/upload/v1781970858/IMG_0197_lbuuys.jpg")',
+          backgroundSize: 'cover',
+          backgroundPosition: 'center'
+        }}>
+          <div style={styles.fullContentContainer}>
+            <p style={styles.descTextWhite}>リアクションから新たな発見を</p>
           </div>
         </div>
 
@@ -187,7 +199,7 @@ const styles: { [key: string]: CSSProperties } = {
     boxSizing: 'border-box',
     scrollSnapAlign: 'start',      
     scrollSnapStop: 'always', 
-    transition: 'background-color 0.4s ease', // スワイプ時の色変化を滑らかにする
+    transition: 'background 0.4s ease', 
   },
 
   // ★ 追加：1枚目と5枚目の背景画像用（少し暗く落とすためにグラデーションを重ねる）
@@ -261,6 +273,17 @@ const styles: { [key: string]: CSSProperties } = {
     marginTop: '16px',
     marginLeft: 0,
     marginRight: 0,
+  },
+
+  // ★ 追加：全画面画像背景に乗る白い機能説明テキスト
+  descTextWhite: {
+    fontSize: '22px',
+    fontWeight: '800',
+    color: '#fff',
+    marginTop: '16px',
+    marginLeft: 0,
+    marginRight: 0,
+    textShadow: '0 2px 8px rgba(0,0,0,0.3)', // 可読性を上げるための軽い影
   },
 
   formTitle: {
