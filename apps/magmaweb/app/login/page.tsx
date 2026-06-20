@@ -1,7 +1,8 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+// ★useSearchParamsをインポートに追加
+import { useRouter, useSearchParams } from 'next/navigation'
 import type { CSSProperties } from 'react'
 import Link from 'next/link'
 import { signIn, signUp } from '../../lib/auth'
@@ -12,7 +13,7 @@ const BACKGROUND_IMAGE_URL = 'url("https://res.cloudinary.com/dk8pvfpzx/image/up
 
 export default function LoginPage() {
   const router = useRouter()
-  const searchParams = useSearchParams()
+  const searchParams = useSearchParams() // ★これで正常にクエリパラメータが取得できるようになります
 
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
