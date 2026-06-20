@@ -37,29 +37,38 @@ export default function ThreadPage({
       const msg = promptMessages[Math.floor(Math.random() * promptMessages.length)]
       setRandomMessage(msg)
 
-      const [p, a, user] = await Promise.all([
-        getProblemById(params.id),
-        getAnswersByProblemId(params.id),
-        getCurrentUser(),
-      ])
+      try {
+        // ★ getCurrentUser()に.catch(() => null)を入れることで、未ログイン時のエラー落ちを防ぐ
+        const [p, a, user] = await Promise.all([
+          getProblemById(params.id),
+          getAnswersByProblemId(params.id),
+          getCurrentUser().catch(() => null),
+        ])
 
-      setProblem(p)
-      setAnswers(a)
+        setProblem(p)
+        setAnswers(a)
 
-      // ★ 未ログイン時は、現在の投稿URLを保持してログイン画面へ強制リダイレクト
-      if (!user) {
-        setCanViewAnswers(false)
+        // ★ 未ログイン時は、現在の投稿URLを保持してログイン画面へ強制リダイレクト
+        if (!user) {
+          setCanViewAnswers(false)
+          const currentPath = window.location.pathname
+          router.push(`/login?next=${encodeURIComponent(currentPath)}`)
+          return
+        }
+
+        const isProblemOwner = p.user_id === user.id
+        const hasPostedAnswer = a.some(
+          (ans) => ans.user_id === user.id
+        )
+
+        setCanViewAnswers(isProblemOwner || hasPostedAnswer)
+
+      } catch (error) {
+        console.error("データ読み込み中にエラーが発生しました:", error)
+        // 万が一postsデータの取得エラーなどが起きた場合も、Loadingで固まるのを防ぐためログインかトップへ逃がす
         const currentPath = window.location.pathname
         router.push(`/login?next=${encodeURIComponent(currentPath)}`)
-        return
       }
-
-      const isProblemOwner = p.user_id === user.id
-      const hasPostedAnswer = a.some(
-        (ans) => ans.user_id === user.id
-      )
-
-      setCanViewAnswers(isProblemOwner || hasPostedAnswer)
     }
 
     load()
