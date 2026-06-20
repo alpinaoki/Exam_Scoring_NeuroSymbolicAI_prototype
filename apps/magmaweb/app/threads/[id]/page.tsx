@@ -98,7 +98,7 @@ export default function ThreadPage({
         }}
       >
         <button
-          onClick={() => router.(`/feed`)}
+          onClick={() => router.push(`/feed`)}
           style={{
             background: 'none',
             border: 'none',
