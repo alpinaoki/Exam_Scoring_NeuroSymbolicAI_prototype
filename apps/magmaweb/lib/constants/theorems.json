@@ -1,6 +1,4 @@
 {
-  "theorems": [
-    {
   "version": "0.1",
   "rule_groups": [
     {
@@ -315,14 +313,15 @@
     },
     {
       "group_id": "substitution_rules",
-      "name": "代入",
-      "before": {
-      "expression": "f(x)",
-    "substitution": "x = a"
-  },
-  "after": "f(a)"
-}
-        ,
+      "name": "代入・置換",
+      "rules": [
+        {
+          "id": "rule_substitution_basic",
+          "name": "代入",
+          "level": ["elementary", "middle", "high"],
+          "before": "f(x), x = a",
+          "after": "f(a)"
+        },
         {
           "id": "rule_variable_replacement",
           "name": "文字置換",
@@ -334,5 +333,3 @@
     }
   ]
 }
-   
-  

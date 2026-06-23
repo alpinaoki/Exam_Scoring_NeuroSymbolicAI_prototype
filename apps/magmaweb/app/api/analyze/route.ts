@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { GoogleGenAI } from '@google/genai'
-// 既に完璧に動いている外部クライアントを直接マウント
 import { supabase } from '../../../lib/supabase'
-// 1. theorems.jsonを読み込む
-import theorems from '../../../lib/constants/theorems.json';
+import theorems from '../../../lib/constants/theorems.json'
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || '' })
 
@@ -15,7 +13,6 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Missing answerId (パラメータが空です)' }, { status: 400 })
   }
 
-  // すでに確立されているクライアントからそのままpostsテーブルを叩く
   const { data: answer, error } = await supabase
     .from('posts')
     .select('image_url')
@@ -29,25 +26,22 @@ export async function GET(request: NextRequest) {
     }, { status: 404 })
   }
 
-  // 2. 定理の名前のリストを文字列にする（TypeScriptの型エラーを回避する万能版）
   let theoremListString = "";
-  const data: any = theorems; // TypeScriptの厳密なチェックを無効化
+  const data: any = theorems;
   
   try {
-    if (data?.theorems?.rule_groups) {
-      // パターンA: { theorems: { rule_groups: [...] } } の場合
-      theoremListString = data.theorems.rule_groups
-        .flatMap((g: any) => g.rules || [])
-        .map((r: any) => `- ${r.name}`)
-        .join('\n');
-    } else if (data?.rule_groups) {
-      // パターンB: { rule_groups: [...] } の場合
+    // 修正版のJSON構造（ルートに version と rule_groups がある状態）に完全対応
+    if (data?.rule_groups) {
       theoremListString = data.rule_groups
         .flatMap((g: any) => g.rules || [])
         .map((r: any) => `- ${r.name}`)
         .join('\n');
+    } else if (data?.theorems?.rule_groups) {
+      theoremListString = data.theorems.rule_groups
+        .flatMap((g: any) => g.rules || [])
+        .map((r: any) => `- ${r.name}`)
+        .join('\n');
     } else if (Array.isArray(data)) {
-      // パターンC: 単なる配列 [...] の場合
       theoremListString = data.map((r: any) => `- ${r.name}`).join('\n');
     }
   } catch (err) {
@@ -60,7 +54,6 @@ export async function GET(request: NextRequest) {
     const base64Image = Buffer.from(arrayBuffer).toString('base64')
 
     const response = await ai.models.generateContent({
-      // 💡 'models/gemini-1.5-pro' からプレフィックスを除去した最新モデルに変更
       model: 'gemini-2.5-flash', 
       contents: [
         {
@@ -68,7 +61,6 @@ export async function GET(request: NextRequest) {
           parts: [
             { inlineData: { mimeType: 'image/jpeg', data: base64Image } },
             {
-              // 👇 ここから修正：内部のバッククォート(`)を完全に排除しました！
               text: `
                 [役割]
                 あなたは数学教育の専門家であり、論理構造解析に特化したAIアシスタントです。
@@ -140,7 +132,7 @@ export async function GET(request: NextRequest) {
                 
                 [利用可能な定理ライブラリ]
                 ${theoremListString}
-              ` // 👈 最後に文字列を正しく閉じます
+              `
             }
           ]
         }
@@ -154,7 +146,6 @@ export async function GET(request: NextRequest) {
     const rawText = response.text
 
     try {
-      // 1. 前後の空白や、万が一混入したマークアップをトリミング
       let cleanText = rawText.trim()
       if (cleanText.startsWith('```json')) {
         cleanText = cleanText.replace(/^```json/, '').replace(/```$/, '').trim()
@@ -162,23 +153,21 @@ export async function GET(request: NextRequest) {
         cleanText = cleanText.replace(/^```/, '').replace(/```$/, '').trim()
       }
 
-      // 2. 特殊な改行コードやエスケープの乱れをパース前に最小限にケア
       const graphData = JSON.parse(cleanText)
       
       return NextResponse.json({
         imageUrl: answer.image_url,
-        graph: graphData
+        graph: graphData.graph // フロントの期待値 { graph: { nodes, edges } } に整合
       })
     } catch (parseErr) {
-      // パースに失敗した場合、文字列の不正なエスケープを強制置換してリトライするセーフティネット
       try {
         const fixedText = rawText
-          .replace(/\\/g, '\\\\') // バックスラッシュをエスケープ
-          .replace(/\\\\"|\\\\'|\\\\n/g, (match) => match.substring(2)) // 必要な制御文字は戻す
+          .replace(/\\/g, '\\\\')
+          .replace(/\\\\"|\\\\'|\\\\n/g, (match) => match.substring(2))
         const graphData = JSON.parse(fixedText)
         return NextResponse.json({
           imageUrl: answer.image_url,
-          graph: graphData
+          graph: graphData.graph
         })
       } catch (innerErr) {
         return NextResponse.json({
