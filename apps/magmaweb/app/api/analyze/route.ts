@@ -3,7 +3,7 @@ import { GoogleGenAI } from '@google/genai'
 // 既に完璧に動いている外部クライアントを直接マウント
 import { supabase } from '../../../lib/supabase'
 // 1. theorems.jsonを読み込む
-import theorems from '../../../lib/constants/theorems.json';
+import theorems from '../../../lib/constants/theorems.json'
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || '' })
 
@@ -34,13 +34,13 @@ export async function GET(request: NextRequest) {
   const data: any = theorems; 
   
   try {
-    if (data?.theorems?.rule_groups) {
+    if (data?.rule_groups) {
       theoremListString = data.theorems.rule_groups
         .flatMap((g: any) => g.rules || [])
         .map((r: any) => `- ${r.name}`)
         .join('\n');
-    } else if (data?.rule_groups) {
-      theoremListString = data.rule_groups
+    } else if (data?.theorems?.rule_groups) {
+      theoremListString = data.theorems.rule_groups
         .flatMap((g: any) => g.rules || [])
         .map((r: any) => `- ${r.name}`)
         .join('\n');
@@ -164,7 +164,7 @@ export async function GET(request: NextRequest) {
       
       return NextResponse.json({
         imageUrl: answer.image_url,
-        graph: graphData
+        graph: graphData.graph // フロントの期待値 { graph: { nodes, edges } } に整合
       })
     } catch (parseErr) {
       try {
@@ -174,7 +174,7 @@ export async function GET(request: NextRequest) {
         const graphData = JSON.parse(fixedText)
         return NextResponse.json({
           imageUrl: answer.image_url,
-          graph: graphData
+          graph: graphData.graph
         })
       } catch (innerErr) {
         return NextResponse.json({
