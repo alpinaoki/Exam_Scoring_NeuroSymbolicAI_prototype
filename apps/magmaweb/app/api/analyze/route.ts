@@ -61,7 +61,7 @@ export async function GET(request: NextRequest) {
           parts: [
             { inlineData: { mimeType: 'image/jpeg', data: base64Image } },
             {
-　　　　　　　 text: `
+              text: `
                 [役割]
                 あなたは数学教育の専門家であり、論理構造解析に特化したAIアシスタントです。
 
