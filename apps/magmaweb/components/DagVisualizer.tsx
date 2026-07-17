@@ -17,7 +17,7 @@ import '@xyflow/react/dist/style.css'
 type GraphNode = {
   id: string
   label: string
-  type: 'proposition' | 'inference'
+  type: 'proposition' | 'inference' | 'theorem' // 💡 'theorem' (定義・定理) を型に追加
 }
 
 type GraphEdge = {
@@ -37,13 +37,32 @@ export default function DagVisualizer({ graphData }: DagVisualizerProps) {
 
   // --- 💡 React Flow 用のノードデータ変換 ---
   const flowNodes = useMemo<Node[]>(() => {
-    // 完全に重なるのを防ぐため、インデックスに応じて初期配置のXYを簡易計算
     return rawNodes.map((node, index) => {
+      // 💡 ノードの種類を3パターンに判定
       const isProposition = node.type === 'proposition'
+      const isTheorem = node.type === 'theorem'
       
-      // 命題ノードと推論ノードを視覚的に少し左右に散らし、上から順に並べる
-      const x = isProposition ? 120 + (index % 2) * 40 : 360
+      // --- 💡 枝分かれが綺麗に見えるように配置(X座標)を計算 ---
+      // 命題は左側、推論は中央、定義・定理は右側に配置して視認性を最大化します
+      let x = 360
+      if (isProposition) {
+        x = 120 + (index % 2) * 40
+      } else if (isTheorem) {
+        x = 560 // 💡 定理ノードは右側に散らして枝分かれ感を強調
+      }
+      
       const y = index * 110 // 各ステップが被らないように縦の距離を確保
+
+      // --- 💡 ノードの種類に応じたカラーデザインの決定 ---
+      let background = '#f8fafc'
+      let borderColor = '#6BCB77' // 標準（推論）は緑
+      if (isProposition) {
+        background = '#ffffff'
+        borderColor = '#4D96FF' // 命題は青
+      } else if (isTheorem) {
+        background = '#fff7ed' // 💡 定理は超薄いオレンジ
+        borderColor = '#f97316' // 💡 定理の枠線は鮮やかなオレンジ
+      }
 
       return {
         id: node.id,
@@ -53,9 +72,11 @@ export default function DagVisualizer({ graphData }: DagVisualizerProps) {
           label: (
             <div style={styles.nodeContent}>
               <div style={styles.nodeHeader}>
-                <span style={isProposition ? styles.propositionBadge : styles.inferenceBadge}>
-                  {isProposition ? '命題' : '推論'}
-                </span>
+                {/* 💡 ノードの種類に応じて3つのバッジを出し分け */}
+                {isProposition && <span style={styles.propositionBadge}>命題</span>}
+                {node.type === 'inference' && <span style={styles.inferenceBadge}>推論</span>}
+                {isTheorem && <span style={styles.theoremBadge}>定義・定理</span>}
+                
                 <span style={styles.nodeId}>{node.id}</span>
               </div>
               <div style={styles.nodeLabel}>{node.label}</div>
@@ -63,10 +84,10 @@ export default function DagVisualizer({ graphData }: DagVisualizerProps) {
           ),
         },
         style: {
-          background: isProposition ? '#ffffff' : '#f8fafc',
-          borderColor: isProposition ? '#4D96FF' : '#6BCB77',
+          background: background,
+          borderColor: borderColor,
           borderWidth: '2px',
-          borderLeft: isProposition ? '6px solid #4D96FF' : '6px solid #6BCB77',
+          borderLeft: `6px solid ${borderColor}`, // 左側のアクセント太線
           borderRadius: '10px',
           color: '#1e293b',
           boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)',
@@ -164,6 +185,15 @@ const styles = {
     fontWeight: 'bold' as const,
     color: '#6BCB77',
     backgroundColor: '#eefaf0',
+    padding: '1px 6px',
+    borderRadius: '4px',
+  },
+  // 💡 定理ノード用のオレンジ色のバッジスタイルを追加
+  theoremBadge: {
+    fontSize: '10px',
+    fontWeight: 'bold' as const,
+    color: '#ea580c',      // 濃いオレンジ
+    backgroundColor: '#ffedd5', // 薄いオレンジ
     padding: '1px 6px',
     borderRadius: '4px',
   },
