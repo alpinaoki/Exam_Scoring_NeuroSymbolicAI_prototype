@@ -11,13 +11,12 @@ import {
   MarkerType,
 } from '@xyflow/react'
 
-// React Flowの標準スタイルシートをインポート
 import '@xyflow/react/dist/style.css'
 
 type GraphNode = {
   id: string
   label: string
-  type: 'proposition' | 'inference' | 'theorem' // 💡 'theorem' (定義・定理) を型に追加
+  type: 'proposition' | 'inference' | 'theorem'
 }
 
 type GraphEdge = {
@@ -38,30 +37,27 @@ export default function DagVisualizer({ graphData }: DagVisualizerProps) {
   // --- 💡 React Flow 用のノードデータ変換 ---
   const flowNodes = useMemo<Node[]>(() => {
     return rawNodes.map((node, index) => {
-      // 💡 ノードの種類を3パターンに判定
       const isProposition = node.type === 'proposition'
       const isTheorem = node.type === 'theorem'
       
-      // --- 💡 枝分かれが綺麗に見えるように配置(X座標)を計算 ---
-      // 命題は左側、推論は中央、定義・定理は右側に配置して視認性を最大化します
       let x = 360
       if (isProposition) {
         x = 120 + (index % 2) * 40
       } else if (isTheorem) {
-        x = 560 // 💡 定理ノードは右側に散らして枝分かれ感を強調
+        x = 580 // 定理ノードはさらに右に寄せて線のスペースを確保
       }
       
-      const y = index * 110 // 各ステップが被らないように縦の距離を確保
+      // 💡 縦の距離を 110 -> 140 に広げ、線が迂回するスペースを作りました
+      const y = index * 140
 
-      // --- 💡 ノードの種類に応じたカラーデザインの決定 ---
       let background = '#f8fafc'
-      let borderColor = '#6BCB77' // 標準（推論）は緑
+      let borderColor = '#6BCB77'
       if (isProposition) {
         background = '#ffffff'
-        borderColor = '#4D96FF' // 命題は青
+        borderColor = '#4D96FF'
       } else if (isTheorem) {
-        background = '#fff7ed' // 💡 定理は超薄いオレンジ
-        borderColor = '#f97316' // 💡 定理の枠線は鮮やかなオレンジ
+        background = '#fff7ed'
+        borderColor = '#f97316'
       }
 
       return {
@@ -72,7 +68,6 @@ export default function DagVisualizer({ graphData }: DagVisualizerProps) {
           label: (
             <div style={styles.nodeContent}>
               <div style={styles.nodeHeader}>
-                {/* 💡 ノードの種類に応じて3つのバッジを出し分け */}
                 {isProposition && <span style={styles.propositionBadge}>命題</span>}
                 {node.type === 'inference' && <span style={styles.inferenceBadge}>推論</span>}
                 {isTheorem && <span style={styles.theoremBadge}>定義・定理</span>}
@@ -87,7 +82,7 @@ export default function DagVisualizer({ graphData }: DagVisualizerProps) {
           background: background,
           borderColor: borderColor,
           borderWidth: '2px',
-          borderLeft: `6px solid ${borderColor}`, // 左側のアクセント太線
+          borderLeft: `6px solid ${borderColor}`,
           borderRadius: '10px',
           color: '#1e293b',
           boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)',
@@ -106,11 +101,16 @@ export default function DagVisualizer({ graphData }: DagVisualizerProps) {
         id: `e-${edge.from}-${edge.to}-${index}`,
         source: edge.from,
         target: edge.to,
-        animated: true, // 動くアニメーション線にして論理の流れを可視化
-        style: { stroke: '#94a3b8', strokeWidth: 2 },
+        type: 'smoothstep', // 💡 斜め線ではなく、直角に曲がる回路図のような線に変更
+        animated: true,
+        style: { 
+          stroke: '#64748b',   // 💡 少し濃いグレーに変更
+          strokeWidth: 2.5,    // 💡 少し太くして見やすく
+          opacity: 0.65        // 💡 重なっても下の文字や線が透けて見えるように半透明化
+        },
         markerEnd: {
-          type: MarkerType.ArrowClosed, // 閉じられた綺麗な矢印
-          color: '#94a3b8',
+          type: MarkerType.ArrowClosed,
+          color: '#64748b',
         },
       }
     })
@@ -126,11 +126,8 @@ export default function DagVisualizer({ graphData }: DagVisualizerProps) {
           fitView
           attributionPosition="bottom-right"
         >
-          {/* 背景のドットグリッドパターン */}
           <Background color="#cbd5e1" gap={16} size={1} />
-          {/* 左下の拡大・縮小・リセット用コントローラー */}
           <Controls />
-          {/* 右下のナビゲーション用ミニマップ */}
           <MiniMap 
             nodeStrokeColor={(n) => n.style?.borderColor as string} 
             nodeColor={(n) => n.style?.background as string} 
@@ -156,7 +153,7 @@ const styles = {
   },
   canvasWrapper: {
     width: '100%',
-    height: '680px', // 複雑な長い数式グラフを動かすのに最適な作業領域の高さ
+    height: '680px',
     backgroundColor: '#f8fafc',
     borderRadius: '16px',
     border: '1px solid #e2e8f0',
@@ -188,12 +185,11 @@ const styles = {
     padding: '1px 6px',
     borderRadius: '4px',
   },
-  // 💡 定理ノード用のオレンジ色のバッジスタイルを追加
   theoremBadge: {
     fontSize: '10px',
     fontWeight: 'bold' as const,
-    color: '#ea580c',      // 濃いオレンジ
-    backgroundColor: '#ffedd5', // 薄いオレンジ
+    color: '#ea580c',
+    backgroundColor: '#ffedd5',
     padding: '1px 6px',
     borderRadius: '4px',
   },
