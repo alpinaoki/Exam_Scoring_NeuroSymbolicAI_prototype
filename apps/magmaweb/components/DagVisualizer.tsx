@@ -9,6 +9,7 @@ import {
   Node,
   Edge,
   MarkerType,
+  Position,
 } from '@xyflow/react'
 
 import '@xyflow/react/dist/style.css'
@@ -36,19 +37,29 @@ export default function DagVisualizer({ graphData }: DagVisualizerProps) {
 
   // --- 💡 React Flow 用のノードデータ変換 ---
   const flowNodes = useMemo<Node[]>(() => {
+    // 命題と定理が何個目かをカウントして、ジグザグに配置するための変数
+    let propCount = 0;
+    let theoremCount = 0;
+
     return rawNodes.map((node, index) => {
       const isProposition = node.type === 'proposition'
       const isTheorem = node.type === 'theorem'
       
-      let x = 360
+      // 💡 線の貫通を防ぐ「ジグザグ配置（カスケードレイアウト）」
+      let x = 350 // 推論(inference)は中央(350)を定位置にする
+      
       if (isProposition) {
-        x = 120 + (index % 2) * 40
+        // 命題は左寄り(100)と少し中央寄り(200)を交互に配置して被りを防ぐ
+        x = propCount % 2 === 0 ? 100 : 200;
+        propCount++;
       } else if (isTheorem) {
-        x = 580 // 定理ノードはさらに右に寄せて線のスペースを確保
+        // 定理は右端(750)の空きスペースに配置し、線が被らないようにする
+        x = 750 + (theoremCount % 2) * 50; 
+        theoremCount++;
       }
       
-      // 💡 縦の距離を 110 -> 140 に広げ、線が迂回するスペースを作りました
-      const y = index * 140
+      // 💡 縦の距離(Y)を広めに取ることで、線が迂回するための「道」を作る
+      const y = index * 160
 
       let background = '#f8fafc'
       let borderColor = '#6BCB77'
@@ -64,6 +75,9 @@ export default function DagVisualizer({ graphData }: DagVisualizerProps) {
         id: node.id,
         type: 'default',
         position: { x, y },
+        // 💡 線の出入り口を明示して迂回しやすくする
+        sourcePosition: Position.Bottom,
+        targetPosition: Position.Top,
         data: {
           label: (
             <div style={styles.nodeContent}>
@@ -71,7 +85,6 @@ export default function DagVisualizer({ graphData }: DagVisualizerProps) {
                 {isProposition && <span style={styles.propositionBadge}>命題</span>}
                 {node.type === 'inference' && <span style={styles.inferenceBadge}>推論</span>}
                 {isTheorem && <span style={styles.theoremBadge}>定義・定理</span>}
-                
                 <span style={styles.nodeId}>{node.id}</span>
               </div>
               <div style={styles.nodeLabel}>{node.label}</div>
@@ -89,28 +102,29 @@ export default function DagVisualizer({ graphData }: DagVisualizerProps) {
           width: 300,
           textAlign: 'left' as const,
           padding: '12px',
+          zIndex: isTheorem ? 1 : 10, // 定理ノードは裏側に回して線を邪魔しにくくする
         },
       }
     })
   }, [rawNodes])
 
-  // --- 💡 React Flow 用のエッジ（矢印の線）データ変換 ---
+  // --- 💡 React Flow 用のエッジデータ変換 ---
   const flowEdges = useMemo<Edge[]>(() => {
     return rawEdges.map((edge, index) => {
       return {
         id: `e-${edge.from}-${edge.to}-${index}`,
         source: edge.from,
         target: edge.to,
-        type: 'smoothstep', // 💡 斜め線ではなく、直角に曲がる回路図のような線に変更
+        type: 'smoothstep', // 直角に曲がる線
         animated: true,
         style: { 
-          stroke: '#64748b',   // 💡 少し濃いグレーに変更
-          strokeWidth: 2.5,    // 💡 少し太くして見やすく
-          opacity: 0.65        // 💡 重なっても下の文字や線が透けて見えるように半透明化
+          stroke: '#94a3b8', 
+          strokeWidth: 2, 
+          opacity: 0.5 // 💡 半透明を強めにして、万が一重なっても下の文字を読めるように
         },
         markerEnd: {
           type: MarkerType.ArrowClosed,
-          color: '#64748b',
+          color: '#94a3b8',
         },
       }
     })
@@ -139,71 +153,14 @@ export default function DagVisualizer({ graphData }: DagVisualizerProps) {
 }
 
 const styles = {
-  container: {
-    width: '100%',
-    display: 'flex',
-    flexDirection: 'column' as const,
-  },
-  title: {
-    fontSize: '16px',
-    fontWeight: 'bold' as const,
-    color: '#334155',
-    marginBottom: '12px',
-    marginTop: 0,
-  },
-  canvasWrapper: {
-    width: '100%',
-    height: '680px',
-    backgroundColor: '#f8fafc',
-    borderRadius: '16px',
-    border: '1px solid #e2e8f0',
-    overflow: 'hidden' as const,
-  },
-  nodeContent: {
-    display: 'flex',
-    flexDirection: 'column' as const,
-    gap: '6px',
-  },
-  nodeHeader: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  propositionBadge: {
-    fontSize: '10px',
-    fontWeight: 'bold' as const,
-    color: '#4D96FF',
-    backgroundColor: '#edf4ff',
-    padding: '1px 6px',
-    borderRadius: '4px',
-  },
-  inferenceBadge: {
-    fontSize: '10px',
-    fontWeight: 'bold' as const,
-    color: '#6BCB77',
-    backgroundColor: '#eefaf0',
-    padding: '1px 6px',
-    borderRadius: '4px',
-  },
-  theoremBadge: {
-    fontSize: '10px',
-    fontWeight: 'bold' as const,
-    color: '#ea580c',
-    backgroundColor: '#ffedd5',
-    padding: '1px 6px',
-    borderRadius: '4px',
-  },
-  nodeId: {
-    fontSize: '10px',
-    color: '#94a3b8',
-    fontFamily: 'monospace',
-  },
-  nodeLabel: {
-    fontSize: '12px',
-    fontWeight: 500,
-    whiteSpace: 'pre-wrap' as const,
-    fontFamily: 'Consolas, Monaco, monospace',
-    wordBreak: 'break-all' as const,
-    lineHeight: 1.4,
-  },
+  container: { width: '100%', display: 'flex', flexDirection: 'column' as const },
+  title: { fontSize: '16px', fontWeight: 'bold' as const, color: '#334155', marginBottom: '12px', marginTop: 0 },
+  canvasWrapper: { width: '100%', height: '680px', backgroundColor: '#f8fafc', borderRadius: '16px', border: '1px solid #e2e8f0', overflow: 'hidden' as const },
+  nodeContent: { display: 'flex', flexDirection: 'column' as const, gap: '6px' },
+  nodeHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
+  propositionBadge: { fontSize: '10px', fontWeight: 'bold' as const, color: '#4D96FF', backgroundColor: '#edf4ff', padding: '1px 6px', borderRadius: '4px' },
+  inferenceBadge: { fontSize: '10px', fontWeight: 'bold' as const, color: '#6BCB77', backgroundColor: '#eefaf0', padding: '1px 6px', borderRadius: '4px' },
+  theoremBadge: { fontSize: '10px', fontWeight: 'bold' as const, color: '#ea580c', backgroundColor: '#ffedd5', padding: '1px 6px', borderRadius: '4px' },
+  nodeId: { fontSize: '10px', color: '#94a3b8', fontFamily: 'monospace' },
+  nodeLabel: { fontSize: '12px', fontWeight: 500, whiteSpace: 'pre-wrap' as const, fontFamily: 'Consolas, Monaco, monospace', wordBreak: 'break-all' as const, lineHeight: 1.4 },
 }
