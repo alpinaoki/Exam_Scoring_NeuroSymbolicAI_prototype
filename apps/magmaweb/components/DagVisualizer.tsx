@@ -40,15 +40,14 @@ type DagVisualizerProps = {
 const CustomNode = ({ data }: any) => {
   return (
     <div style={data.style}>
-      {/* 縦の直列フロー用 */}
       <Handle type="target" position={Position.Top} id="top" style={{ opacity: 0 }} />
       <Handle type="source" position={Position.Bottom} id="bottom" style={{ opacity: 0 }} />
       
-      {/* 右側の大きく迂回するジャンプ・ルート用（高さを少しズラして重なりにくくする） */}
+      {/* 迂回ルート用：右側の接続口 */}
       <Handle type="target" position={Position.Right} id="right-target" style={{ opacity: 0, top: '30%' }} />
       <Handle type="source" position={Position.Right} id="right-source" style={{ opacity: 0, top: '70%' }} />
 
-      {/* 左側の定理ノード接続用 */}
+      {/* 定理ノード接続用：左側の接続口 */}
       <Handle type="target" position={Position.Left} id="left-target" style={{ opacity: 0, top: '50%' }} />
       <Handle type="source" position={Position.Left} id="left-source" style={{ opacity: 0, top: '50%' }} />
 
@@ -68,15 +67,17 @@ const BypassEdge = ({
   markerEnd,
   data,
 }: EdgeProps) => {
-  // jumpIndexごとに大きく外側に膨らませる（1本目は60px、2本目は100px、3本目は140px...と完全にズラす）
+  // jumpIndexを使って、線が重ならないように右側へ大きく膨らませる
   const jumpIndex = data?.jumpIndex || 0;
-  const xOffset = 60 + jumpIndex * 40;
+  // 1本目は右に80px、2本目は130px、3本目は180px...と完全に間隔を空ける
+  const xOffset = 80 + jumpIndex * 50;
   const routeX = Math.max(sourceX, targetX) + xOffset;
 
-  const r = 16;
+  const r = 20; // 角の丸み
   const dir = targetY > sourceY ? 1 : -1;
   const actualR = Math.min(r, Math.abs(targetY - sourceY) / 2);
 
+  // 右に出て、下（上）へ向かい、左へ戻ってノードに入る手動ルート
   const path = `
     M ${sourceX} ${sourceY}
     L ${routeX - actualR} ${sourceY}
@@ -89,16 +90,16 @@ const BypassEdge = ({
   return <BaseEdge id={id} path={path} markerEnd={markerEnd} style={style} />;
 }
 
-// React Flowにカスタム部品を登録
+// 登録
 const nodeTypes = { custom: CustomNode }
 const edgeTypes = { bypass: BypassEdge } 
 
 export default function DagVisualizer({ graphData }: DagVisualizerProps) {
   if (!graphData || !Array.isArray(graphData.nodes) || !Array.isArray(graphData.edges)) {
     return (
-      <div style={{ padding: '20px', color: '#ef4444', backgroundColor: '#fee2e2', borderRadius: '12px', margin: '20px' }}>
-        <h4 style={{ margin: '0 0 10px 0' }}>グラフデータの描画エラー</h4>
-        <p style={{ fontSize: '14px', margin: 0 }}>AIからのデータ抽出に失敗したか、データ構造が不正です。</p>
+      <div style={{ padding: '20px', color: '#ef4444', backgroundColor: '#fee2e2', borderRadius: '12px' }}>
+        <h4 style={{ margin: '0 0 10px 0' }}>データエラー</h4>
+        <p style={{ margin: 0 }}>グラフデータが不正です。</p>
       </div>
     );
   }
@@ -113,15 +114,22 @@ export default function DagVisualizer({ graphData }: DagVisualizerProps) {
 
   // --- ノードの配置 ---
   const flowNodes = useMemo<Node[]>(() => {
+    let propCount = 0;
+    
     return rawNodes.map((node, index) => {
       const isProposition = node.type === 'proposition'
       const isTheorem = node.type === 'theorem'
       
-      let x = 400 
+      let x = 380; // 推論ノードの基本位置
       if (isTheorem) {
-        x = 50 
+        x = 40; // 定理ノードは左端へ
+      } else if (isProposition) {
+        // 命題ノードは少しジグザグにして縦の直線かぶりを防ぐ
+        x = propCount % 2 === 0 ? 350 : 410;
+        propCount++;
       }
       
+      // 縦の間隔をしっかり開ける
       const y = index * 160
 
       let background = '#f8fafc'
@@ -140,8 +148,8 @@ export default function DagVisualizer({ graphData }: DagVisualizerProps) {
         position: { x, y },
         data: {
           style: {
-            background: background,
-            borderColor: borderColor,
+            background,
+            borderColor,
             borderWidth: '2px',
             borderStyle: 'solid',
             borderLeft: `6px solid ${borderColor}`,
@@ -171,7 +179,7 @@ export default function DagVisualizer({ graphData }: DagVisualizerProps) {
 
   // --- エッジ（線）のルーティング ---
   const flowEdges = useMemo<Edge[]>(() => {
-    let jumpCounter = 0; // ジャンプする線をカウントして重ならないようにする
+    let jumpCounter = 0;
 
     return rawEdges.map((edge, index) => {
       const fromNode = rawNodes.find(n => n.id === edge.from)
@@ -198,13 +206,12 @@ export default function DagVisualizer({ graphData }: DagVisualizerProps) {
       } else if (isJump) {
         sourceHandle = 'right-source'
         targetHandle = 'right-target'
-        type = 'bypass' // 💡 自作した「重ならないカスタムエッジ」を指定
-        jumpIndex = jumpCounter++; // 何番目のジャンプ線かを記録して幅を広げる
+        type = 'bypass' // ★ ここでカスタムエッジを適用
+        jumpIndex = jumpCounter++; 
       }
 
-      // 💡 線の色を以前のスレート色（グレー）に確実に戻す
-      const strokeColor = '#94a3b8' 
-      const strokeWidth = 2.5
+      // 💡 赤色を完全に排除し、落ち着いた濃いグレー（スレート）に統一
+      const strokeColor = '#64748b' 
 
       return {
         id: `e-${edge.from}-${edge.to}-${index}`,
@@ -214,11 +221,11 @@ export default function DagVisualizer({ graphData }: DagVisualizerProps) {
         targetHandle, 
         type,
         animated: true,
-        data: { jumpIndex }, // カスタムエッジに重なり回避用の数値を渡す
+        data: { jumpIndex }, 
         style: { 
           stroke: strokeColor, 
-          strokeWidth: strokeWidth, 
-          opacity: 0.6 // 少し透けさせて視認性アップ
+          strokeWidth: 2.5, 
+          opacity: 0.65 
         },
         markerEnd: {
           type: MarkerType.ArrowClosed,
@@ -236,7 +243,7 @@ export default function DagVisualizer({ graphData }: DagVisualizerProps) {
           nodes={flowNodes}
           edges={flowEdges}
           nodeTypes={nodeTypes}
-          edgeTypes={edgeTypes} // 💡 カスタムエッジをReact Flowに確実に認識させる
+          edgeTypes={edgeTypes}
           fitView
           attributionPosition="bottom-right"
         >
