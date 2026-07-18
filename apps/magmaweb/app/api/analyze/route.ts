@@ -149,7 +149,7 @@ export async function GET(request: NextRequest) {
 
     const rawText = response.text
 
-    try {
+   try {
       let cleanText = rawText.trim()
       if (cleanText.startsWith('```json')) {
         cleanText = cleanText.replace(/^```json/, '').replace(/```$/, '').trim()
@@ -157,13 +157,26 @@ export async function GET(request: NextRequest) {
         cleanText = cleanText.replace(/^```/, '').replace(/```$/, '').trim()
       }
 
-      const graphData = JSON.parse(cleanText)
-      return NextResponse.json({ imageUrl: answer.image_url, graph: graphData })
+      // 💡 AIの出力をパースする
+      const parsedData = JSON.parse(cleanText)
+      
+      return NextResponse.json({ 
+        imageUrl: answer.image_url, 
+        graph: parsedData.graph, // 💡 フロントが欲しい「graphの中身」だけを取り出して渡す！
+        newTheorems: parsedData.new_theorems // 💡 新しい定理データも一緒に返す
+      })
+      
     } catch (parseErr) {
+      // パース失敗時のリカバリ処理
       try {
         const fixedText = rawText.replace(/\\/g, '\\\\').replace(/\\\\"|\\\\'|\\\\n/g, (match) => match.substring(2))
-        const graphData = JSON.parse(fixedText)
-        return NextResponse.json({ imageUrl: answer.image_url, graph: graphData })
+        const parsedData = JSON.parse(fixedText)
+        
+        return NextResponse.json({ 
+          imageUrl: answer.image_url, 
+          graph: parsedData.graph, // 💡 ここも同様に修正
+          newTheorems: parsedData.new_theorems
+        })
       } catch (innerErr) {
         return NextResponse.json({ error: 'Geminiの出力データがJSONとして不適正です', rawText: rawText })
       }
