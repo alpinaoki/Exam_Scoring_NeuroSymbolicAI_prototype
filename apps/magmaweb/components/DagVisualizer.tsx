@@ -10,8 +10,10 @@ import {
   Edge,
   MarkerType,
   Position,
+  Handle,
 } from '@xyflow/react'
 
+// @ts-ignore
 import '@xyflow/react/dist/style.css'
 
 type GraphNode = {
@@ -32,45 +34,65 @@ type DagVisualizerProps = {
   }
 }
 
+// --- 💡 1. 線の出入り口を自由に制御するためのカスタムノード ---
+const CustomNode = ({ data }: any) => {
+  return (
+    <div style={data.style}>
+      {/* 縦の直列フロー用（透明にして見えなくしています） */}
+      <Handle type="target" position={Position.Top} id="top" style={{ opacity: 0 }} />
+      <Handle type="source" position={Position.Bottom} id="bottom" style={{ opacity: 0 }} />
+      
+      {/* 右側の大きく迂回するジャンプ・ルート用 */}
+      <Handle type="target" position={Position.Right} id="right-target" style={{ opacity: 0, top: '20%' }} />
+      <Handle type="source" position={Position.Right} id="right-source" style={{ opacity: 0, top: '80%' }} />
+
+      {/* 左側の定理ノード接続用 */}
+      <Handle type="target" position={Position.Left} id="left-target" style={{ opacity: 0, top: '50%' }} />
+      <Handle type="source" position={Position.Left} id="left-source" style={{ opacity: 0, top: '50%' }} />
+
+      {data.content}
+    </div>
+  )
+}
+
+// 作成したカスタムノードをReact Flowに登録
+const nodeTypes = { custom: CustomNode }
+
 export default function DagVisualizer({ graphData }: DagVisualizerProps) {
-  // 💡 安全装置: データが空だったり、不正な形式の時はクラッシュさせずにエラーメッセージを出す
+  // 安全装置（データが空のときのクラッシュ防止）
   if (!graphData || !Array.isArray(graphData.nodes) || !Array.isArray(graphData.edges)) {
-    console.error("【データ受信エラー】無効なgraphDataを受信しました:", graphData);
     return (
       <div style={{ padding: '20px', color: '#ef4444', backgroundColor: '#fee2e2', borderRadius: '12px', margin: '20px' }}>
         <h4 style={{ margin: '0 0 10px 0' }}>グラフデータの描画エラー</h4>
-        <p style={{ fontSize: '14px', margin: 0 }}>AIからのデータ抽出に失敗したか、データ構造が不正です。ブラウザのコンソール（F12キー）を確認してください。</p>
+        <p style={{ fontSize: '14px', margin: 0 }}>AIからのデータ抽出に失敗したか、データ構造が不正です。</p>
       </div>
     );
   }
 
   const { nodes: rawNodes, edges: rawEdges } = graphData
 
-  // --- 💡 React Flow 用のノードデータ変換 ---
-  const flowNodes = useMemo<Node[]>(() => {
-    // 命題と定理が何個目かをカウントして、ジグザグに配置するための変数
-    let propCount = 0;
-    let theoremCount = 0;
+  // ノードが上から何番目にあるかを記憶するマップ
+  const nodeIndexMap = useMemo(() => {
+    const map = new Map<string, number>()
+    rawNodes.forEach((n, i) => map.set(n.id, i))
+    return map
+  }, [rawNodes])
 
+  // --- 💡 2. ノードの3レーン配置 ---
+  const flowNodes = useMemo<Node[]>(() => {
     return rawNodes.map((node, index) => {
       const isProposition = node.type === 'proposition'
       const isTheorem = node.type === 'theorem'
       
-      // 💡 線の貫通を防ぐ「ジグザグ配置（カスケードレイアウト）」
-      let x = 350 // 推論(inference)は中央(350)を定位置にする
-      
-      if (isProposition) {
-        // 命題は左寄り(100)と少し中央寄り(200)を交互に配置して被りを防ぐ
-        x = propCount % 2 === 0 ? 100 : 200;
-        propCount++;
-      } else if (isTheorem) {
-        // 定理は右端(750)の空きスペースに配置し、線が被らないようにする
-        x = 750 + (theoremCount % 2) * 50; 
-        theoremCount++;
+      // 【左レーン(50)】: 定理ノード
+      // 【中央レーン(400)】: メインの論理フロー（命題・推論）
+      // 【右側の空間】: 遠距離ジャンプ用の迂回路（ノードは置かない）
+      let x = 400 
+      if (isTheorem) {
+        x = 50 
       }
       
-      // 💡 縦の距離(Y)を広めに取ることで、線が迂回するための「道」を作る
-      const y = index * 160
+      const y = index * 160 // 縦幅も広めにとって線のスペースを確保
 
       let background = '#f8fafc'
       let borderColor = '#6BCB77'
@@ -84,13 +106,24 @@ export default function DagVisualizer({ graphData }: DagVisualizerProps) {
 
       return {
         id: node.id,
-        type: 'default',
+        type: 'custom', // 💡 ここでカスタムノードを指定
         position: { x, y },
-        // 💡 線の出入り口を明示して迂回しやすくする
-        sourcePosition: Position.Bottom,
-        targetPosition: Position.Top,
         data: {
-          label: (
+          style: {
+            background: background,
+            borderColor: borderColor,
+            borderWidth: '2px',
+            borderStyle: 'solid',
+            borderLeft: `6px solid ${borderColor}`,
+            borderRadius: '10px',
+            color: '#1e293b',
+            boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)',
+            width: 300,
+            textAlign: 'left' as const,
+            padding: '12px',
+            zIndex: isTheorem ? 1 : 10,
+          },
+          content: (
             <div style={styles.nodeContent}>
               <div style={styles.nodeHeader}>
                 {isProposition && <span style={styles.propositionBadge}>命題</span>}
@@ -102,44 +135,67 @@ export default function DagVisualizer({ graphData }: DagVisualizerProps) {
             </div>
           ),
         },
-        style: {
-          background: background,
-          borderColor: borderColor,
-          borderWidth: '2px',
-          borderLeft: `6px solid ${borderColor}`,
-          borderRadius: '10px',
-          color: '#1e293b',
-          boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)',
-          width: 300,
-          textAlign: 'left' as const,
-          padding: '12px',
-          zIndex: isTheorem ? 1 : 10, // 定理ノードは裏側に回して線を邪魔しにくくする
-        },
       }
     })
   }, [rawNodes])
 
-  // --- 💡 React Flow 用のエッジデータ変換 ---
+  // --- 💡 3. エッジ（線）のスマート迂回ルーティング ---
   const flowEdges = useMemo<Edge[]>(() => {
     return rawEdges.map((edge, index) => {
+      const fromNode = rawNodes.find(n => n.id === edge.from)
+      const toNode = rawNodes.find(n => n.id === edge.to)
+      
+      const fromIndex = nodeIndexMap.get(edge.from) ?? 0
+      const toIndex = nodeIndexMap.get(edge.to) ?? 0
+      
+      // 隣り合っていないノードへの接続は「遠距離ジャンプ」と判定
+      const isJump = Math.abs(toIndex - fromIndex) > 1
+
+      const isToTheorem = toNode?.type === 'theorem'
+      const isFromTheorem = fromNode?.type === 'theorem'
+
+      // デフォルトは「下から出て上に入る」
+      let sourceHandle = 'bottom'
+      let targetHandle = 'top'
+
+      if (isToTheorem) {
+        // メイン(中央)から定理(左)へ： 左から出て右に入る
+        sourceHandle = 'left-source'
+        targetHandle = 'right-target'
+      } else if (isFromTheorem) {
+        // 定理(左)からメイン(中央)へ： 右から出て左に入る
+        sourceHandle = 'right-source'
+        targetHandle = 'left-target'
+      } else if (isJump) {
+        // 💡遠距離ジャンプ： 右から出て右に入る（これにより右側の空きスペースを大きく迂回します）
+        sourceHandle = 'right-source'
+        targetHandle = 'right-target'
+      }
+
+      // ジャンプする線は、写真のイメージに合わせて赤色で少し太く目立たせる
+      const strokeColor = isJump ? '#ef4444' : '#94a3b8' 
+      const strokeWidth = isJump ? 3 : 2
+
       return {
         id: `e-${edge.from}-${edge.to}-${index}`,
         source: edge.from,
         target: edge.to,
-        type: 'smoothstep', // 直角に曲がる線
+        sourceHandle, // 💡 指定した出口を使う
+        targetHandle, // 💡 指定した入口を使う
+        type: 'smoothstep',
         animated: true,
         style: { 
-          stroke: '#94a3b8', 
-          strokeWidth: 2, 
-          opacity: 0.5 // 💡 半透明を強めにして、万が一重なっても下の文字を読めるように
+          stroke: strokeColor, 
+          strokeWidth: strokeWidth, 
+          opacity: isJump ? 0.8 : 0.5 
         },
         markerEnd: {
           type: MarkerType.ArrowClosed,
-          color: '#94a3b8',
+          color: strokeColor,
         },
       }
     })
-  }, [rawEdges])
+  }, [rawEdges, rawNodes, nodeIndexMap])
 
   return (
     <div style={styles.container}>
@@ -148,15 +204,13 @@ export default function DagVisualizer({ graphData }: DagVisualizerProps) {
         <ReactFlow
           nodes={flowNodes}
           edges={flowEdges}
+          nodeTypes={nodeTypes} // 💡 カスタムノードをReact Flowに教える
           fitView
           attributionPosition="bottom-right"
         >
           <Background color="#cbd5e1" gap={16} size={1} />
           <Controls />
-          <MiniMap 
-            nodeStrokeColor={(n) => n.style?.borderColor as string} 
-            nodeColor={(n) => n.style?.background as string} 
-          />
+          <MiniMap />
         </ReactFlow>
       </div>
     </div>
