@@ -44,9 +44,9 @@ const CustomNode = ({ data }: any) => {
       <Handle type="target" position={Position.Top} id="top" style={{ opacity: 0 }} />
       <Handle type="source" position={Position.Bottom} id="bottom" style={{ opacity: 0 }} />
       
-      {/* 右側の大きく迂回するジャンプ・ルート用 */}
-      <Handle type="target" position={Position.Right} id="right-target" style={{ opacity: 0, top: '20%' }} />
-      <Handle type="source" position={Position.Right} id="right-source" style={{ opacity: 0, top: '80%' }} />
+      {/* 右側の大きく迂回するジャンプ・ルート用（高さを少しズラして重なりにくくする） */}
+      <Handle type="target" position={Position.Right} id="right-target" style={{ opacity: 0, top: '30%' }} />
+      <Handle type="source" position={Position.Right} id="right-source" style={{ opacity: 0, top: '70%' }} />
 
       {/* 左側の定理ノード接続用 */}
       <Handle type="target" position={Position.Left} id="left-target" style={{ opacity: 0, top: '50%' }} />
@@ -68,16 +68,15 @@ const BypassEdge = ({
   markerEnd,
   data,
 }: EdgeProps) => {
-  // 渡されたインデックスを使って、線を外側にどれくらい膨らませるか計算する
+  // jumpIndexごとに大きく外側に膨らませる（1本目は60px、2本目は100px、3本目は140px...と完全にズラす）
   const jumpIndex = data?.jumpIndex || 0;
-  const padding = 30 + jumpIndex * 25; // 1本目は30px、2本目は55px、3本目は80px...とズレていく
-  const routeX = Math.max(sourceX, targetX) + padding;
+  const xOffset = 60 + jumpIndex * 40;
+  const routeX = Math.max(sourceX, targetX) + xOffset;
 
-  const r = 15; // 角の丸み
+  const r = 16;
   const dir = targetY > sourceY ? 1 : -1;
   const actualR = Math.min(r, Math.abs(targetY - sourceY) / 2);
 
-  // SVGパスを手動で構築（右に出て、下(または上)に行き、左に戻る）
   const path = `
     M ${sourceX} ${sourceY}
     L ${routeX - actualR} ${sourceY}
@@ -92,7 +91,7 @@ const BypassEdge = ({
 
 // React Flowにカスタム部品を登録
 const nodeTypes = { custom: CustomNode }
-const edgeTypes = { bypass: BypassEdge } // カスタムエッジを登録
+const edgeTypes = { bypass: BypassEdge } 
 
 export default function DagVisualizer({ graphData }: DagVisualizerProps) {
   if (!graphData || !Array.isArray(graphData.nodes) || !Array.isArray(graphData.edges)) {
@@ -203,7 +202,7 @@ export default function DagVisualizer({ graphData }: DagVisualizerProps) {
         jumpIndex = jumpCounter++; // 何番目のジャンプ線かを記録して幅を広げる
       }
 
-      // 💡 線の色を以前と同じスレート色に戻し、太さも統一感のある2.5pxに調整
+      // 💡 線の色を以前のスレート色（グレー）に確実に戻す
       const strokeColor = '#94a3b8' 
       const strokeWidth = 2.5
 
@@ -237,7 +236,7 @@ export default function DagVisualizer({ graphData }: DagVisualizerProps) {
           nodes={flowNodes}
           edges={flowEdges}
           nodeTypes={nodeTypes}
-          edgeTypes={edgeTypes} // 💡 カスタムエッジをReact Flowに教える
+          edgeTypes={edgeTypes} // 💡 カスタムエッジをReact Flowに確実に認識させる
           fitView
           attributionPosition="bottom-right"
         >
