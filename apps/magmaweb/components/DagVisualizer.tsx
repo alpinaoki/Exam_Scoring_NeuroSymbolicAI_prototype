@@ -33,6 +33,17 @@ type DagVisualizerProps = {
 }
 
 export default function DagVisualizer({ graphData }: DagVisualizerProps) {
+  // 💡 安全装置: データが空だったり、不正な形式の時はクラッシュさせずにエラーメッセージを出す
+  if (!graphData || !Array.isArray(graphData.nodes) || !Array.isArray(graphData.edges)) {
+    console.error("【データ受信エラー】無効なgraphDataを受信しました:", graphData);
+    return (
+      <div style={{ padding: '20px', color: '#ef4444', backgroundColor: '#fee2e2', borderRadius: '12px', margin: '20px' }}>
+        <h4 style={{ margin: '0 0 10px 0' }}>グラフデータの描画エラー</h4>
+        <p style={{ fontSize: '14px', margin: 0 }}>AIからのデータ抽出に失敗したか、データ構造が不正です。ブラウザのコンソール（F12キー）を確認してください。</p>
+      </div>
+    );
+  }
+
   const { nodes: rawNodes, edges: rawEdges } = graphData
 
   // --- 💡 React Flow 用のノードデータ変換 ---
