@@ -11,6 +11,8 @@ import {
   MarkerType,
   Position,
   Handle,
+  BaseEdge,
+  EdgeProps,
 } from '@xyflow/react'
 
 // @ts-ignore
@@ -38,7 +40,7 @@ type DagVisualizerProps = {
 const CustomNode = ({ data }: any) => {
   return (
     <div style={data.style}>
-      {/* 縦の直列フロー用（透明にして見えなくしています） */}
+      {/* 縦の直列フロー用 */}
       <Handle type="target" position={Position.Top} id="top" style={{ opacity: 0 }} />
       <Handle type="source" position={Position.Bottom} id="bottom" style={{ opacity: 0 }} />
       
@@ -55,11 +57,44 @@ const CustomNode = ({ data }: any) => {
   )
 }
 
-// 作成したカスタムノードをReact Flowに登録
+// --- 💡 2. 複数の線が重ならないように自動でずらす「カスタムエッジ」 ---
+const BypassEdge = ({
+  id,
+  sourceX,
+  sourceY,
+  targetX,
+  targetY,
+  style = {},
+  markerEnd,
+  data,
+}: EdgeProps) => {
+  // 渡されたインデックスを使って、線を外側にどれくらい膨らませるか計算する
+  const jumpIndex = data?.jumpIndex || 0;
+  const padding = 30 + jumpIndex * 25; // 1本目は30px、2本目は55px、3本目は80px...とズレていく
+  const routeX = Math.max(sourceX, targetX) + padding;
+
+  const r = 15; // 角の丸み
+  const dir = targetY > sourceY ? 1 : -1;
+  const actualR = Math.min(r, Math.abs(targetY - sourceY) / 2);
+
+  // SVGパスを手動で構築（右に出て、下(または上)に行き、左に戻る）
+  const path = `
+    M ${sourceX} ${sourceY}
+    L ${routeX - actualR} ${sourceY}
+    Q ${routeX} ${sourceY} ${routeX} ${sourceY + actualR * dir}
+    L ${routeX} ${targetY - actualR * dir}
+    Q ${routeX} ${targetY} ${routeX - actualR} ${targetY}
+    L ${targetX} ${targetY}
+  `;
+
+  return <BaseEdge id={id} path={path} markerEnd={markerEnd} style={style} />;
+}
+
+// React Flowにカスタム部品を登録
 const nodeTypes = { custom: CustomNode }
+const edgeTypes = { bypass: BypassEdge } // カスタムエッジを登録
 
 export default function DagVisualizer({ graphData }: DagVisualizerProps) {
-  // 安全装置（データが空のときのクラッシュ防止）
   if (!graphData || !Array.isArray(graphData.nodes) || !Array.isArray(graphData.edges)) {
     return (
       <div style={{ padding: '20px', color: '#ef4444', backgroundColor: '#fee2e2', borderRadius: '12px', margin: '20px' }}>
@@ -71,28 +106,24 @@ export default function DagVisualizer({ graphData }: DagVisualizerProps) {
 
   const { nodes: rawNodes, edges: rawEdges } = graphData
 
-  // ノードが上から何番目にあるかを記憶するマップ
   const nodeIndexMap = useMemo(() => {
     const map = new Map<string, number>()
     rawNodes.forEach((n, i) => map.set(n.id, i))
     return map
   }, [rawNodes])
 
-  // --- 💡 2. ノードの3レーン配置 ---
+  // --- ノードの配置 ---
   const flowNodes = useMemo<Node[]>(() => {
     return rawNodes.map((node, index) => {
       const isProposition = node.type === 'proposition'
       const isTheorem = node.type === 'theorem'
       
-      // 【左レーン(50)】: 定理ノード
-      // 【中央レーン(400)】: メインの論理フロー（命題・推論）
-      // 【右側の空間】: 遠距離ジャンプ用の迂回路（ノードは置かない）
       let x = 400 
       if (isTheorem) {
         x = 50 
       }
       
-      const y = index * 160 // 縦幅も広めにとって線のスペースを確保
+      const y = index * 160
 
       let background = '#f8fafc'
       let borderColor = '#6BCB77'
@@ -106,7 +137,7 @@ export default function DagVisualizer({ graphData }: DagVisualizerProps) {
 
       return {
         id: node.id,
-        type: 'custom', // 💡 ここでカスタムノードを指定
+        type: 'custom',
         position: { x, y },
         data: {
           style: {
@@ -139,8 +170,10 @@ export default function DagVisualizer({ graphData }: DagVisualizerProps) {
     })
   }, [rawNodes])
 
-  // --- 💡 3. エッジ（線）のスマート迂回ルーティング ---
+  // --- エッジ（線）のルーティング ---
   const flowEdges = useMemo<Edge[]>(() => {
+    let jumpCounter = 0; // ジャンプする線をカウントして重ならないようにする
+
     return rawEdges.map((edge, index) => {
       const fromNode = rawNodes.find(n => n.id === edge.from)
       const toNode = rawNodes.find(n => n.id === edge.to)
@@ -148,46 +181,45 @@ export default function DagVisualizer({ graphData }: DagVisualizerProps) {
       const fromIndex = nodeIndexMap.get(edge.from) ?? 0
       const toIndex = nodeIndexMap.get(edge.to) ?? 0
       
-      // 隣り合っていないノードへの接続は「遠距離ジャンプ」と判定
       const isJump = Math.abs(toIndex - fromIndex) > 1
-
       const isToTheorem = toNode?.type === 'theorem'
       const isFromTheorem = fromNode?.type === 'theorem'
 
-      // デフォルトは「下から出て上に入る」
       let sourceHandle = 'bottom'
       let targetHandle = 'top'
+      let type = 'smoothstep'
+      let jumpIndex = 0
 
       if (isToTheorem) {
-        // メイン(中央)から定理(左)へ： 左から出て右に入る
         sourceHandle = 'left-source'
         targetHandle = 'right-target'
       } else if (isFromTheorem) {
-        // 定理(左)からメイン(中央)へ： 右から出て左に入る
         sourceHandle = 'right-source'
         targetHandle = 'left-target'
       } else if (isJump) {
-        // 💡遠距離ジャンプ： 右から出て右に入る（これにより右側の空きスペースを大きく迂回します）
         sourceHandle = 'right-source'
         targetHandle = 'right-target'
+        type = 'bypass' // 💡 自作した「重ならないカスタムエッジ」を指定
+        jumpIndex = jumpCounter++; // 何番目のジャンプ線かを記録して幅を広げる
       }
 
-      // ジャンプする線は、写真のイメージに合わせて赤色で少し太く目立たせる
-      const strokeColor = isJump ? '#ef4444' : '#94a3b8' 
-      const strokeWidth = isJump ? 3 : 2
+      // 💡 線の色を以前と同じスレート色に戻し、太さも統一感のある2.5pxに調整
+      const strokeColor = '#94a3b8' 
+      const strokeWidth = 2.5
 
       return {
         id: `e-${edge.from}-${edge.to}-${index}`,
         source: edge.from,
         target: edge.to,
-        sourceHandle, // 💡 指定した出口を使う
-        targetHandle, // 💡 指定した入口を使う
-        type: 'smoothstep',
+        sourceHandle, 
+        targetHandle, 
+        type,
         animated: true,
+        data: { jumpIndex }, // カスタムエッジに重なり回避用の数値を渡す
         style: { 
           stroke: strokeColor, 
           strokeWidth: strokeWidth, 
-          opacity: isJump ? 0.8 : 0.5 
+          opacity: 0.6 // 少し透けさせて視認性アップ
         },
         markerEnd: {
           type: MarkerType.ArrowClosed,
@@ -204,7 +236,8 @@ export default function DagVisualizer({ graphData }: DagVisualizerProps) {
         <ReactFlow
           nodes={flowNodes}
           edges={flowEdges}
-          nodeTypes={nodeTypes} // 💡 カスタムノードをReact Flowに教える
+          nodeTypes={nodeTypes}
+          edgeTypes={edgeTypes} // 💡 カスタムエッジをReact Flowに教える
           fitView
           attributionPosition="bottom-right"
         >
