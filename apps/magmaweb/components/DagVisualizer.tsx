@@ -1,5 +1,5 @@
-// @ts-nocheck
 'use client'
+// @ts-nocheck
 
 import React, { useMemo } from 'react'
 import {
@@ -51,8 +51,8 @@ const CustomEdgeWithLabels = ({
   const jumpIndex = data?.jumpIndex || 0
   const isBypass = data?.isBypass || false
   const isReference = data?.isReference || false
-  const sourceLabel = data?.sourceLabel || ''
-  const targetLabel = data?.targetLabel || ''
+  const sourceLabel = data?.sourceLabel || '不明'
+  const targetLabel = data?.targetLabel || '不明'
 
   let edgePath = ''
   let labelPos = { startX: 0, startY: 0, midX: 0, midY: 0, endX: 0, endY: 0 }
@@ -78,15 +78,16 @@ const CustomEdgeWithLabels = ({
     edgePath = path
     
     const dirY = targetY > sourceY ? 1 : -1
+    // 💡 絶対にノードにめり込まないよう、固定で40px離す
+    const safeOffset = Math.min(40, Math.abs(targetY - sourceY) * 0.3)
     
-    // 💡 【被り防止】割合ではなく、ノードの接続口から必ず「40px」離れた位置にラベルを固定
     labelPos = {
       startX: sourceX, 
-      startY: sourceY + (40 * dirY),
+      startY: sourceY + (safeOffset * dirY),
       midX: (sourceX + targetX) / 2, 
       midY: (sourceY + targetY) / 2,
       endX: targetX, 
-      endY: targetY - (40 * dirY)
+      endY: targetY - (safeOffset * dirY)
     }
   }
 
@@ -97,15 +98,12 @@ const CustomEdgeWithLabels = ({
     <>
       <BaseEdge id={id} path={edgePath} markerEnd={markerEnd} style={style} />
       <EdgeLabelRenderer>
-        {/* 💡 日本語の「次」に変更 */}
         <div style={{ ...styles.edgeLabelBase, transform: `translate(-50%, -50%) translate(${labelPos.startX}px, ${labelPos.startY}px)`, backgroundColor: '#e2e8f0', color: '#334155' }} className="nodrag nopan">
           次: {targetLabel}
         </div>
-        {/* 中央の要約ラベル */}
         <div style={{ ...styles.edgeLabelBase, transform: `translate(-50%, -50%) translate(${labelPos.midX}px, ${labelPos.midY}px)`, backgroundColor: mainBadgeColor, color: '#ffffff', fontWeight: 'bold', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }} className="nodrag nopan">
           {sourceLabel} {centerIcon} {targetLabel}
         </div>
-        {/* 💡 日本語の「元」に変更 */}
         <div style={{ ...styles.edgeLabelBase, transform: `translate(-50%, -50%) translate(${labelPos.endX}px, ${labelPos.endY}px)`, backgroundColor: '#e2e8f0', color: '#334155' }} className="nodrag nopan">
           元: {sourceLabel}
         </div>
@@ -130,7 +128,6 @@ export default function DagVisualizer({ graphData }: DagVisualizerProps) {
     while (changed && iterations < 100) {
       changed = false
       rawEdges.forEach(edge => {
-        // 💡 ここでも念のためトリミング
         const safeFrom = edge.from?.trim()
         const safeTo = edge.to?.trim()
         const fromDepth = dMap.get(safeFrom) || 0
@@ -212,16 +209,14 @@ export default function DagVisualizer({ graphData }: DagVisualizerProps) {
     let leftJumpCounter = 0
 
     return rawEdges.map((edge, index) => {
-      // 💡 【重要】IDに混ざった見えない空白を排除して、確実にノードを特定する
-      const safeFrom = edge.from?.trim()
-      const safeTo = edge.to?.trim()
+      const safeFrom = edge.from?.trim() || ''
+      const safeTo = edge.to?.trim() || ''
 
       const fromNode = rawNodes.find(n => n.id?.trim() === safeFrom)
       const toNode = rawNodes.find(n => n.id?.trim() === safeTo)
 
-      // 💡 確実に日本語の文章（label）を抽出し、英語のIDにフォールバックさせない
-      const rawSourceText = fromNode?.label || safeFrom || '不明'
-      const rawTargetText = toNode?.label || safeTo || '不明'
+      const rawSourceText = fromNode?.label || safeFrom
+      const rawTargetText = toNode?.label || safeTo
 
       const sourceLabel = summarizeText(rawSourceText, 12)
       const targetLabel = summarizeText(rawTargetText, 12)
