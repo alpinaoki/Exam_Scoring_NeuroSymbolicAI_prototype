@@ -24,6 +24,7 @@ type GraphNode = { id: string; label: string; type: 'proposition' | 'inference' 
 type GraphEdge = { from: string; to: string }
 type DagVisualizerProps = { graphData: { nodes: GraphNode[]; edges: GraphEdge[] } }
 
+// 💡 要約関数（12文字でカット）
 const summarizeText = (text: string, maxLength: number = 12) => {
   if (!text) return ''
   const cleanText = text.replace(/\n/g, ' ')
@@ -43,7 +44,7 @@ const CustomNode = ({ data }: any) => (
   </div>
 )
 
-// --- カスタムエッジ ---
+// --- カスタムエッジ（ラベル付き） ---
 const CustomEdgeWithLabels = ({
   id, sourceX, sourceY, targetX, targetY, sourcePosition, targetPosition, style = {}, markerEnd, data,
 }: EdgeProps) => {
@@ -68,17 +69,24 @@ const CustomEdgeWithLabels = ({
     edgePath = `M ${sourceX} ${sourceY} L ${routeX - (isLeft ? -actualR : actualR)} ${sourceY} Q ${routeX} ${sourceY} ${routeX} ${sourceY + actualR * dir} L ${routeX} ${targetY - actualR * dir} Q ${routeX} ${targetY} ${routeX - (isLeft ? -actualR : actualR)} ${targetY} L ${targetX} ${targetY}`
 
     labelPos = {
-      startX: sourceX + (routeX - sourceX) * 0.4, startY: sourceY,
+      startX: sourceX + (routeX - sourceX) * 0.5, startY: sourceY,
       midX: routeX, midY: (sourceY + targetY) / 2,
-      endX: targetX + (routeX - targetX) * 0.4, endY: targetY
+      endX: targetX + (routeX - targetX) * 0.5, endY: targetY
     }
   } else {
     const [path] = getSmoothStepPath({ sourceX, sourceY, sourcePosition, targetX, targetY, targetPosition, borderRadius: 12 })
     edgePath = path
+    
+    const dirY = targetY > sourceY ? 1 : -1
+    
+    // 💡 【被り防止】割合ではなく、ノードの接続口から必ず「40px」離れた位置にラベルを固定
     labelPos = {
-      startX: sourceX + (targetX - sourceX) * 0.15, startY: sourceY + (targetY - sourceY) * 0.15,
-      midX: (sourceX + targetX) / 2, midY: (sourceY + targetY) / 2,
-      endX: sourceX + (targetX - sourceX) * 0.85, endY: sourceY + (targetY - sourceY) * 0.85
+      startX: sourceX, 
+      startY: sourceY + (40 * dirY),
+      midX: (sourceX + targetX) / 2, 
+      midY: (sourceY + targetY) / 2,
+      endX: targetX, 
+      endY: targetY - (40 * dirY)
     }
   }
 
@@ -89,14 +97,17 @@ const CustomEdgeWithLabels = ({
     <>
       <BaseEdge id={id} path={edgePath} markerEnd={markerEnd} style={style} />
       <EdgeLabelRenderer>
+        {/* 💡 日本語の「次」に変更 */}
         <div style={{ ...styles.edgeLabelBase, transform: `translate(-50%, -50%) translate(${labelPos.startX}px, ${labelPos.startY}px)`, backgroundColor: '#e2e8f0', color: '#334155' }} className="nodrag nopan">
-          To: {targetLabel}
+          次: {targetLabel}
         </div>
+        {/* 中央の要約ラベル */}
         <div style={{ ...styles.edgeLabelBase, transform: `translate(-50%, -50%) translate(${labelPos.midX}px, ${labelPos.midY}px)`, backgroundColor: mainBadgeColor, color: '#ffffff', fontWeight: 'bold', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }} className="nodrag nopan">
           {sourceLabel} {centerIcon} {targetLabel}
         </div>
+        {/* 💡 日本語の「元」に変更 */}
         <div style={{ ...styles.edgeLabelBase, transform: `translate(-50%, -50%) translate(${labelPos.endX}px, ${labelPos.endY}px)`, backgroundColor: '#e2e8f0', color: '#334155' }} className="nodrag nopan">
-          From: {sourceLabel}
+          元: {sourceLabel}
         </div>
       </EdgeLabelRenderer>
     </>
@@ -111,7 +122,6 @@ export default function DagVisualizer({ graphData }: DagVisualizerProps) {
 
   const { nodes: rawNodes, edges: rawEdges } = graphData
 
-  // 💡 自動階層計算エンジン（深さを求めて並列分岐を検知する）
   const depths = useMemo(() => {
     const dMap = new Map<string, number>()
     rawNodes.forEach(n => dMap.set(n.id, 0))
@@ -120,10 +130,13 @@ export default function DagVisualizer({ graphData }: DagVisualizerProps) {
     while (changed && iterations < 100) {
       changed = false
       rawEdges.forEach(edge => {
-        const fromDepth = dMap.get(edge.from) || 0
-        const toDepth = dMap.get(edge.to) || 0
+        // 💡 ここでも念のためトリミング
+        const safeFrom = edge.from?.trim()
+        const safeTo = edge.to?.trim()
+        const fromDepth = dMap.get(safeFrom) || 0
+        const toDepth = dMap.get(safeTo) || 0
         if (fromDepth + 1 > toDepth) {
-          dMap.set(edge.to, fromDepth + 1)
+          dMap.set(safeTo, fromDepth + 1)
           changed = true
         }
       })
@@ -133,7 +146,6 @@ export default function DagVisualizer({ graphData }: DagVisualizerProps) {
   }, [rawNodes, rawEdges])
 
   const flowNodes = useMemo<Node[]>(() => {
-    // 階層ごとにノードをグループ化
     const depthGroups = new Map<number, GraphNode[]>()
     rawNodes.forEach(node => {
       if (node.type === 'theorem') return
@@ -156,12 +168,11 @@ export default function DagVisualizer({ graphData }: DagVisualizerProps) {
         const d = depths.get(node.id) || 0
         y = d * 180
         
-        // 💡 分岐したノードを左右対称に横並びさせる計算
         const siblings = depthGroups.get(d) || []
         const siblingIndex = siblings.findIndex(n => n.id === node.id)
         const totalSiblings = siblings.length
         
-        const spacing = 320 // 横並びにする際の間隔
+        const spacing = 320 
         const startX = 450 - ((totalSiblings - 1) * spacing) / 2
         x = startX + siblingIndex * spacing
       }
@@ -201,14 +212,22 @@ export default function DagVisualizer({ graphData }: DagVisualizerProps) {
     let leftJumpCounter = 0
 
     return rawEdges.map((edge, index) => {
-      const fromNode = rawNodes.find(n => n.id === edge.from)
-      const toNode = rawNodes.find(n => n.id === edge.to)
+      // 💡 【重要】IDに混ざった見えない空白を排除して、確実にノードを特定する
+      const safeFrom = edge.from?.trim()
+      const safeTo = edge.to?.trim()
 
-      const sourceLabel = summarizeText(fromNode?.label || edge.from, 12)
-      const targetLabel = summarizeText(toNode?.label || edge.to, 12)
+      const fromNode = rawNodes.find(n => n.id?.trim() === safeFrom)
+      const toNode = rawNodes.find(n => n.id?.trim() === safeTo)
 
-      const fromDepth = depths.get(edge.from) || 0
-      const toDepth = depths.get(edge.to) || 0
+      // 💡 確実に日本語の文章（label）を抽出し、英語のIDにフォールバックさせない
+      const rawSourceText = fromNode?.label || safeFrom || '不明'
+      const rawTargetText = toNode?.label || safeTo || '不明'
+
+      const sourceLabel = summarizeText(rawSourceText, 12)
+      const targetLabel = summarizeText(rawTargetText, 12)
+
+      const fromDepth = depths.get(safeFrom) || 0
+      const toDepth = depths.get(safeTo) || 0
       const isJump = Math.abs(toDepth - fromDepth) > 1
 
       const isToTheorem = toNode?.type === 'theorem'
@@ -240,8 +259,8 @@ export default function DagVisualizer({ graphData }: DagVisualizerProps) {
       const strokeColor = isReference ? '#f97316' : '#475569'
 
       return {
-        id: `e-${edge.from}-${edge.to}-${index}`,
-        source: edge.from, target: edge.to,
+        id: `e-${safeFrom}-${safeTo}-${index}`,
+        source: safeFrom, target: safeTo,
         sourceHandle, targetHandle, type: 'customEdge',
         animated: !isReference,
         data: { jumpIndex, isBypass, sourceLabel, targetLabel, isReference },
