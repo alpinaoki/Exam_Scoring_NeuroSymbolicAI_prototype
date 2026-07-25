@@ -26,7 +26,7 @@ type DagVisualizerProps = { graphData: { nodes: GraphNode[]; edges: GraphEdge[] 
 
 // 💡 要約関数（12文字でカット）
 const summarizeText = (text: string, maxLength: number = 12) => {
-  if (!text) return ''
+  if (!text) return '不明'
   const cleanText = text.replace(/\n/g, ' ')
   return cleanText.length > maxLength ? cleanText.substring(0, maxLength) + '...' : cleanText
 }
@@ -69,25 +69,24 @@ const CustomEdgeWithLabels = ({
     edgePath = `M ${sourceX} ${sourceY} L ${routeX - (isLeft ? -actualR : actualR)} ${sourceY} Q ${routeX} ${sourceY} ${routeX} ${sourceY + actualR * dir} L ${routeX} ${targetY - actualR * dir} Q ${routeX} ${targetY} ${routeX - (isLeft ? -actualR : actualR)} ${targetY} L ${targetX} ${targetY}`
 
     labelPos = {
-      startX: sourceX + (routeX - sourceX) * 0.5, startY: sourceY,
+      startX: sourceX + (routeX - sourceX) * 0.4, startY: sourceY,
       midX: routeX, midY: (sourceY + targetY) / 2,
-      endX: targetX + (routeX - targetX) * 0.5, endY: targetY
+      endX: targetX + (routeX - targetX) * 0.4, endY: targetY
     }
   } else {
     const [path] = getSmoothStepPath({ sourceX, sourceY, sourcePosition, targetX, targetY, targetPosition, borderRadius: 12 })
     edgePath = path
     
-    const dirY = targetY > sourceY ? 1 : -1
-    // 💡 絶対にノードにめり込まないよう、固定で40px離す
-    const safeOffset = Math.min(40, Math.abs(targetY - sourceY) * 0.3)
+    // 💡 【重なり防止】線の長さに対して、20%（次）・50%（中央）・80%（元）の均等な位置に配置する
+    const yDist = targetY - sourceY
     
     labelPos = {
       startX: sourceX, 
-      startY: sourceY + (safeOffset * dirY),
+      startY: sourceY + yDist * 0.20,
       midX: (sourceX + targetX) / 2, 
-      midY: (sourceY + targetY) / 2,
+      midY: sourceY + yDist * 0.50,
       endX: targetX, 
-      endY: targetY - (safeOffset * dirY)
+      endY: sourceY + yDist * 0.80
     }
   }
 
@@ -128,8 +127,10 @@ export default function DagVisualizer({ graphData }: DagVisualizerProps) {
     while (changed && iterations < 100) {
       changed = false
       rawEdges.forEach(edge => {
-        const safeFrom = edge.from?.trim()
-        const safeTo = edge.to?.trim()
+        const safeFrom = edge?.from?.trim() || ''
+        const safeTo = edge?.to?.trim() || ''
+        if (!safeFrom || !safeTo) return
+        
         const fromDepth = dMap.get(safeFrom) || 0
         const toDepth = dMap.get(safeTo) || 0
         if (fromDepth + 1 > toDepth) {
@@ -163,7 +164,7 @@ export default function DagVisualizer({ graphData }: DagVisualizerProps) {
         theoremCount++
       } else {
         const d = depths.get(node.id) || 0
-        y = d * 180
+        y = d * 220 // 💡 ラベルが重ならないよう、縦の間隔を広げました (180 -> 220)
         
         const siblings = depthGroups.get(d) || []
         const siblingIndex = siblings.findIndex(n => n.id === node.id)
@@ -209,12 +210,13 @@ export default function DagVisualizer({ graphData }: DagVisualizerProps) {
     let leftJumpCounter = 0
 
     return rawEdges.map((edge, index) => {
-      const safeFrom = edge.from?.trim() || ''
-      const safeTo = edge.to?.trim() || ''
+      const safeFrom = edge?.from?.trim() || ''
+      const safeTo = edge?.to?.trim() || ''
 
       const fromNode = rawNodes.find(n => n.id?.trim() === safeFrom)
       const toNode = rawNodes.find(n => n.id?.trim() === safeTo)
 
+      // 💡 日本語の文章を確実に取得
       const rawSourceText = fromNode?.label || safeFrom
       const rawTargetText = toNode?.label || safeTo
 
@@ -290,5 +292,5 @@ const styles = {
   theoremBadge: { fontSize: '10px', fontWeight: 'bold' as const, color: '#ea580c', backgroundColor: '#ffedd5', padding: '1px 6px', borderRadius: '4px' },
   nodeId: { fontSize: '10px', color: '#94a3b8', fontFamily: 'monospace' },
   nodeLabel: { fontSize: '12px', fontWeight: 500, whiteSpace: 'pre-wrap' as const, fontFamily: 'Consolas, Monaco, monospace', wordBreak: 'break-all' as const, lineHeight: 1.4 },
-  edgeLabelBase: { position: 'absolute' as const, fontSize: '9px', padding: '2px 6px', borderRadius: '4px', pointerEvents: 'none' as const, whiteSpace: 'nowrap' as const, zIndex: 100 },
+  edgeLabelBase: { position: 'absolute' as const, fontSize: '9px', padding: '2px 4px', borderRadius: '4px', pointerEvents: 'none' as const, whiteSpace: 'nowrap' as const, zIndex: 100 },
 }
