@@ -20,69 +20,36 @@ import {
 
 import '@xyflow/react/dist/style.css'
 
-type GraphNode = {
-  id: string
-  label: string
-  type: 'proposition' | 'inference' | 'theorem'
-}
+type GraphNode = { id: string; label: string; type: 'proposition' | 'inference' | 'theorem' }
+type GraphEdge = { from: string; to: string }
+type DagVisualizerProps = { graphData: { nodes: GraphNode[]; edges: GraphEdge[] } }
 
-type GraphEdge = {
-  from: string
-  to: string
-}
-
-type DagVisualizerProps = {
-  graphData: {
-    nodes: GraphNode[]
-    edges: GraphEdge[]
-  }
-}
-
-// 💡 長い文章を「一言（指定文字数）」に要約する便利関数
-const summarizeText = (text: string, maxLength: number = 10) => {
+const summarizeText = (text: string, maxLength: number = 12) => {
   if (!text) return ''
-  // 改行をスペースに変換して1行にする
   const cleanText = text.replace(/\n/g, ' ')
-  return cleanText.length > maxLength 
-    ? cleanText.substring(0, maxLength) + '...' 
-    : cleanText
+  return cleanText.length > maxLength ? cleanText.substring(0, maxLength) + '...' : cleanText
 }
 
 // --- カスタムノード ---
-const CustomNode = ({ data }: any) => {
-  return (
-    <div style={data.style}>
-      <Handle type="target" position={Position.Top} id="top" style={{ opacity: 0 }} />
-      <Handle type="source" position={Position.Bottom} id="bottom" style={{ opacity: 0 }} />
-      
-      <Handle type="target" position={Position.Right} id="right-target" style={{ opacity: 0, top: '30%' }} />
-      <Handle type="source" position={Position.Right} id="right-source" style={{ opacity: 0, top: '70%' }} />
+const CustomNode = ({ data }: any) => (
+  <div style={data.style}>
+    <Handle type="target" position={Position.Top} id="top" style={{ opacity: 0 }} />
+    <Handle type="source" position={Position.Bottom} id="bottom" style={{ opacity: 0 }} />
+    <Handle type="target" position={Position.Right} id="right-target" style={{ opacity: 0, top: '30%' }} />
+    <Handle type="source" position={Position.Right} id="right-source" style={{ opacity: 0, top: '70%' }} />
+    <Handle type="target" position={Position.Left} id="left-target" style={{ opacity: 0, top: '50%' }} />
+    <Handle type="source" position={Position.Left} id="left-source" style={{ opacity: 0, top: '50%' }} />
+    {data.content}
+  </div>
+)
 
-      <Handle type="target" position={Position.Left} id="left-target" style={{ opacity: 0, top: '50%' }} />
-      <Handle type="source" position={Position.Left} id="left-source" style={{ opacity: 0, top: '50%' }} />
-
-      {data.content}
-    </div>
-  )
-}
-
-// --- 重なり回避 ＆ 一言要約ラベル付きカスタムエッジ ---
+// --- カスタムエッジ ---
 const CustomEdgeWithLabels = ({
-  id,
-  sourceX,
-  sourceY,
-  targetX,
-  targetY,
-  sourcePosition,
-  targetPosition,
-  style = {},
-  markerEnd,
-  data,
+  id, sourceX, sourceY, targetX, targetY, sourcePosition, targetPosition, style = {}, markerEnd, data,
 }: EdgeProps) => {
   const jumpIndex = data?.jumpIndex || 0
   const isBypass = data?.isBypass || false
-  
-  // 💡 エッジ生成時に渡された「要約されたラベル」を受け取る
+  const isReference = data?.isReference || false
   const sourceLabel = data?.sourceLabel || ''
   const targetLabel = data?.targetLabel || ''
 
@@ -93,93 +60,42 @@ const CustomEdgeWithLabels = ({
     const isLeft = targetX < sourceX
     const baseOffset = 80 + jumpIndex * 40
     const xOffset = isLeft ? -baseOffset : baseOffset
-    const routeX = isLeft 
-      ? Math.min(sourceX, targetX) + xOffset 
-      : Math.max(sourceX, targetX) + xOffset
-
+    const routeX = isLeft ? Math.min(sourceX, targetX) + xOffset : Math.max(sourceX, targetX) + xOffset
     const r = 15
     const dir = targetY > sourceY ? 1 : -1
     const actualR = Math.min(r, Math.abs(targetY - sourceY) / 2)
 
-    edgePath = `
-      M ${sourceX} ${sourceY}
-      L ${routeX - (isLeft ? -actualR : actualR)} ${sourceY}
-      Q ${routeX} ${sourceY} ${routeX} ${sourceY + actualR * dir}
-      L ${routeX} ${targetY - actualR * dir}
-      Q ${routeX} ${targetY} ${routeX - (isLeft ? -actualR : actualR)} ${targetY}
-      L ${targetX} ${targetY}
-    `
+    edgePath = `M ${sourceX} ${sourceY} L ${routeX - (isLeft ? -actualR : actualR)} ${sourceY} Q ${routeX} ${sourceY} ${routeX} ${sourceY + actualR * dir} L ${routeX} ${targetY - actualR * dir} Q ${routeX} ${targetY} ${routeX - (isLeft ? -actualR : actualR)} ${targetY} L ${targetX} ${targetY}`
 
-    labelPos.startX = sourceX + (routeX - sourceX) * 0.4
-    labelPos.startY = sourceY
-    labelPos.midX = routeX
-    labelPos.midY = (sourceY + targetY) / 2
-    labelPos.endX = targetX + (routeX - targetX) * 0.4
-    labelPos.endY = targetY
-
+    labelPos = {
+      startX: sourceX + (routeX - sourceX) * 0.4, startY: sourceY,
+      midX: routeX, midY: (sourceY + targetY) / 2,
+      endX: targetX + (routeX - targetX) * 0.4, endY: targetY
+    }
   } else {
-    const [path] = getSmoothStepPath({
-      sourceX,
-      sourceY,
-      sourcePosition,
-      targetX,
-      targetY,
-      targetPosition,
-      borderRadius: 12,
-    })
+    const [path] = getSmoothStepPath({ sourceX, sourceY, sourcePosition, targetX, targetY, targetPosition, borderRadius: 12 })
     edgePath = path
-
-    labelPos.startX = sourceX + (targetX - sourceX) * 0.15
-    labelPos.startY = sourceY + (targetY - sourceY) * 0.15
-    labelPos.midX = (sourceX + targetX) / 2
-    labelPos.midY = (sourceY + targetY) / 2
-    labelPos.endX = sourceX + (targetX - sourceX) * 0.85
-    labelPos.endY = sourceY + (targetY - sourceY) * 0.85
+    labelPos = {
+      startX: sourceX + (targetX - sourceX) * 0.15, startY: sourceY + (targetY - sourceY) * 0.15,
+      midX: (sourceX + targetX) / 2, midY: (sourceY + targetY) / 2,
+      endX: sourceX + (targetX - sourceX) * 0.85, endY: sourceY + (targetY - sourceY) * 0.85
+    }
   }
+
+  const mainBadgeColor = isReference ? '#f97316' : '#3b82f6'
+  const centerIcon = isReference ? '🔗' : '➔'
 
   return (
     <>
       <BaseEdge id={id} path={edgePath} markerEnd={markerEnd} style={style} />
-      
       <EdgeLabelRenderer>
-        {/* ① 根本付近：つながる先のノードの一言要約 */}
-        <div
-          style={{
-            ...styles.edgeLabelBase,
-            transform: `translate(-50%, -50%) translate(${labelPos.startX}px, ${labelPos.startY}px)`,
-            backgroundColor: '#e2e8f0',
-            color: '#334155',
-          }}
-          className="nodrag nopan"
-        >
+        <div style={{ ...styles.edgeLabelBase, transform: `translate(-50%, -50%) translate(${labelPos.startX}px, ${labelPos.startY}px)`, backgroundColor: '#e2e8f0', color: '#334155' }} className="nodrag nopan">
           To: {targetLabel}
         </div>
-
-        {/* ② 中央付近：どこからどこへ繋がっているかの一言要約 */}
-        <div
-          style={{
-            ...styles.edgeLabelBase,
-            transform: `translate(-50%, -50%) translate(${labelPos.midX}px, ${labelPos.midY}px)`,
-            backgroundColor: '#3b82f6',
-            color: '#ffffff',
-            fontWeight: 'bold',
-            boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-          }}
-          className="nodrag nopan"
-        >
-          {sourceLabel} ➔ {targetLabel}
+        <div style={{ ...styles.edgeLabelBase, transform: `translate(-50%, -50%) translate(${labelPos.midX}px, ${labelPos.midY}px)`, backgroundColor: mainBadgeColor, color: '#ffffff', fontWeight: 'bold', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }} className="nodrag nopan">
+          {sourceLabel} {centerIcon} {targetLabel}
         </div>
-
-        {/* ③ 先端付近：どのノードから出てきたかの一言要約 */}
-        <div
-          style={{
-            ...styles.edgeLabelBase,
-            transform: `translate(-50%, -50%) translate(${labelPos.endX}px, ${labelPos.endY}px)`,
-            backgroundColor: '#e2e8f0',
-            color: '#334155',
-          }}
-          className="nodrag nopan"
-        >
+        <div style={{ ...styles.edgeLabelBase, transform: `translate(-50%, -50%) translate(${labelPos.endX}px, ${labelPos.endY}px)`, backgroundColor: '#e2e8f0', color: '#334155' }} className="nodrag nopan">
           From: {sourceLabel}
         </div>
       </EdgeLabelRenderer>
@@ -191,50 +107,67 @@ const nodeTypes = { custom: CustomNode }
 const edgeTypes = { customEdge: CustomEdgeWithLabels }
 
 export default function DagVisualizer({ graphData }: DagVisualizerProps) {
-  if (!graphData || !Array.isArray(graphData.nodes) || !Array.isArray(graphData.edges)) {
-    return (
-      <div style={{ padding: '20px', color: '#ef4444', backgroundColor: '#fee2e2', borderRadius: '12px' }}>
-        <h4 style={{ margin: '0 0 10px 0' }}>データエラー</h4>
-        <p style={{ margin: 0 }}>グラフデータが不正です。</p>
-      </div>
-    )
-  }
+  if (!graphData || !Array.isArray(graphData.nodes) || !Array.isArray(graphData.edges)) return <div>エラー</div>
 
   const { nodes: rawNodes, edges: rawEdges } = graphData
 
-  const nodeIndexMap = useMemo(() => {
-    const map = new Map<string, number>()
-    rawNodes.forEach((n, i) => map.set(n.id, i))
-    return map
-  }, [rawNodes])
+  // 💡 自動階層計算エンジン（深さを求めて並列分岐を検知する）
+  const depths = useMemo(() => {
+    const dMap = new Map<string, number>()
+    rawNodes.forEach(n => dMap.set(n.id, 0))
+    let changed = true
+    let iterations = 0
+    while (changed && iterations < 100) {
+      changed = false
+      rawEdges.forEach(edge => {
+        const fromDepth = dMap.get(edge.from) || 0
+        const toDepth = dMap.get(edge.to) || 0
+        if (fromDepth + 1 > toDepth) {
+          dMap.set(edge.to, fromDepth + 1)
+          changed = true
+        }
+      })
+      iterations++
+    }
+    return dMap
+  }, [rawNodes, rawEdges])
 
-  // --- ノード配置 ---
   const flowNodes = useMemo<Node[]>(() => {
-    let propCount = 0
+    // 階層ごとにノードをグループ化
+    const depthGroups = new Map<number, GraphNode[]>()
+    rawNodes.forEach(node => {
+      if (node.type === 'theorem') return
+      const d = depths.get(node.id) || 0
+      if (!depthGroups.has(d)) depthGroups.set(d, [])
+      depthGroups.get(d)!.push(node)
+    })
 
-    return rawNodes.map((node, index) => {
-      const isProposition = node.type === 'proposition'
+    let theoremCount = 0
+    return rawNodes.map((node) => {
       const isTheorem = node.type === 'theorem'
-
       let x = 400
+      let y = 0
+
       if (isTheorem) {
         x = 30
-      } else if (isProposition) {
-        x = propCount % 2 === 0 ? 370 : 430
-        propCount++
+        y = theoremCount * 180 + 50
+        theoremCount++
+      } else {
+        const d = depths.get(node.id) || 0
+        y = d * 180
+        
+        // 💡 分岐したノードを左右対称に横並びさせる計算
+        const siblings = depthGroups.get(d) || []
+        const siblingIndex = siblings.findIndex(n => n.id === node.id)
+        const totalSiblings = siblings.length
+        
+        const spacing = 320 // 横並びにする際の間隔
+        const startX = 450 - ((totalSiblings - 1) * spacing) / 2
+        x = startX + siblingIndex * spacing
       }
 
-      const y = index * 180
-
-      let background = '#f8fafc'
-      let borderColor = '#6BCB77'
-      if (isProposition) {
-        background = '#ffffff'
-        borderColor = '#4D96FF'
-      } else if (isTheorem) {
-        background = '#fff7ed'
-        borderColor = '#f97316'
-      }
+      const background = isTheorem ? '#fff7ed' : node.type === 'proposition' ? '#ffffff' : '#f8fafc'
+      const borderColor = isTheorem ? '#f97316' : node.type === 'proposition' ? '#4D96FF' : '#6BCB77'
 
       return {
         id: node.id,
@@ -242,25 +175,17 @@ export default function DagVisualizer({ graphData }: DagVisualizerProps) {
         position: { x, y },
         data: {
           style: {
-            background,
-            borderColor,
-            borderWidth: '2px',
-            borderStyle: 'solid',
-            borderLeft: `6px solid ${borderColor}`,
-            borderRadius: '10px',
-            color: '#1e293b',
-            boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)',
-            width: 280,
-            textAlign: 'left' as const,
-            padding: '12px',
-            zIndex: isTheorem ? 1 : 10,
+            background, borderColor, borderWidth: '2px', borderStyle: 'solid',
+            borderLeft: `6px solid ${borderColor}`, borderRadius: '10px',
+            color: '#1e293b', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)',
+            width: 280, textAlign: 'left', padding: '12px', zIndex: isTheorem ? 1 : 10,
           },
           content: (
             <div style={styles.nodeContent}>
               <div style={styles.nodeHeader}>
-                {isProposition && <span style={styles.propositionBadge}>命題</span>}
-                {node.type === 'inference' && <span style={styles.inferenceBadge}>推論</span>}
-                {isTheorem && <span style={styles.theoremBadge}>定義・定理</span>}
+                <span style={isTheorem ? styles.theoremBadge : node.type === 'proposition' ? styles.propositionBadge : styles.inferenceBadge}>
+                  {isTheorem ? '定義・定理' : node.type === 'proposition' ? '命題' : '推論'}
+                </span>
                 <span style={styles.nodeId}>{node.id}</span>
               </div>
               <div style={styles.nodeLabel}>{node.label}</div>
@@ -269,9 +194,8 @@ export default function DagVisualizer({ graphData }: DagVisualizerProps) {
         },
       }
     })
-  }, [rawNodes])
+  }, [rawNodes, depths])
 
-  // --- エッジルーティング ---
   const flowEdges = useMemo<Edge[]>(() => {
     let rightJumpCounter = 0
     let leftJumpCounter = 0
@@ -280,16 +204,16 @@ export default function DagVisualizer({ graphData }: DagVisualizerProps) {
       const fromNode = rawNodes.find(n => n.id === edge.from)
       const toNode = rawNodes.find(n => n.id === edge.to)
 
-      // 💡 ノードの文章を抽出して10文字程度に要約する
-      const sourceLabel = summarizeText(fromNode?.label || edge.from, 10)
-      const targetLabel = summarizeText(toNode?.label || edge.to, 10)
+      const sourceLabel = summarizeText(fromNode?.label || edge.from, 12)
+      const targetLabel = summarizeText(toNode?.label || edge.to, 12)
 
-      const fromIndex = nodeIndexMap.get(edge.from) ?? 0
-      const toIndex = nodeIndexMap.get(edge.to) ?? 0
+      const fromDepth = depths.get(edge.from) || 0
+      const toDepth = depths.get(edge.to) || 0
+      const isJump = Math.abs(toDepth - fromDepth) > 1
 
-      const isJump = Math.abs(toIndex - fromIndex) > 1
       const isToTheorem = toNode?.type === 'theorem'
       const isFromTheorem = fromNode?.type === 'theorem'
+      const isReference = isToTheorem || isFromTheorem
 
       let sourceHandle = 'bottom'
       let targetHandle = 'top'
@@ -313,43 +237,25 @@ export default function DagVisualizer({ graphData }: DagVisualizerProps) {
         jumpIndex = rightJumpCounter++
       }
 
-      const strokeColor = '#475569'
+      const strokeColor = isReference ? '#f97316' : '#475569'
 
       return {
         id: `e-${edge.from}-${edge.to}-${index}`,
-        source: edge.from,
-        target: edge.to,
-        sourceHandle,
-        targetHandle,
-        type: 'customEdge',
-        animated: true,
-        // 💡 ここでエッジに「要約ラベル」のデータを渡す
-        data: { jumpIndex, isBypass, sourceLabel, targetLabel },
-        style: {
-          stroke: strokeColor,
-          strokeWidth: 2,
-          opacity: 0.8,
-        },
-        markerEnd: {
-          type: MarkerType.ArrowClosed,
-          color: strokeColor,
-        },
+        source: edge.from, target: edge.to,
+        sourceHandle, targetHandle, type: 'customEdge',
+        animated: !isReference,
+        data: { jumpIndex, isBypass, sourceLabel, targetLabel, isReference },
+        style: { stroke: strokeColor, strokeWidth: 2, opacity: 0.6, strokeDasharray: isReference ? '6 6' : undefined },
+        markerEnd: isReference ? undefined : { type: MarkerType.ArrowClosed, color: strokeColor },
       }
     })
-  }, [rawEdges, rawNodes, nodeIndexMap])
+  }, [rawEdges, rawNodes, depths])
 
   return (
     <div style={styles.container}>
       <h3 style={styles.title}>論理構造 DAG モニター</h3>
       <div style={styles.canvasWrapper}>
-        <ReactFlow
-          nodes={flowNodes}
-          edges={flowEdges}
-          nodeTypes={nodeTypes}
-          edgeTypes={edgeTypes}
-          fitView
-          attributionPosition="bottom-right"
-        >
+        <ReactFlow nodes={flowNodes} edges={flowEdges} nodeTypes={nodeTypes} edgeTypes={edgeTypes} fitView attributionPosition="bottom-right">
           <Background color="#cbd5e1" gap={16} size={1} />
           <Controls />
           <MiniMap />
@@ -370,13 +276,5 @@ const styles = {
   theoremBadge: { fontSize: '10px', fontWeight: 'bold' as const, color: '#ea580c', backgroundColor: '#ffedd5', padding: '1px 6px', borderRadius: '4px' },
   nodeId: { fontSize: '10px', color: '#94a3b8', fontFamily: 'monospace' },
   nodeLabel: { fontSize: '12px', fontWeight: 500, whiteSpace: 'pre-wrap' as const, fontFamily: 'Consolas, Monaco, monospace', wordBreak: 'break-all' as const, lineHeight: 1.4 },
-  edgeLabelBase: {
-    position: 'absolute' as const,
-    fontSize: '9px',
-    padding: '2px 6px',
-    borderRadius: '4px',
-    pointerEvents: 'none' as const,
-    whiteSpace: 'nowrap' as const,
-    zIndex: 100,
-  },
+  edgeLabelBase: { position: 'absolute' as const, fontSize: '9px', padding: '2px 6px', borderRadius: '4px', pointerEvents: 'none' as const, whiteSpace: 'nowrap' as const, zIndex: 100 },
 }
