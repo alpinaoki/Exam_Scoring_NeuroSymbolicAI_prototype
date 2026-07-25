@@ -38,18 +38,26 @@ type DagVisualizerProps = {
   }
 }
 
-// --- 💡 1. カスタムノード ---
+// 💡 長い文章を「一言（指定文字数）」に要約する便利関数
+const summarizeText = (text: string, maxLength: number = 10) => {
+  if (!text) return ''
+  // 改行をスペースに変換して1行にする
+  const cleanText = text.replace(/\n/g, ' ')
+  return cleanText.length > maxLength 
+    ? cleanText.substring(0, maxLength) + '...' 
+    : cleanText
+}
+
+// --- カスタムノード ---
 const CustomNode = ({ data }: any) => {
   return (
     <div style={data.style}>
       <Handle type="target" position={Position.Top} id="top" style={{ opacity: 0 }} />
       <Handle type="source" position={Position.Bottom} id="bottom" style={{ opacity: 0 }} />
       
-      {/* 右側の接続口（迂回用） */}
       <Handle type="target" position={Position.Right} id="right-target" style={{ opacity: 0, top: '30%' }} />
       <Handle type="source" position={Position.Right} id="right-source" style={{ opacity: 0, top: '70%' }} />
 
-      {/* 左側の接続口（定理ノード用） */}
       <Handle type="target" position={Position.Left} id="left-target" style={{ opacity: 0, top: '50%' }} />
       <Handle type="source" position={Position.Left} id="left-source" style={{ opacity: 0, top: '50%' }} />
 
@@ -58,11 +66,9 @@ const CustomNode = ({ data }: any) => {
   )
 }
 
-// --- 💡 2. 重なり回避 ＆ 3箇所ラベル表示付きカスタムエッジ ---
+// --- 重なり回避 ＆ 一言要約ラベル付きカスタムエッジ ---
 const CustomEdgeWithLabels = ({
   id,
-  source,
-  target,
   sourceX,
   sourceY,
   targetX,
@@ -75,13 +81,15 @@ const CustomEdgeWithLabels = ({
 }: EdgeProps) => {
   const jumpIndex = data?.jumpIndex || 0
   const isBypass = data?.isBypass || false
+  
+  // 💡 エッジ生成時に渡された「要約されたラベル」を受け取る
+  const sourceLabel = data?.sourceLabel || ''
+  const targetLabel = data?.targetLabel || ''
 
   let edgePath = ''
   let labelPos = { startX: 0, startY: 0, midX: 0, midY: 0, endX: 0, endY: 0 }
 
   if (isBypass) {
-    // 💡 左右の重なりを回避するために jumpIndex で膨らみ幅（xOffset）を変える
-    // 定理（左側）への接続なら左に膨らませ、通常（右側）なら右に膨らませる
     const isLeft = targetX < sourceX
     const baseOffset = 80 + jumpIndex * 40
     const xOffset = isLeft ? -baseOffset : baseOffset
@@ -102,7 +110,6 @@ const CustomEdgeWithLabels = ({
       L ${targetX} ${targetY}
     `
 
-    // ラベル位置の計算（根本: 15%, 中央: 50%, 先端: 85%）
     labelPos.startX = sourceX + (routeX - sourceX) * 0.4
     labelPos.startY = sourceY
     labelPos.midX = routeX
@@ -111,7 +118,6 @@ const CustomEdgeWithLabels = ({
     labelPos.endY = targetY
 
   } else {
-    // 通常の標準ステップエッジ
     const [path] = getSmoothStepPath({
       sourceX,
       sourceY,
@@ -135,9 +141,8 @@ const CustomEdgeWithLabels = ({
     <>
       <BaseEdge id={id} path={edgePath} markerEnd={markerEnd} style={style} />
       
-      {/* 💡 根本・中央・先端の3箇所に情報を描画 */}
       <EdgeLabelRenderer>
-        {/* ① 根本付近：つながる先のノードID */}
+        {/* ① 根本付近：つながる先のノードの一言要約 */}
         <div
           style={{
             ...styles.edgeLabelBase,
@@ -147,10 +152,10 @@ const CustomEdgeWithLabels = ({
           }}
           className="nodrag nopan"
         >
-          To: {target}
+          To: {targetLabel}
         </div>
 
-        {/* ② 中央付近：どのノードからどのノードへ繋がっているか */}
+        {/* ② 中央付近：どこからどこへ繋がっているかの一言要約 */}
         <div
           style={{
             ...styles.edgeLabelBase,
@@ -162,10 +167,10 @@ const CustomEdgeWithLabels = ({
           }}
           className="nodrag nopan"
         >
-          {source} ➔ {target}
+          {sourceLabel} ➔ {targetLabel}
         </div>
 
-        {/* ③ 先端付近：どのノードから出てきたか */}
+        {/* ③ 先端付近：どのノードから出てきたかの一言要約 */}
         <div
           style={{
             ...styles.edgeLabelBase,
@@ -175,7 +180,7 @@ const CustomEdgeWithLabels = ({
           }}
           className="nodrag nopan"
         >
-          From: {source}
+          From: {sourceLabel}
         </div>
       </EdgeLabelRenderer>
     </>
@@ -213,13 +218,13 @@ export default function DagVisualizer({ graphData }: DagVisualizerProps) {
 
       let x = 400
       if (isTheorem) {
-        x = 30 // 定理ノードは左側へ配置
+        x = 30
       } else if (isProposition) {
         x = propCount % 2 === 0 ? 370 : 430
         propCount++
       }
 
-      const y = index * 180 // 縦間隔をしっかり空ける
+      const y = index * 180
 
       let background = '#f8fafc'
       let borderColor = '#6BCB77'
@@ -275,6 +280,10 @@ export default function DagVisualizer({ graphData }: DagVisualizerProps) {
       const fromNode = rawNodes.find(n => n.id === edge.from)
       const toNode = rawNodes.find(n => n.id === edge.to)
 
+      // 💡 ノードの文章を抽出して10文字程度に要約する
+      const sourceLabel = summarizeText(fromNode?.label || edge.from, 10)
+      const targetLabel = summarizeText(toNode?.label || edge.to, 10)
+
       const fromIndex = nodeIndexMap.get(edge.from) ?? 0
       const toIndex = nodeIndexMap.get(edge.to) ?? 0
 
@@ -287,7 +296,6 @@ export default function DagVisualizer({ graphData }: DagVisualizerProps) {
       let isBypass = false
       let jumpIndex = 0
 
-      // 定理ノード（左側）への接続、または離れたノードへのジャンク接続の判定
       if (isToTheorem) {
         sourceHandle = 'left-source'
         targetHandle = 'left-target'
@@ -315,7 +323,8 @@ export default function DagVisualizer({ graphData }: DagVisualizerProps) {
         targetHandle,
         type: 'customEdge',
         animated: true,
-        data: { jumpIndex, isBypass },
+        // 💡 ここでエッジに「要約ラベル」のデータを渡す
+        data: { jumpIndex, isBypass, sourceLabel, targetLabel },
         style: {
           stroke: strokeColor,
           strokeWidth: 2,
@@ -364,7 +373,7 @@ const styles = {
   edgeLabelBase: {
     position: 'absolute' as const,
     fontSize: '9px',
-    padding: '2px 5px',
+    padding: '2px 6px',
     borderRadius: '4px',
     pointerEvents: 'none' as const,
     whiteSpace: 'nowrap' as const,
