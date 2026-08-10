@@ -24,7 +24,8 @@ type GraphNode = { id: string; label: string; type: 'proposition' | 'inference' 
 type GraphEdge = { from: string; to: string }
 type DagVisualizerProps = { graphData: { nodes: GraphNode[]; edges: GraphEdge[] } }
 
-const summarizeText = (text: string, maxLength: number = 12) => {
+// 💡 中央の重なりを減らすため、最大10文字にコンパクト化
+const summarizeText = (text: string, maxLength: number = 10) => {
   if (!text) return '不明'
   const cleanText = text.replace(/\n/g, ' ')
   return cleanText.length > maxLength ? cleanText.substring(0, maxLength) + '...' : cleanText
@@ -56,8 +57,7 @@ const CustomEdgeWithLabels = ({
 
   if (isBypass) {
     const isLeft = targetX < sourceX
-    // 💡 【修正】複数回定理を使った場合でも点線が重ならないよう、線の間隔（膨らみ幅）を大きくしました
-    const baseOffset = 120 + jumpIndex * 60 
+    const baseOffset = 120 + jumpIndex * 60
     const xOffset = isLeft ? -baseOffset : baseOffset
     const routeX = isLeft ? Math.min(sourceX, targetX) + xOffset : Math.max(sourceX, targetX) + xOffset
     const r = 15
@@ -66,28 +66,29 @@ const CustomEdgeWithLabels = ({
 
     edgePath = `M ${sourceX} ${sourceY} L ${routeX - (isLeft ? -actualR : actualR)} ${sourceY} Q ${routeX} ${sourceY} ${routeX} ${sourceY + actualR * dir} L ${routeX} ${targetY - actualR * dir} Q ${routeX} ${targetY} ${routeX - (isLeft ? -actualR : actualR)} ${targetY} L ${targetX} ${targetY}`
 
-    // 💡 点線のラベルが線自体に被らないよう、Y座標を少し（-15px）ずらして配置
+    // 💡 【修正】迂回線（横から出る線）は、必ず横方向（X軸）にずらした位置にラベルを固定し、Y軸は少し上に浮かす
+    const safeX = isLeft ? -40 : 40
     labelPos = {
-      startX: sourceX + (routeX - sourceX) * 0.5, startY: sourceY - 15,
-      midX: routeX, midY: (sourceY + targetY) / 2,
-      endX: targetX + (routeX - targetX) * 0.5, endY: targetY - 15
+      startX: sourceX + safeX, 
+      startY: sourceY - 12,
+      midX: routeX, 
+      midY: (sourceY + targetY) / 2,
+      endX: targetX + safeX, 
+      endY: targetY - 12
     }
   } else {
-    const [path] = getSmoothStepPath({ sourceX, sourceY, sourcePosition, targetX, targetY, targetPosition, borderRadius: 12 })
+    // 💡 【修正】React Flowの計算エンジンが算出した「本当のど真ん中（labelX, labelY）」を直接取得する
+    const [path, labelX, labelY] = getSmoothStepPath({ sourceX, sourceY, sourcePosition, targetX, targetY, targetPosition, borderRadius: 12 })
     edgePath = path
     
-    // 💡 【修正】分岐したときにラベル同士が重ならないよう、目的地（targetX）に向かってX座標も少し引っ張る計算式に変更
-    const yDist = targetY - sourceY
-    const safeY = Math.min(Math.abs(yDist) * 0.2, 55) // Yは最大55px離す
-    const dirY = targetY > sourceY ? 1 : -1
-
+    // 💡 【修正】標準線（上下から出る線）は、必ず縦方向（Y軸）に30pxずらした位置に固定し、X軸はそのまま（これで絶対に線からズレない）
     labelPos = {
-      startX: sourceX + (targetX - sourceX) * 0.25, // 分岐方向に25%ずらす
-      startY: sourceY + (safeY * dirY),
-      midX: (sourceX + targetX) / 2, 
-      midY: (sourceY + targetY) / 2,
-      endX: targetX - (targetX - sourceX) * 0.25, // 合流元方向に25%ずらす
-      endY: targetY - (safeY * dirY)
+      startX: sourceX, 
+      startY: sourceY + 30,
+      midX: labelX, // 👈 算出した本当のど真ん中
+      midY: labelY, // 👈 算出した本当のど真ん中
+      endX: targetX, 
+      endY: targetY - 30
     }
   }
 
@@ -99,13 +100,13 @@ const CustomEdgeWithLabels = ({
       <BaseEdge id={id} path={edgePath} markerEnd={markerEnd} style={style} />
       <EdgeLabelRenderer>
         <div style={{ ...styles.edgeLabelBase, transform: `translate(-50%, -50%) translate(${labelPos.startX}px, ${labelPos.startY}px)`, backgroundColor: '#e2e8f0', color: '#334155' }} className="nodrag nopan">
-          To: {targetLabel}
+          次: {targetLabel}
         </div>
         <div style={{ ...styles.edgeLabelBase, transform: `translate(-50%, -50%) translate(${labelPos.midX}px, ${labelPos.midY}px)`, backgroundColor: mainBadgeColor, color: '#ffffff', fontWeight: 'bold', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }} className="nodrag nopan">
           {sourceLabel} {centerIcon} {targetLabel}
         </div>
         <div style={{ ...styles.edgeLabelBase, transform: `translate(-50%, -50%) translate(${labelPos.endX}px, ${labelPos.endY}px)`, backgroundColor: '#e2e8f0', color: '#334155' }} className="nodrag nopan">
-          From: {sourceLabel}
+          元: {sourceLabel}
         </div>
       </EdgeLabelRenderer>
     </>
@@ -160,20 +161,18 @@ export default function DagVisualizer({ graphData }: DagVisualizerProps) {
       let y = 0
 
       if (isTheorem) {
-        // 💡 【修正】メインのフローが分岐して横に広がっても絶対にぶつからないよう、遥か左（-500px）へ退避させました
-        x = -500 
+        // 💡 【修正】どれだけ分岐しても絶対に衝突しないよう、遥か左（-1000）へ避難させました
+        x = -1000 
         y = theoremCount * 280 + 50
         theoremCount++
       } else {
         const d = depths.get(node.id) || 0
-        // 💡 【修正】ラベルが入る余裕をもたせるため、縦の間隔をさらに広げました（220 -> 280）
         y = d * 280 
         
         const siblings = depthGroups.get(d) || []
         const siblingIndex = siblings.findIndex(n => n.id === node.id)
         const totalSiblings = siblings.length
         
-        // 💡 【修正】横並びのときの間隔も広くして、線が絡まりにくくしました（320 -> 360）
         const spacing = 360 
         const startX = 450 - ((totalSiblings - 1) * spacing) / 2
         x = startX + siblingIndex * spacing
@@ -223,8 +222,8 @@ export default function DagVisualizer({ graphData }: DagVisualizerProps) {
       const rawSourceText = fromNode?.label || safeFrom
       const rawTargetText = toNode?.label || safeTo
 
-      const sourceLabel = summarizeText(rawSourceText, 12)
-      const targetLabel = summarizeText(rawTargetText, 12)
+      const sourceLabel = summarizeText(rawSourceText, 10) // 10文字に短縮
+      const targetLabel = summarizeText(rawTargetText, 10)
 
       const fromDepth = depths.get(safeFrom) || 0
       const toDepth = depths.get(safeTo) || 0
