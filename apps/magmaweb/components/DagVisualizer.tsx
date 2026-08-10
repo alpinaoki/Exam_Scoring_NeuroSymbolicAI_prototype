@@ -16,11 +16,11 @@ import {
   EdgeProps,
   EdgeLabelRenderer,
   getBezierPath,
+  getStraightPath, // 💡 定理への線をまっすぐにする機能
 } from '@xyflow/react'
 
 import '@xyflow/react/dist/style.css'
 
-// 💡 密集を防ぐため要約を8文字に設定
 const summarizeText = (text: string, maxLength: number = 8) => {
   if (!text) return '不明'
   const cleanText = text.replace(/\n/g, ' ')
@@ -52,8 +52,13 @@ const CustomEdgeWithLabels = ({
   let labelX = 0
   let labelY = 0
 
-  if (isBypass) {
-    // 迂回線（左側）
+  if (isReference) {
+    // 💡 定理への接続はスッキリとした直線に
+    const [path, cX, cY] = getStraightPath({ sourceX, sourceY, targetX, targetY })
+    edgePath = path
+    labelX = cX
+    labelY = cY
+  } else if (isBypass) {
     const isLeft = true 
     const baseOffset = 150 + jumpIndex * 80
     const xOffset = isLeft ? -baseOffset : baseOffset
@@ -63,20 +68,48 @@ const CustomEdgeWithLabels = ({
     const actualR = Math.min(r, Math.abs(targetY - sourceY) / 2)
 
     edgePath = `M ${sourceX} ${sourceY} L ${routeX + actualR} ${sourceY} Q ${routeX} ${sourceY} ${routeX} ${sourceY + actualR * dir} L ${routeX} ${targetY - actualR * dir} Q ${routeX} ${targetY} ${routeX + actualR} ${targetY} L ${targetX} ${targetY}`
-    
     labelX = routeX
     labelY = (sourceY + targetY) / 2
   } else {
-    // メインの線と定理への線は、なめらかな曲線（Bezier）
     const [path, cX, cY] = getBezierPath({ sourceX, sourceY, sourcePosition, targetX, targetY, targetPosition })
     edgePath = path
     labelX = cX
     labelY = cY
   }
 
-  const mainBadgeColor = isReference ? '#f97316' : '#3b82f6'
-  const centerIcon = isReference ? '🔗' : '➔'
+  // 💡 【修正】定理への線は、巨大なテキストを廃止して「小さなアイコンだけ」にする（前回ここで先祖返りさせていました）
+  if (isReference) {
+    return (
+      <>
+        <BaseEdge id={id} path={edgePath} markerEnd={markerEnd} style={style} />
+        <EdgeLabelRenderer>
+          <div
+            style={{
+              position: 'absolute',
+              transform: `translate(-50%, -50%) translate(${labelX}px, ${labelY}px)`,
+              backgroundColor: '#f97316',
+              color: '#ffffff',
+              fontSize: '10px',
+              width: '18px',
+              height: '18px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              borderRadius: '50%',
+              boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+              pointerEvents: 'none',
+              zIndex: 100,
+            }}
+            className="nodrag nopan"
+          >
+            🔗
+          </div>
+        </EdgeLabelRenderer>
+      </>
+    )
+  }
 
+  // メインフローのタグ
   return (
     <>
       <BaseEdge id={id} path={edgePath} markerEnd={markerEnd} style={style} />
@@ -85,11 +118,11 @@ const CustomEdgeWithLabels = ({
           style={{
             position: 'absolute',
             transform: `translate(-50%, -50%) translate(${labelX}px, ${labelY}px)`,
-            backgroundColor: mainBadgeColor,
+            backgroundColor: '#3b82f6',
             color: '#ffffff',
             fontWeight: 'bold',
             fontSize: '9px',
-            padding: '3px 8px',
+            padding: '2px 6px',
             borderRadius: '4px',
             boxShadow: '0 2px 4px rgba(0,0,0,0.15)',
             pointerEvents: 'none',
@@ -98,7 +131,7 @@ const CustomEdgeWithLabels = ({
           }}
           className="nodrag nopan"
         >
-          {sourceLabel} {centerIcon} {targetLabel}
+          {sourceLabel} ➔ {targetLabel}
         </div>
       </EdgeLabelRenderer>
     </>
@@ -175,7 +208,7 @@ export default function DagVisualizer({ graphData }: DagVisualizerProps) {
         const mainSiblings = depthGroups.get(targetDepth) || []
         const mainIndex = mainSiblings.findIndex(n => n.id === targetMainId)
         
-        // 💡 【修正】メイン列同士の間隔を900pxに大幅拡大！
+        // 💡 900pxの幅広レイアウト
         const spacing = 900 
         const startX = 450 - ((mainSiblings.length - 1) * spacing) / 2
         const mainX = startX + mainIndex * spacing
@@ -183,8 +216,7 @@ export default function DagVisualizer({ graphData }: DagVisualizerProps) {
         const tCount = theoremCounts.get(targetMainId || '') || 0
         theoremCounts.set(targetMainId || '', tCount + 1)
 
-        // 💡 【修正】定理ノードは、900pxのちょうど真ん中（+450px）に配置。
-        // これにより、タグが入る十分な「空き地（170px）」が確保されます。
+        // 💡 定理ノードはメインから450px右（ノードの間に完全な空き地ができる）
         x = mainX + 450 
         y = targetDepth * 280 + (tCount * 110)
       } else {
@@ -195,7 +227,6 @@ export default function DagVisualizer({ graphData }: DagVisualizerProps) {
         const siblingIndex = siblings.findIndex(n => n.id === node.id)
         const totalSiblings = siblings.length
         
-        // メインノード同士の間隔も900pxに統一
         const spacing = 900 
         const startX = 450 - ((totalSiblings - 1) * spacing) / 2
         x = startX + siblingIndex * spacing
