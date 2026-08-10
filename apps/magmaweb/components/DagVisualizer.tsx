@@ -15,7 +15,7 @@ import {
   BaseEdge,
   EdgeProps,
   EdgeLabelRenderer,
-  getSmoothStepPath,
+  getBezierPath, // 💡 直角(SmoothStep)から曲線(Bezier)に変更
 } from '@xyflow/react'
 
 import '@xyflow/react/dist/style.css'
@@ -24,7 +24,6 @@ type GraphNode = { id: string; label: string; type: 'proposition' | 'inference' 
 type GraphEdge = { from: string; to: string }
 type DagVisualizerProps = { graphData: { nodes: GraphNode[]; edges: GraphEdge[] } }
 
-// 💡 中央の重なりを減らすため、最大10文字にコンパクト化
 const summarizeText = (text: string, maxLength: number = 10) => {
   if (!text) return '不明'
   const cleanText = text.replace(/\n/g, ' ')
@@ -66,7 +65,6 @@ const CustomEdgeWithLabels = ({
 
     edgePath = `M ${sourceX} ${sourceY} L ${routeX - (isLeft ? -actualR : actualR)} ${sourceY} Q ${routeX} ${sourceY} ${routeX} ${sourceY + actualR * dir} L ${routeX} ${targetY - actualR * dir} Q ${routeX} ${targetY} ${routeX - (isLeft ? -actualR : actualR)} ${targetY} L ${targetX} ${targetY}`
 
-    // 💡 【修正】迂回線（横から出る線）は、必ず横方向（X軸）にずらした位置にラベルを固定し、Y軸は少し上に浮かす
     const safeX = isLeft ? -40 : 40
     labelPos = {
       startX: sourceX + safeX, 
@@ -77,18 +75,20 @@ const CustomEdgeWithLabels = ({
       endY: targetY - 12
     }
   } else {
-    // 💡 【修正】React Flowの計算エンジンが算出した「本当のど真ん中（labelX, labelY）」を直接取得する
-    const [path, labelX, labelY] = getSmoothStepPath({ sourceX, sourceY, sourcePosition, targetX, targetY, targetPosition, borderRadius: 12 })
+    // 💡 【修正】なめらかな曲線（Bezier）を描画し、複数線が重なるのを防ぐ
+    const [path, labelX, labelY] = getBezierPath({ 
+      sourceX, sourceY, sourcePosition, targetX, targetY, targetPosition 
+    })
     edgePath = path
     
-    // 💡 【修正】標準線（上下から出る線）は、必ず縦方向（Y軸）に30pxずらした位置に固定し、X軸はそのまま（これで絶対に線からズレない）
+    // 💡 【修正】曲線の軌道に合わせて、15%進んだ位置と85%進んだ位置にタグを置く
     labelPos = {
-      startX: sourceX, 
-      startY: sourceY + 30,
-      midX: labelX, // 👈 算出した本当のど真ん中
-      midY: labelY, // 👈 算出した本当のど真ん中
-      endX: targetX, 
-      endY: targetY - 30
+      startX: sourceX + (targetX - sourceX) * 0.15, 
+      startY: sourceY + (targetY - sourceY) * 0.15 + 15,
+      midX: labelX, // 曲線の本当のど真ん中
+      midY: labelY, 
+      endX: targetX - (targetX - sourceX) * 0.15, 
+      endY: targetY - (targetY - sourceY) * 0.15 - 15
     }
   }
 
@@ -145,6 +145,22 @@ export default function DagVisualizer({ graphData }: DagVisualizerProps) {
     return dMap
   }, [rawNodes, rawEdges])
 
+  // 💡 【修正】定理ノードを「それが使われたメインノードと同じ高さ」に配置するための計算
+  const theoremDepths = useMemo(() => {
+    const tMap = new Map<string, number>()
+    rawEdges.forEach(edge => {
+      const fromNode = rawNodes.find(n => n.id === edge.from)
+      const toNode = rawNodes.find(n => n.id === edge.to)
+      if (fromNode?.type === 'theorem' && toNode) {
+        tMap.set(fromNode.id, depths.get(toNode.id) || 0)
+      }
+      if (toNode?.type === 'theorem' && fromNode) {
+        tMap.set(toNode.id, depths.get(fromNode.id) || 0)
+      }
+    })
+    return tMap
+  }, [rawEdges, rawNodes, depths])
+
   const flowNodes = useMemo<Node[]>(() => {
     const depthGroups = new Map<number, GraphNode[]>()
     rawNodes.forEach(node => {
@@ -154,17 +170,16 @@ export default function DagVisualizer({ graphData }: DagVisualizerProps) {
       depthGroups.get(d)!.push(node)
     })
 
-    let theoremCount = 0
     return rawNodes.map((node) => {
       const isTheorem = node.type === 'theorem'
       let x = 400
       let y = 0
 
       if (isTheorem) {
-        // 💡 【修正】どれだけ分岐しても絶対に衝突しないよう、遥か左（-1000）へ避難させました
-        x = -1000 
-        y = theoremCount * 280 + 50
-        theoremCount++
+        const d = theoremDepths.get(node.id) || 0
+        // 💡 【修正】メインフローの左側（-450）に固定し、高さ（Y）は関連ノードに合わせる
+        x = -450 
+        y = d * 280 + 20 
       } else {
         const d = depths.get(node.id) || 0
         y = d * 280 
@@ -173,7 +188,7 @@ export default function DagVisualizer({ graphData }: DagVisualizerProps) {
         const siblingIndex = siblings.findIndex(n => n.id === node.id)
         const totalSiblings = siblings.length
         
-        const spacing = 360 
+        const spacing = 400 // 💡 曲線を綺麗に見せるため、横幅をさらに少し広げました
         const startX = 450 - ((totalSiblings - 1) * spacing) / 2
         x = startX + siblingIndex * spacing
       }
@@ -206,7 +221,7 @@ export default function DagVisualizer({ graphData }: DagVisualizerProps) {
         },
       }
     })
-  }, [rawNodes, depths])
+  }, [rawNodes, depths, theoremDepths])
 
   const flowEdges = useMemo<Edge[]>(() => {
     let rightJumpCounter = 0
@@ -222,7 +237,7 @@ export default function DagVisualizer({ graphData }: DagVisualizerProps) {
       const rawSourceText = fromNode?.label || safeFrom
       const rawTargetText = toNode?.label || safeTo
 
-      const sourceLabel = summarizeText(rawSourceText, 10) // 10文字に短縮
+      const sourceLabel = summarizeText(rawSourceText, 10)
       const targetLabel = summarizeText(rawTargetText, 10)
 
       const fromDepth = depths.get(safeFrom) || 0
