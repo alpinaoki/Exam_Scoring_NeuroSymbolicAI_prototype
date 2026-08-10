@@ -1,7 +1,7 @@
 'use client'
 // @ts-nocheck
 
-import React, { useMemo, useState } from 'react' // 💡 useStateを追加
+import React, { useMemo } from 'react'
 import {
   ReactFlow,
   Background,
@@ -16,11 +16,11 @@ import {
   EdgeProps,
   EdgeLabelRenderer,
   getBezierPath,
-  getStraightPath,
 } from '@xyflow/react'
 
 import '@xyflow/react/dist/style.css'
 
+// 💡 密集を防ぐため要約を8文字に設定
 const summarizeText = (text: string, maxLength: number = 8) => {
   if (!text) return '不明'
   const cleanText = text.replace(/\n/g, ' ')
@@ -28,8 +28,7 @@ const summarizeText = (text: string, maxLength: number = 8) => {
 }
 
 const CustomNode = ({ data }: any) => (
-  // 💡 ノード自体の透明度（opacity）を動的に変えられるように設定
-  <div style={{ ...data.style, transition: 'opacity 0.3s ease' }}>
+  <div style={data.style}>
     <Handle type="target" position={Position.Top} id="top" style={{ opacity: 0 }} />
     <Handle type="source" position={Position.Bottom} id="bottom" style={{ opacity: 0 }} />
     <Handle type="target" position={Position.Right} id="right-target" style={{ opacity: 0, top: '50%' }} />
@@ -41,25 +40,20 @@ const CustomNode = ({ data }: any) => (
 )
 
 const CustomEdgeWithLabels = ({
-  id, source, target, sourceX, sourceY, targetX, targetY, sourcePosition, targetPosition, style = {}, markerEnd, data,
+  id, sourceX, sourceY, targetX, targetY, sourcePosition, targetPosition, style = {}, markerEnd, data,
 }: EdgeProps) => {
   const jumpIndex = Number(data?.jumpIndex || 0)
   const isBypass = Boolean(data?.isBypass)
   const isReference = Boolean(data?.isReference)
   const sourceLabel = String(data?.sourceLabel || '不明')
   const targetLabel = String(data?.targetLabel || '不明')
-  const isActive = Boolean(data?.isActive) // 💡 この線が現在ハイライトされているか
 
   let edgePath = ''
   let labelX = 0
   let labelY = 0
 
-  if (isReference) {
-    const [path, cX, cY] = getStraightPath({ sourceX, sourceY, targetX, targetY })
-    edgePath = path
-    labelX = cX
-    labelY = cY
-  } else if (isBypass) {
+  if (isBypass) {
+    // 迂回線（左側）
     const isLeft = true 
     const baseOffset = 150 + jumpIndex * 80
     const xOffset = isLeft ? -baseOffset : baseOffset
@@ -73,64 +67,29 @@ const CustomEdgeWithLabels = ({
     labelX = routeX
     labelY = (sourceY + targetY) / 2
   } else {
+    // メインの線と定理への線は、なめらかな曲線（Bezier）
     const [path, cX, cY] = getBezierPath({ sourceX, sourceY, sourcePosition, targetX, targetY, targetPosition })
     edgePath = path
     labelX = cX
     labelY = cY
   }
 
-  // 💡 【大改善】🔗アイコンをクリック可能にし、ハイライト時は大きくする
-  if (isReference) {
-    return (
-      <>
-        <BaseEdge id={id} path={edgePath} markerEnd={markerEnd} style={{...style, transition: 'all 0.3s ease'}} />
-        <EdgeLabelRenderer>
-          <div
-            onClick={(e) => {
-              e.stopPropagation() // 他のクリック判定をブロック
-              if(data?.onIconClick) data.onIconClick(source, target) // 親にクリックを伝える
-            }}
-            style={{
-              position: 'absolute',
-              transform: `translate(-50%, -50%) translate(${labelX}px, ${labelY}px) scale(${isActive ? 1.4 : 1})`,
-              backgroundColor: isActive ? '#ef4444' : '#f97316', // ハイライト時は赤っぽく
-              color: '#ffffff',
-              fontSize: '10px',
-              width: '18px',
-              height: '18px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              borderRadius: '50%',
-              boxShadow: isActive ? '0 0 10px rgba(239, 68, 68, 0.6)' : '0 2px 4px rgba(0,0,0,0.1)',
-              pointerEvents: 'auto', // 💡 クリックを有効化！
-              cursor: 'pointer', // 💡 マウスカーソルを指マークに
-              transition: 'all 0.2s ease', // アニメーション
-              zIndex: 100,
-            }}
-            className="nodrag nopan"
-            title="クリックで関連ノードをハイライト"
-          >
-            🔗
-          </div>
-        </EdgeLabelRenderer>
-      </>
-    )
-  }
+  const mainBadgeColor = isReference ? '#f97316' : '#3b82f6'
+  const centerIcon = isReference ? '🔗' : '➔'
 
   return (
     <>
-      <BaseEdge id={id} path={edgePath} markerEnd={markerEnd} style={{...style, transition: 'all 0.3s ease'}} />
+      <BaseEdge id={id} path={edgePath} markerEnd={markerEnd} style={style} />
       <EdgeLabelRenderer>
         <div
           style={{
             position: 'absolute',
             transform: `translate(-50%, -50%) translate(${labelX}px, ${labelY}px)`,
-            backgroundColor: '#3b82f6',
+            backgroundColor: mainBadgeColor,
             color: '#ffffff',
             fontWeight: 'bold',
             fontSize: '9px',
-            padding: '2px 6px',
+            padding: '3px 8px',
             borderRadius: '4px',
             boxShadow: '0 2px 4px rgba(0,0,0,0.15)',
             pointerEvents: 'none',
@@ -139,7 +98,7 @@ const CustomEdgeWithLabels = ({
           }}
           className="nodrag nopan"
         >
-          {sourceLabel} ➔ {targetLabel}
+          {sourceLabel} {centerIcon} {targetLabel}
         </div>
       </EdgeLabelRenderer>
     </>
@@ -151,9 +110,6 @@ const edgeTypes = { customEdge: CustomEdgeWithLabels }
 
 export default function DagVisualizer({ graphData }: DagVisualizerProps) {
   if (!graphData || !Array.isArray(graphData.nodes) || !Array.isArray(graphData.edges)) return <div>エラー</div>
-
-  // 💡 【新規】現在ハイライトされている繋がりを記憶するステート
-  const [activeHighlight, setActiveHighlight] = useState<{source: string, target: string} | null>(null)
 
   const { nodes: rawNodes, edges: rawEdges } = graphData
 
@@ -218,14 +174,18 @@ export default function DagVisualizer({ graphData }: DagVisualizerProps) {
         
         const mainSiblings = depthGroups.get(targetDepth) || []
         const mainIndex = mainSiblings.findIndex(n => n.id === targetMainId)
-        const spacing = 600 
+        
+        // 💡 【修正】メイン列同士の間隔を900pxに大幅拡大！
+        const spacing = 900 
         const startX = 450 - ((mainSiblings.length - 1) * spacing) / 2
         const mainX = startX + mainIndex * spacing
 
         const tCount = theoremCounts.get(targetMainId || '') || 0
         theoremCounts.set(targetMainId || '', tCount + 1)
 
-        x = mainX + 300 
+        // 💡 【修正】定理ノードは、900pxのちょうど真ん中（+450px）に配置。
+        // これにより、タグが入る十分な「空き地（170px）」が確保されます。
+        x = mainX + 450 
         y = targetDepth * 280 + (tCount * 110)
       } else {
         const d = depths.get(node.id) || 0
@@ -235,19 +195,14 @@ export default function DagVisualizer({ graphData }: DagVisualizerProps) {
         const siblingIndex = siblings.findIndex(n => n.id === node.id)
         const totalSiblings = siblings.length
         
-        const spacing = 600 
+        // メインノード同士の間隔も900pxに統一
+        const spacing = 900 
         const startX = 450 - ((totalSiblings - 1) * spacing) / 2
         x = startX + siblingIndex * spacing
       }
 
       const background = isTheorem ? '#fff7ed' : node.type === 'proposition' ? '#ffffff' : '#f8fafc'
       const borderColor = isTheorem ? '#f97316' : node.type === 'proposition' ? '#4D96FF' : '#6BCB77'
-
-      // 💡 【新規】ハイライト対象かどうかを判定し、対象外なら透明度を下げる（薄くする）
-      const isHighlighted = activeHighlight 
-        ? (node.id === activeHighlight.source || node.id === activeHighlight.target) 
-        : true // 何も選択されていなければ全員濃いまま
-      const opacity = isHighlighted ? 1 : 0.15
 
       return {
         id: node.id,
@@ -258,9 +213,7 @@ export default function DagVisualizer({ graphData }: DagVisualizerProps) {
             background, borderColor, borderWidth: '2px', borderStyle: 'solid',
             borderLeft: `6px solid ${borderColor}`, borderRadius: '10px',
             color: '#1e293b', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)',
-            width: 280, textAlign: 'left', padding: '12px',
-            zIndex: isTheorem ? 1 : 10,
-            opacity, // 💡 動的な透明度を適用
+            width: 280, textAlign: 'left', padding: '12px', zIndex: isTheorem ? 1 : 10,
           },
           content: (
             <div style={styles.nodeContent}>
@@ -276,17 +229,10 @@ export default function DagVisualizer({ graphData }: DagVisualizerProps) {
         },
       }
     })
-  }, [rawNodes, depths, theoremTargets, activeHighlight]) // 💡 activeHighlightが更新されたら再計算
+  }, [rawNodes, depths, theoremTargets])
 
   const flowEdges = useMemo<Edge[]>(() => {
     let bypassCounter = 0
-
-    // 💡 🔗クリック時に呼ばれる関数（既に選択中なら解除、違うなら選択）
-    const handleIconClick = (sourceId: string, targetId: string) => {
-      setActiveHighlight(prev => 
-        (prev?.source === sourceId && prev?.target === targetId) ? null : { source: sourceId, target: targetId }
-      )
-    }
 
     return rawEdges.map((edge, index) => {
       const safeFrom = edge?.from?.trim() || ''
@@ -324,46 +270,25 @@ export default function DagVisualizer({ graphData }: DagVisualizerProps) {
         jumpIndex = bypassCounter++
       }
 
-      // 💡 【新規】ハイライト判定
-      const isHighlightedEdge = activeHighlight
-        ? (safeFrom === activeHighlight.source && safeTo === activeHighlight.target)
-        : true
-      const isActive = activeHighlight && isHighlightedEdge
-
-      const baseColor = isReference ? '#f97316' : '#475569'
-      const strokeColor = isActive ? '#ef4444' : baseColor // 選択中は赤色に
-      const edgeOpacity = isHighlightedEdge ? (isActive ? 1 : 0.6) : 0.1 // 選択対象外の線は薄く
-      const strokeWidth = isActive ? 4 : 2 // 選択中の線は太く
+      const strokeColor = isReference ? '#f97316' : '#475569'
 
       return {
         id: `e-${safeFrom}-${safeTo}-${index}`,
         source: safeFrom, target: safeTo,
         sourceHandle, targetHandle, type: 'customEdge',
         animated: !isReference,
-        data: { 
-          jumpIndex, isBypass, sourceLabel, targetLabel, isReference,
-          onIconClick: handleIconClick, // 💡 クリック処理を渡す
-          isActive // 💡 アクティブ状態を渡す
-        },
-        style: { stroke: strokeColor, strokeWidth, opacity: edgeOpacity, strokeDasharray: isReference ? '6 6' : undefined },
+        data: { jumpIndex, isBypass, sourceLabel, targetLabel, isReference },
+        style: { stroke: strokeColor, strokeWidth: 2, opacity: 0.6, strokeDasharray: isReference ? '6 6' : undefined },
         markerEnd: isReference ? undefined : { type: MarkerType.ArrowClosed, color: strokeColor },
       }
     })
-  }, [rawEdges, rawNodes, depths, activeHighlight]) // 💡 activeHighlightが更新されたら再計算
+  }, [rawEdges, rawNodes, depths])
 
   return (
     <div style={styles.container}>
       <h3 style={styles.title}>論理構造 DAG モニター</h3>
       <div style={styles.canvasWrapper}>
-        <ReactFlow 
-          nodes={flowNodes} 
-          edges={flowEdges} 
-          nodeTypes={nodeTypes} 
-          edgeTypes={edgeTypes} 
-          fitView 
-          attributionPosition="bottom-right"
-          onPaneClick={() => setActiveHighlight(null)} // 💡 背景クリックでハイライト解除
-        >
+        <ReactFlow nodes={flowNodes} edges={flowEdges} nodeTypes={nodeTypes} edgeTypes={edgeTypes} fitView attributionPosition="bottom-right">
           <Background color="#cbd5e1" gap={16} size={1} />
           <Controls />
           <MiniMap />
