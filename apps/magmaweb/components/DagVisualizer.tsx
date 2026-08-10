@@ -45,7 +45,6 @@ const CustomNode = ({ data }: any) => (
 const CustomEdgeWithLabels = ({
   id, sourceX, sourceY, targetX, targetY, sourcePosition, targetPosition, style = {}, markerEnd, data,
 }: EdgeProps) => {
-  // 💡 ここで強制的に型を指定し、TypeScriptのエラーを突破します
   const jumpIndex = Number(data?.jumpIndex || 0)
   const isBypass = Boolean(data?.isBypass)
   const isReference = Boolean(data?.isReference)
@@ -57,7 +56,8 @@ const CustomEdgeWithLabels = ({
 
   if (isBypass) {
     const isLeft = targetX < sourceX
-    const baseOffset = 80 + jumpIndex * 40
+    // 💡 【修正】複数回定理を使った場合でも点線が重ならないよう、線の間隔（膨らみ幅）を大きくしました
+    const baseOffset = 120 + jumpIndex * 60 
     const xOffset = isLeft ? -baseOffset : baseOffset
     const routeX = isLeft ? Math.min(sourceX, targetX) + xOffset : Math.max(sourceX, targetX) + xOffset
     const r = 15
@@ -66,24 +66,28 @@ const CustomEdgeWithLabels = ({
 
     edgePath = `M ${sourceX} ${sourceY} L ${routeX - (isLeft ? -actualR : actualR)} ${sourceY} Q ${routeX} ${sourceY} ${routeX} ${sourceY + actualR * dir} L ${routeX} ${targetY - actualR * dir} Q ${routeX} ${targetY} ${routeX - (isLeft ? -actualR : actualR)} ${targetY} L ${targetX} ${targetY}`
 
+    // 💡 点線のラベルが線自体に被らないよう、Y座標を少し（-15px）ずらして配置
     labelPos = {
-      startX: sourceX + (routeX - sourceX) * 0.4, startY: sourceY,
+      startX: sourceX + (routeX - sourceX) * 0.5, startY: sourceY - 15,
       midX: routeX, midY: (sourceY + targetY) / 2,
-      endX: targetX + (routeX - targetX) * 0.4, endY: targetY
+      endX: targetX + (routeX - targetX) * 0.5, endY: targetY - 15
     }
   } else {
     const [path] = getSmoothStepPath({ sourceX, sourceY, sourcePosition, targetX, targetY, targetPosition, borderRadius: 12 })
     edgePath = path
     
+    // 💡 【修正】分岐したときにラベル同士が重ならないよう、目的地（targetX）に向かってX座標も少し引っ張る計算式に変更
     const yDist = targetY - sourceY
-    
+    const safeY = Math.min(Math.abs(yDist) * 0.2, 55) // Yは最大55px離す
+    const dirY = targetY > sourceY ? 1 : -1
+
     labelPos = {
-      startX: sourceX, 
-      startY: sourceY + yDist * 0.20,
+      startX: sourceX + (targetX - sourceX) * 0.25, // 分岐方向に25%ずらす
+      startY: sourceY + (safeY * dirY),
       midX: (sourceX + targetX) / 2, 
-      midY: sourceY + yDist * 0.50,
-      endX: targetX, 
-      endY: sourceY + yDist * 0.80
+      midY: (sourceY + targetY) / 2,
+      endX: targetX - (targetX - sourceX) * 0.25, // 合流元方向に25%ずらす
+      endY: targetY - (safeY * dirY)
     }
   }
 
@@ -95,13 +99,13 @@ const CustomEdgeWithLabels = ({
       <BaseEdge id={id} path={edgePath} markerEnd={markerEnd} style={style} />
       <EdgeLabelRenderer>
         <div style={{ ...styles.edgeLabelBase, transform: `translate(-50%, -50%) translate(${labelPos.startX}px, ${labelPos.startY}px)`, backgroundColor: '#e2e8f0', color: '#334155' }} className="nodrag nopan">
-          次: {targetLabel}
+          To: {targetLabel}
         </div>
         <div style={{ ...styles.edgeLabelBase, transform: `translate(-50%, -50%) translate(${labelPos.midX}px, ${labelPos.midY}px)`, backgroundColor: mainBadgeColor, color: '#ffffff', fontWeight: 'bold', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }} className="nodrag nopan">
           {sourceLabel} {centerIcon} {targetLabel}
         </div>
         <div style={{ ...styles.edgeLabelBase, transform: `translate(-50%, -50%) translate(${labelPos.endX}px, ${labelPos.endY}px)`, backgroundColor: '#e2e8f0', color: '#334155' }} className="nodrag nopan">
-          元: {sourceLabel}
+          From: {sourceLabel}
         </div>
       </EdgeLabelRenderer>
     </>
@@ -156,18 +160,21 @@ export default function DagVisualizer({ graphData }: DagVisualizerProps) {
       let y = 0
 
       if (isTheorem) {
-        x = 30
-        y = theoremCount * 180 + 50
+        // 💡 【修正】メインのフローが分岐して横に広がっても絶対にぶつからないよう、遥か左（-500px）へ退避させました
+        x = -500 
+        y = theoremCount * 280 + 50
         theoremCount++
       } else {
         const d = depths.get(node.id) || 0
-        y = d * 220
+        // 💡 【修正】ラベルが入る余裕をもたせるため、縦の間隔をさらに広げました（220 -> 280）
+        y = d * 280 
         
         const siblings = depthGroups.get(d) || []
         const siblingIndex = siblings.findIndex(n => n.id === node.id)
         const totalSiblings = siblings.length
         
-        const spacing = 320 
+        // 💡 【修正】横並びのときの間隔も広くして、線が絡まりにくくしました（320 -> 360）
+        const spacing = 360 
         const startX = 450 - ((totalSiblings - 1) * spacing) / 2
         x = startX + siblingIndex * spacing
       }
