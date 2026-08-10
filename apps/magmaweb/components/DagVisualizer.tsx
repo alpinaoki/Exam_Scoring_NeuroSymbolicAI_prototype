@@ -15,7 +15,7 @@ import {
   BaseEdge,
   EdgeProps,
   EdgeLabelRenderer,
-  getBezierPath, // 💡 なめらかな曲線を生成するエンジン
+  getBezierPath,
 } from '@xyflow/react'
 
 import '@xyflow/react/dist/style.css'
@@ -24,7 +24,6 @@ type GraphNode = { id: string; label: string; type: 'proposition' | 'inference' 
 type GraphEdge = { from: string; to: string }
 type DagVisualizerProps = { graphData: { nodes: GraphNode[]; edges: GraphEdge[] } }
 
-// 💡 視認性を高めるため、要約を10文字に
 const summarizeText = (text: string, maxLength: number = 10) => {
   if (!text) return '不明'
   const cleanText = text.replace(/\n/g, ' ')
@@ -33,7 +32,6 @@ const summarizeText = (text: string, maxLength: number = 10) => {
 
 const CustomNode = ({ data }: any) => (
   <div style={data.style}>
-    {/* 💡 全方向に接続口（Handle）を用意し、自動ルーティングに対応 */}
     <Handle type="target" position={Position.Top} id="top" style={{ opacity: 0 }} />
     <Handle type="source" position={Position.Bottom} id="bottom" style={{ opacity: 0 }} />
     <Handle type="target" position={Position.Right} id="right-target" style={{ opacity: 0, top: '50%' }} />
@@ -47,14 +45,39 @@ const CustomNode = ({ data }: any) => (
 const CustomEdgeWithLabels = ({
   id, sourceX, sourceY, targetX, targetY, sourcePosition, targetPosition, style = {}, markerEnd, data,
 }: EdgeProps) => {
+  const jumpIndex = Number(data?.jumpIndex || 0)
+  const isBypass = Boolean(data?.isBypass)
   const isReference = Boolean(data?.isReference)
   const sourceLabel = String(data?.sourceLabel || '不明')
   const targetLabel = String(data?.targetLabel || '不明')
 
-  // 💡 曲線の軌道と、その「本当のど真ん中の座標（labelX, labelY）」を自動計算
-  const [edgePath, labelX, labelY] = getBezierPath({
-    sourceX, sourceY, sourcePosition, targetX, targetY, targetPosition,
-  })
+  let edgePath = ''
+  let labelX = 0
+  let labelY = 0
+
+  if (isBypass) {
+    // 💡 迂回線（バイパス）は絶対に「左側」へ膨らむように固定
+    const isLeft = true 
+    const baseOffset = 150 + jumpIndex * 80
+    const xOffset = isLeft ? -baseOffset : baseOffset
+    const routeX = Math.min(sourceX, targetX) + xOffset
+    const r = 15
+    const dir = targetY > sourceY ? 1 : -1
+    const actualR = Math.min(r, Math.abs(targetY - sourceY) / 2)
+
+    edgePath = `M ${sourceX} ${sourceY} L ${routeX + actualR} ${sourceY} Q ${routeX} ${sourceY} ${routeX} ${sourceY + actualR * dir} L ${routeX} ${targetY - actualR * dir} Q ${routeX} ${targetY} ${routeX + actualR} ${targetY} L ${targetX} ${targetY}`
+    
+    labelX = routeX
+    labelY = (sourceY + targetY) / 2
+  } else {
+    // 💡 メインの線と定理への線は、なめらかな曲線
+    const [path, cX, cY] = getBezierPath({
+      sourceX, sourceY, sourcePosition, targetX, targetY, targetPosition,
+    })
+    edgePath = path
+    labelX = cX
+    labelY = cY
+  }
 
   const mainBadgeColor = isReference ? '#f97316' : '#3b82f6'
   const centerIcon = isReference ? '🔗' : '➔'
@@ -63,7 +86,6 @@ const CustomEdgeWithLabels = ({
     <>
       <BaseEdge id={id} path={edgePath} markerEnd={markerEnd} style={style} />
       <EdgeLabelRenderer>
-        {/* 💡 複数タグを廃止し、曲線のど真ん中に1つだけ「要約タグ」を配置（絶対に線からズレない） */}
         <div
           style={{
             position: 'absolute',
@@ -96,7 +118,6 @@ export default function DagVisualizer({ graphData }: DagVisualizerProps) {
 
   const { nodes: rawNodes, edges: rawEdges } = graphData
 
-  // 1. 各ノードの深さ（階層）を計算
   const depths = useMemo(() => {
     const dMap = new Map<string, number>()
     rawNodes.forEach(n => dMap.set(n.id, 0))
@@ -121,7 +142,6 @@ export default function DagVisualizer({ graphData }: DagVisualizerProps) {
     return dMap
   }, [rawNodes, rawEdges])
 
-  // 2. 定理ノードが「どのメインノードに紐付いているか」を特定
   const theoremTargets = useMemo(() => {
     const map = new Map<string, string>()
     rawEdges.forEach(edge => {
@@ -137,7 +157,6 @@ export default function DagVisualizer({ graphData }: DagVisualizerProps) {
     return map
   }, [rawEdges, rawNodes])
 
-  // 3. ノードの配置位置を決定
   const flowNodes = useMemo<Node[]>(() => {
     const depthGroups = new Map<number, GraphNode[]>()
     rawNodes.forEach(node => {
@@ -147,7 +166,7 @@ export default function DagVisualizer({ graphData }: DagVisualizerProps) {
       depthGroups.get(d)!.push(node)
     })
 
-    const theoremCounts = new Map<string, number>() // 同じメインノードに付く定理の数をカウント
+    const theoremCounts = new Map<string, number>()
 
     return rawNodes.map((node) => {
       const isTheorem = node.type === 'theorem'
@@ -155,32 +174,31 @@ export default function DagVisualizer({ graphData }: DagVisualizerProps) {
       let y = 0
 
       if (isTheorem) {
-        // 💡 【修正】定理ノードを「紐付いているメインノードの真横（左側）」に配置する
+        // 💡 定理ノードはメインノードの「専用右側レーン（+340px）」に配置
         const targetMainId = theoremTargets.get(node.id)
         const targetDepth = targetMainId ? (depths.get(targetMainId) || 0) : 0
         
-        // メインノードのX座標を計算
         const mainSiblings = depthGroups.get(targetDepth) || []
         const mainIndex = mainSiblings.findIndex(n => n.id === targetMainId)
-        const spacing = 450
+        const spacing = 750 // メインの幅
         const startX = 450 - ((mainSiblings.length - 1) * spacing) / 2
         const mainX = startX + mainIndex * spacing
 
-        // 定理が複数ある場合は縦に少しずらす
         const tCount = theoremCounts.get(targetMainId || '') || 0
         theoremCounts.set(targetMainId || '', tCount + 1)
 
-        x = mainX - 350 // メインノードの350px左
-        y = targetDepth * 250 + (tCount * 120) // メインノードと同じ高さ＋重なり防止ずらし
+        x = mainX + 340 // メインノードのすぐ右！
+        y = targetDepth * 280 + (tCount * 120)
       } else {
         const d = depths.get(node.id) || 0
-        y = d * 250
+        y = d * 280 
         
         const siblings = depthGroups.get(d) || []
         const siblingIndex = siblings.findIndex(n => n.id === node.id)
         const totalSiblings = siblings.length
         
-        const spacing = 450 // 分岐時の間隔を広げて見やすく
+        // 💡 メインノード同士の間隔を 750px に超拡大！これで定理ノードが間に入っても絶対ぶつからない
+        const spacing = 750 
         const startX = 450 - ((totalSiblings - 1) * spacing) / 2
         x = startX + siblingIndex * spacing
       }
@@ -215,8 +233,9 @@ export default function DagVisualizer({ graphData }: DagVisualizerProps) {
     })
   }, [rawNodes, depths, theoremTargets])
 
-  // 4. 線のルーティングを決定
   const flowEdges = useMemo<Edge[]>(() => {
+    let bypassCounter = 0
+
     return rawEdges.map((edge, index) => {
       const safeFrom = edge?.from?.trim() || ''
       const safeTo = edge?.to?.trim() || ''
@@ -227,20 +246,34 @@ export default function DagVisualizer({ graphData }: DagVisualizerProps) {
       const sourceLabel = summarizeText(fromNode?.label || safeFrom, 10)
       const targetLabel = summarizeText(toNode?.label || safeTo, 10)
 
+      const fromDepth = depths.get(safeFrom) || 0
+      const toDepth = depths.get(safeTo) || 0
+      const isJump = Math.abs(toDepth - fromDepth) > 1
+
       const isToTheorem = toNode?.type === 'theorem'
       const isFromTheorem = fromNode?.type === 'theorem'
       const isReference = isToTheorem || isFromTheorem
 
       let sourceHandle = 'bottom'
       let targetHandle = 'top'
+      let isBypass = false
+      let jumpIndex = 0
 
-      // 💡 【修正】横に配置した定理ノードへの接続は、美しく横から線を出す
+      // 💡 交通整理（ハンドルの指定）
       if (isToTheorem) {
-        sourceHandle = 'left-source' // メインの左から
-        targetHandle = 'right-target' // 定理の右へ
+        // メインから定理へ（右へ出す）
+        sourceHandle = 'right-source'
+        targetHandle = 'left-target'
       } else if (isFromTheorem) {
-        sourceHandle = 'right-source' // 定理の右から
-        targetHandle = 'left-target' // メインの左へ
+        // 定理からメインへ（左へ出す）
+        sourceHandle = 'left-source'
+        targetHandle = 'right-target'
+      } else if (isJump) {
+        // ジャンプ（迂回）はすべて左レーンへ
+        sourceHandle = 'left-source'
+        targetHandle = 'left-target'
+        isBypass = true
+        jumpIndex = bypassCounter++
       }
 
       const strokeColor = isReference ? '#f97316' : '#475569'
@@ -250,12 +283,12 @@ export default function DagVisualizer({ graphData }: DagVisualizerProps) {
         source: safeFrom, target: safeTo,
         sourceHandle, targetHandle, type: 'customEdge',
         animated: !isReference,
-        data: { sourceLabel, targetLabel, isReference },
+        data: { jumpIndex, isBypass, sourceLabel, targetLabel, isReference },
         style: { stroke: strokeColor, strokeWidth: 2, opacity: 0.6, strokeDasharray: isReference ? '6 6' : undefined },
         markerEnd: isReference ? undefined : { type: MarkerType.ArrowClosed, color: strokeColor },
       }
     })
-  }, [rawEdges, rawNodes])
+  }, [rawEdges, rawNodes, depths])
 
   return (
     <div style={styles.container}>
