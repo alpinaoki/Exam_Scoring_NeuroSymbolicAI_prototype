@@ -16,9 +16,9 @@ import {
   EdgeProps,
   EdgeLabelRenderer,
   getSmoothStepPath,
-} from '@xyflow/react'
+} from '../../../@xyflow/react'
 
-import '@xyflow/react/dist/style.css'
+import '../../../@xyflow/react/dist/style.css'
 
 type GraphNode = { id: string; label: string; type: 'proposition' | 'inference' | 'theorem' }
 type GraphEdge = { from: string; to: string }
