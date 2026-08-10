@@ -15,7 +15,7 @@ import {
   BaseEdge,
   EdgeProps,
   EdgeLabelRenderer,
-  getBezierPath, // 💡 直角(SmoothStep)から曲線(Bezier)に変更
+  getBezierPath, // 💡 なめらかな曲線を生成するエンジン
 } from '@xyflow/react'
 
 import '@xyflow/react/dist/style.css'
@@ -24,6 +24,7 @@ type GraphNode = { id: string; label: string; type: 'proposition' | 'inference' 
 type GraphEdge = { from: string; to: string }
 type DagVisualizerProps = { graphData: { nodes: GraphNode[]; edges: GraphEdge[] } }
 
+// 💡 視認性を高めるため、要約を10文字に
 const summarizeText = (text: string, maxLength: number = 10) => {
   if (!text) return '不明'
   const cleanText = text.replace(/\n/g, ' ')
@@ -32,10 +33,11 @@ const summarizeText = (text: string, maxLength: number = 10) => {
 
 const CustomNode = ({ data }: any) => (
   <div style={data.style}>
+    {/* 💡 全方向に接続口（Handle）を用意し、自動ルーティングに対応 */}
     <Handle type="target" position={Position.Top} id="top" style={{ opacity: 0 }} />
     <Handle type="source" position={Position.Bottom} id="bottom" style={{ opacity: 0 }} />
-    <Handle type="target" position={Position.Right} id="right-target" style={{ opacity: 0, top: '30%' }} />
-    <Handle type="source" position={Position.Right} id="right-source" style={{ opacity: 0, top: '70%' }} />
+    <Handle type="target" position={Position.Right} id="right-target" style={{ opacity: 0, top: '50%' }} />
+    <Handle type="source" position={Position.Right} id="right-source" style={{ opacity: 0, top: '50%' }} />
     <Handle type="target" position={Position.Left} id="left-target" style={{ opacity: 0, top: '50%' }} />
     <Handle type="source" position={Position.Left} id="left-source" style={{ opacity: 0, top: '50%' }} />
     {data.content}
@@ -45,52 +47,14 @@ const CustomNode = ({ data }: any) => (
 const CustomEdgeWithLabels = ({
   id, sourceX, sourceY, targetX, targetY, sourcePosition, targetPosition, style = {}, markerEnd, data,
 }: EdgeProps) => {
-  const jumpIndex = Number(data?.jumpIndex || 0)
-  const isBypass = Boolean(data?.isBypass)
   const isReference = Boolean(data?.isReference)
   const sourceLabel = String(data?.sourceLabel || '不明')
   const targetLabel = String(data?.targetLabel || '不明')
 
-  let edgePath = ''
-  let labelPos = { startX: 0, startY: 0, midX: 0, midY: 0, endX: 0, endY: 0 }
-
-  if (isBypass) {
-    const isLeft = targetX < sourceX
-    const baseOffset = 120 + jumpIndex * 60
-    const xOffset = isLeft ? -baseOffset : baseOffset
-    const routeX = isLeft ? Math.min(sourceX, targetX) + xOffset : Math.max(sourceX, targetX) + xOffset
-    const r = 15
-    const dir = targetY > sourceY ? 1 : -1
-    const actualR = Math.min(r, Math.abs(targetY - sourceY) / 2)
-
-    edgePath = `M ${sourceX} ${sourceY} L ${routeX - (isLeft ? -actualR : actualR)} ${sourceY} Q ${routeX} ${sourceY} ${routeX} ${sourceY + actualR * dir} L ${routeX} ${targetY - actualR * dir} Q ${routeX} ${targetY} ${routeX - (isLeft ? -actualR : actualR)} ${targetY} L ${targetX} ${targetY}`
-
-    const safeX = isLeft ? -40 : 40
-    labelPos = {
-      startX: sourceX + safeX, 
-      startY: sourceY - 12,
-      midX: routeX, 
-      midY: (sourceY + targetY) / 2,
-      endX: targetX + safeX, 
-      endY: targetY - 12
-    }
-  } else {
-    // 💡 【修正】なめらかな曲線（Bezier）を描画し、複数線が重なるのを防ぐ
-    const [path, labelX, labelY] = getBezierPath({ 
-      sourceX, sourceY, sourcePosition, targetX, targetY, targetPosition 
-    })
-    edgePath = path
-    
-    // 💡 【修正】曲線の軌道に合わせて、15%進んだ位置と85%進んだ位置にタグを置く
-    labelPos = {
-      startX: sourceX + (targetX - sourceX) * 0.15, 
-      startY: sourceY + (targetY - sourceY) * 0.15 + 15,
-      midX: labelX, // 曲線の本当のど真ん中
-      midY: labelY, 
-      endX: targetX - (targetX - sourceX) * 0.15, 
-      endY: targetY - (targetY - sourceY) * 0.15 - 15
-    }
-  }
+  // 💡 曲線の軌道と、その「本当のど真ん中の座標（labelX, labelY）」を自動計算
+  const [edgePath, labelX, labelY] = getBezierPath({
+    sourceX, sourceY, sourcePosition, targetX, targetY, targetPosition,
+  })
 
   const mainBadgeColor = isReference ? '#f97316' : '#3b82f6'
   const centerIcon = isReference ? '🔗' : '➔'
@@ -99,14 +63,25 @@ const CustomEdgeWithLabels = ({
     <>
       <BaseEdge id={id} path={edgePath} markerEnd={markerEnd} style={style} />
       <EdgeLabelRenderer>
-        <div style={{ ...styles.edgeLabelBase, transform: `translate(-50%, -50%) translate(${labelPos.startX}px, ${labelPos.startY}px)`, backgroundColor: '#e2e8f0', color: '#334155' }} className="nodrag nopan">
-          次: {targetLabel}
-        </div>
-        <div style={{ ...styles.edgeLabelBase, transform: `translate(-50%, -50%) translate(${labelPos.midX}px, ${labelPos.midY}px)`, backgroundColor: mainBadgeColor, color: '#ffffff', fontWeight: 'bold', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }} className="nodrag nopan">
+        {/* 💡 複数タグを廃止し、曲線のど真ん中に1つだけ「要約タグ」を配置（絶対に線からズレない） */}
+        <div
+          style={{
+            position: 'absolute',
+            transform: `translate(-50%, -50%) translate(${labelX}px, ${labelY}px)`,
+            backgroundColor: mainBadgeColor,
+            color: '#ffffff',
+            fontWeight: 'bold',
+            fontSize: '10px',
+            padding: '4px 8px',
+            borderRadius: '6px',
+            boxShadow: '0 2px 6px rgba(0,0,0,0.15)',
+            pointerEvents: 'none',
+            whiteSpace: 'nowrap',
+            zIndex: 100,
+          }}
+          className="nodrag nopan"
+        >
           {sourceLabel} {centerIcon} {targetLabel}
-        </div>
-        <div style={{ ...styles.edgeLabelBase, transform: `translate(-50%, -50%) translate(${labelPos.endX}px, ${labelPos.endY}px)`, backgroundColor: '#e2e8f0', color: '#334155' }} className="nodrag nopan">
-          元: {sourceLabel}
         </div>
       </EdgeLabelRenderer>
     </>
@@ -121,6 +96,7 @@ export default function DagVisualizer({ graphData }: DagVisualizerProps) {
 
   const { nodes: rawNodes, edges: rawEdges } = graphData
 
+  // 1. 各ノードの深さ（階層）を計算
   const depths = useMemo(() => {
     const dMap = new Map<string, number>()
     rawNodes.forEach(n => dMap.set(n.id, 0))
@@ -145,22 +121,23 @@ export default function DagVisualizer({ graphData }: DagVisualizerProps) {
     return dMap
   }, [rawNodes, rawEdges])
 
-  // 💡 【修正】定理ノードを「それが使われたメインノードと同じ高さ」に配置するための計算
-  const theoremDepths = useMemo(() => {
-    const tMap = new Map<string, number>()
+  // 2. 定理ノードが「どのメインノードに紐付いているか」を特定
+  const theoremTargets = useMemo(() => {
+    const map = new Map<string, string>()
     rawEdges.forEach(edge => {
       const fromNode = rawNodes.find(n => n.id === edge.from)
       const toNode = rawNodes.find(n => n.id === edge.to)
-      if (fromNode?.type === 'theorem' && toNode) {
-        tMap.set(fromNode.id, depths.get(toNode.id) || 0)
+      if (fromNode?.type === 'theorem' && toNode && !map.has(fromNode.id)) {
+        map.set(fromNode.id, toNode.id)
       }
-      if (toNode?.type === 'theorem' && fromNode) {
-        tMap.set(toNode.id, depths.get(fromNode.id) || 0)
+      if (toNode?.type === 'theorem' && fromNode && !map.has(toNode.id)) {
+        map.set(toNode.id, fromNode.id)
       }
     })
-    return tMap
-  }, [rawEdges, rawNodes, depths])
+    return map
+  }, [rawEdges, rawNodes])
 
+  // 3. ノードの配置位置を決定
   const flowNodes = useMemo<Node[]>(() => {
     const depthGroups = new Map<number, GraphNode[]>()
     rawNodes.forEach(node => {
@@ -170,25 +147,40 @@ export default function DagVisualizer({ graphData }: DagVisualizerProps) {
       depthGroups.get(d)!.push(node)
     })
 
+    const theoremCounts = new Map<string, number>() // 同じメインノードに付く定理の数をカウント
+
     return rawNodes.map((node) => {
       const isTheorem = node.type === 'theorem'
       let x = 400
       let y = 0
 
       if (isTheorem) {
-        const d = theoremDepths.get(node.id) || 0
-        // 💡 【修正】メインフローの左側（-450）に固定し、高さ（Y）は関連ノードに合わせる
-        x = -450 
-        y = d * 280 + 20 
+        // 💡 【修正】定理ノードを「紐付いているメインノードの真横（左側）」に配置する
+        const targetMainId = theoremTargets.get(node.id)
+        const targetDepth = targetMainId ? (depths.get(targetMainId) || 0) : 0
+        
+        // メインノードのX座標を計算
+        const mainSiblings = depthGroups.get(targetDepth) || []
+        const mainIndex = mainSiblings.findIndex(n => n.id === targetMainId)
+        const spacing = 450
+        const startX = 450 - ((mainSiblings.length - 1) * spacing) / 2
+        const mainX = startX + mainIndex * spacing
+
+        // 定理が複数ある場合は縦に少しずらす
+        const tCount = theoremCounts.get(targetMainId || '') || 0
+        theoremCounts.set(targetMainId || '', tCount + 1)
+
+        x = mainX - 350 // メインノードの350px左
+        y = targetDepth * 250 + (tCount * 120) // メインノードと同じ高さ＋重なり防止ずらし
       } else {
         const d = depths.get(node.id) || 0
-        y = d * 280 
+        y = d * 250
         
         const siblings = depthGroups.get(d) || []
         const siblingIndex = siblings.findIndex(n => n.id === node.id)
         const totalSiblings = siblings.length
         
-        const spacing = 400 // 💡 曲線を綺麗に見せるため、横幅をさらに少し広げました
+        const spacing = 450 // 分岐時の間隔を広げて見やすく
         const startX = 450 - ((totalSiblings - 1) * spacing) / 2
         x = startX + siblingIndex * spacing
       }
@@ -221,12 +213,10 @@ export default function DagVisualizer({ graphData }: DagVisualizerProps) {
         },
       }
     })
-  }, [rawNodes, depths, theoremDepths])
+  }, [rawNodes, depths, theoremTargets])
 
+  // 4. 線のルーティングを決定
   const flowEdges = useMemo<Edge[]>(() => {
-    let rightJumpCounter = 0
-    let leftJumpCounter = 0
-
     return rawEdges.map((edge, index) => {
       const safeFrom = edge?.from?.trim() || ''
       const safeTo = edge?.to?.trim() || ''
@@ -234,15 +224,8 @@ export default function DagVisualizer({ graphData }: DagVisualizerProps) {
       const fromNode = rawNodes.find(n => n.id?.trim() === safeFrom)
       const toNode = rawNodes.find(n => n.id?.trim() === safeTo)
 
-      const rawSourceText = fromNode?.label || safeFrom
-      const rawTargetText = toNode?.label || safeTo
-
-      const sourceLabel = summarizeText(rawSourceText, 10)
-      const targetLabel = summarizeText(rawTargetText, 10)
-
-      const fromDepth = depths.get(safeFrom) || 0
-      const toDepth = depths.get(safeTo) || 0
-      const isJump = Math.abs(toDepth - fromDepth) > 1
+      const sourceLabel = summarizeText(fromNode?.label || safeFrom, 10)
+      const targetLabel = summarizeText(toNode?.label || safeTo, 10)
 
       const isToTheorem = toNode?.type === 'theorem'
       const isFromTheorem = fromNode?.type === 'theorem'
@@ -250,24 +233,14 @@ export default function DagVisualizer({ graphData }: DagVisualizerProps) {
 
       let sourceHandle = 'bottom'
       let targetHandle = 'top'
-      let isBypass = false
-      let jumpIndex = 0
 
+      // 💡 【修正】横に配置した定理ノードへの接続は、美しく横から線を出す
       if (isToTheorem) {
-        sourceHandle = 'left-source'
-        targetHandle = 'left-target'
-        isBypass = true
-        jumpIndex = leftJumpCounter++
+        sourceHandle = 'left-source' // メインの左から
+        targetHandle = 'right-target' // 定理の右へ
       } else if (isFromTheorem) {
-        sourceHandle = 'right-source'
-        targetHandle = 'left-target'
-        isBypass = true
-        jumpIndex = leftJumpCounter++
-      } else if (isJump) {
-        sourceHandle = 'right-source'
-        targetHandle = 'right-target'
-        isBypass = true
-        jumpIndex = rightJumpCounter++
+        sourceHandle = 'right-source' // 定理の右から
+        targetHandle = 'left-target' // メインの左へ
       }
 
       const strokeColor = isReference ? '#f97316' : '#475569'
@@ -277,12 +250,12 @@ export default function DagVisualizer({ graphData }: DagVisualizerProps) {
         source: safeFrom, target: safeTo,
         sourceHandle, targetHandle, type: 'customEdge',
         animated: !isReference,
-        data: { jumpIndex, isBypass, sourceLabel, targetLabel, isReference },
+        data: { sourceLabel, targetLabel, isReference },
         style: { stroke: strokeColor, strokeWidth: 2, opacity: 0.6, strokeDasharray: isReference ? '6 6' : undefined },
         markerEnd: isReference ? undefined : { type: MarkerType.ArrowClosed, color: strokeColor },
       }
     })
-  }, [rawEdges, rawNodes, depths])
+  }, [rawEdges, rawNodes])
 
   return (
     <div style={styles.container}>
@@ -309,5 +282,4 @@ const styles = {
   theoremBadge: { fontSize: '10px', fontWeight: 'bold' as const, color: '#ea580c', backgroundColor: '#ffedd5', padding: '1px 6px', borderRadius: '4px' },
   nodeId: { fontSize: '10px', color: '#94a3b8', fontFamily: 'monospace' },
   nodeLabel: { fontSize: '12px', fontWeight: 500, whiteSpace: 'pre-wrap' as const, fontFamily: 'Consolas, Monaco, monospace', wordBreak: 'break-all' as const, lineHeight: 1.4 },
-  edgeLabelBase: { position: 'absolute' as const, fontSize: '9px', padding: '2px 4px', borderRadius: '4px', pointerEvents: 'none' as const, whiteSpace: 'nowrap' as const, zIndex: 100 },
 }
