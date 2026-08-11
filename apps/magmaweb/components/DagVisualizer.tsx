@@ -45,17 +45,17 @@ const CustomNode = ({ data }: any) => (
 const CustomEdgeWithLabels = ({
   id, source, target, sourceX, sourceY, targetX, targetY, sourcePosition, targetPosition, style = {}, markerEnd, data,
 }: EdgeProps) => {
-  const jumpIndex = Number(data?.jumpIndex || 0)
-  const isBypass = Boolean(data?.isBypass)
-  const isReference = Boolean(data?.isReference)
-  const sourceLabel = String(data?.sourceLabel || '不明')
-  const targetLabel = String(data?.targetLabel || '不明')
+  // 💡 TypeScriptのエラーを確実に回避するため (data as any) を使用
+  const jumpIndex = Number((data as any)?.jumpIndex || 0)
+  const isBypass = Boolean((data as any)?.isBypass)
+  const isReference = Boolean((data as any)?.isReference)
+  const sourceLabel = String((data as any)?.sourceLabel || '不明')
+  const targetLabel = String((data as any)?.targetLabel || '不明')
   
-  // 動的スタイルの受け取り
-  const edgeColor = data?.edgeColor || (isReference ? '#f97316' : '#475569')
-  const edgeOpacity = data?.edgeOpacity ?? 0.6
-  const strokeWidth = data?.strokeWidth || 2
-  const badgeColor = data?.badgeColor || '#3b82f6'
+  const edgeColor = String((data as any)?.edgeColor || (isReference ? '#f97316' : '#475569'))
+  const edgeOpacity = Number((data as any)?.edgeOpacity ?? 0.6)
+  const strokeWidth = Number((data as any)?.strokeWidth || 2)
+  const badgeColor = String((data as any)?.badgeColor || '#3b82f6')
 
   let edgePath = ''
   let labelX = 0
@@ -80,7 +80,6 @@ const CustomEdgeWithLabels = ({
     labelY = cY
   }
 
-  // 定理への参照エッジ（タグなし）
   if (isReference) {
     const [path] = getStraightPath({ sourceX, sourceY, targetX, targetY })
     return (
@@ -93,7 +92,6 @@ const CustomEdgeWithLabels = ({
     )
   }
 
-  // メインフローのエッジ（タグ付き・クリック可能）
   return (
     <>
       <BaseEdge
@@ -106,7 +104,7 @@ const CustomEdgeWithLabels = ({
         <div
           onClick={(e) => {
             e.stopPropagation()
-            if (data?.onTagClick) data.onTagClick(id)
+            if ((data as any)?.onTagClick) (data as any).onTagClick(id)
           }}
           style={{
             position: 'absolute',
@@ -118,14 +116,14 @@ const CustomEdgeWithLabels = ({
             padding: '6px 10px',
             borderRadius: '8px',
             boxShadow: '0 2px 6px rgba(0,0,0,0.15)',
-            pointerEvents: 'auto', // クリック可能に設定
+            pointerEvents: 'auto', 
             cursor: 'pointer',
             whiteSpace: 'pre-wrap',
             maxWidth: '220px',
             textAlign: 'center',
             wordBreak: 'break-word',
             lineHeight: '1.4',
-            opacity: edgeOpacity < 0.3 ? 0.2 : 1, // エッジの透明度に同期
+            opacity: edgeOpacity < 0.3 ? 0.2 : 1, 
             transition: 'all 0.3s ease',
             zIndex: 100,
           }}
@@ -146,15 +144,12 @@ const edgeTypes = { customEdge: CustomEdgeWithLabels }
 export default function DagVisualizer({ graphData }: DagVisualizerProps) {
   if (!graphData || !Array.isArray(graphData.nodes) || !Array.isArray(graphData.edges)) return <div>エラー</div>
 
-  // 選択状態の管理
-  // selectedMode: 'none' | 'node' | 'edge'
   const [selectedMode, setSelectedMode] = useState<'none' | 'node' | 'edge'>('none')
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null)
   const [selectedEdgeId, setSelectedEdgeId] = useState<string | null>(null)
 
   const { nodes: rawNodes, edges: rawEdges } = graphData
 
-  // 階層計算
   const depths = useMemo(() => {
     const dMap = new Map<string, number>()
     rawNodes.forEach(n => dMap.set(n.id, 0))
@@ -179,7 +174,6 @@ export default function DagVisualizer({ graphData }: DagVisualizerProps) {
     return dMap
   }, [rawNodes, rawEdges])
 
-  // 定理ノードの関連先を特定
   const theoremTargets = useMemo(() => {
     const map = new Map<string, string>()
     rawEdges.forEach(edge => {
@@ -195,13 +189,12 @@ export default function DagVisualizer({ graphData }: DagVisualizerProps) {
     return map
   }, [rawEdges, rawNodes])
 
-  // ハイライト判定ロジック関数
+  // 💡 ハイライトを判定するロジック
   const getHighlightInfo = (nodeId: string) => {
     if (selectedMode === 'none') return { isHighlighted: true }
     
     if (selectedMode === 'node' && selectedNodeId) {
       if (nodeId === selectedNodeId) return { isHighlighted: true, isTargetSelf: true }
-      // 接続しているノードか判定
       const isConnected = rawEdges.some(
         e => (e.from === selectedNodeId && e.to === nodeId) || (e.to === selectedNodeId && e.from === nodeId)
       )
@@ -219,7 +212,6 @@ export default function DagVisualizer({ graphData }: DagVisualizerProps) {
     return { isHighlighted: false }
   }
 
-  // ノードデータ生成
   const flowNodes = useMemo<Node[]>(() => {
     const depthGroups = new Map<number, GraphNode[]>()
     rawNodes.forEach(node => {
@@ -268,10 +260,8 @@ export default function DagVisualizer({ graphData }: DagVisualizerProps) {
       const background = isTheorem ? '#fff7ed' : node.type === 'proposition' ? '#ffffff' : '#f8fafc'
       const borderColor = isTheorem ? '#f97316' : node.type === 'proposition' ? '#4D96FF' : '#6BCB77'
 
-      // ハイライト情報に基づく透明度と枠線強調の適用
       const { isHighlighted, isTargetSelf } = getHighlightInfo(node.id)
       const opacity = isHighlighted ? 1 : 0.15
-      const extraBorder = isTargetSelf ? '3px solid #1e293b' : `2px solid ${borderColor}`
 
       return {
         id: node.id,
@@ -310,7 +300,6 @@ export default function DagVisualizer({ graphData }: DagVisualizerProps) {
     })
   }, [rawNodes, depths, theoremTargets, selectedMode, selectedNodeId, selectedEdgeId])
 
-  // エッジデータ生成（色分け＆ハイライトロジック）
   const flowEdges = useMemo<Edge[]>(() => {
     let bypassCounter = 0
 
@@ -351,37 +340,34 @@ export default function DagVisualizer({ graphData }: DagVisualizerProps) {
         jumpIndex = bypassCounter++
       }
 
-      // --- 💡 色分け・ハイライトのリアルタイム計算 ---
+      // 💡 ノードクリック時の色分けロジック（赤/青）
       let edgeColor = isReference ? '#f97316' : '#475569'
       let badgeColor = '#3b82f6'
       let edgeOpacity = 0.6
       let strokeWidth = 2
 
       if (selectedMode === 'none') {
-        // 未選択時は通常表示
         edgeOpacity = 0.6
         strokeWidth = 2
       } else if (selectedMode === 'node' && selectedNodeId) {
         if (safeFrom === selectedNodeId) {
-          // 🔵 【出るエッジ】青色に強調！
+          // 出るエッジ（青）
           edgeColor = '#2563eb'
           badgeColor = '#2563eb'
           edgeOpacity = 1
           strokeWidth = 4
         } else if (safeTo === selectedNodeId) {
-          // 🔴 【入るエッジ】赤色に強調！
+          // 入るエッジ（赤）
           edgeColor = '#ef4444'
           badgeColor = '#ef4444'
           edgeOpacity = 1
           strokeWidth = 4
         } else {
-          // 関係のないエッジは薄暗く
           edgeOpacity = 0.1
           strokeWidth = 1
         }
       } else if (selectedMode === 'edge' && selectedEdgeId) {
         if (edgeId === selectedEdgeId) {
-          // 選択されたタグのエッジを強調
           edgeColor = '#2563eb'
           badgeColor = '#2563eb'
           edgeOpacity = 1
@@ -399,7 +385,7 @@ export default function DagVisualizer({ graphData }: DagVisualizerProps) {
         sourceHandle,
         targetHandle,
         type: 'customEdge',
-        animated: selectedMode !== 'none' && edgeOpacity === 1, // ハイライト中の線をアニメーション強調
+        animated: selectedMode !== 'none' && edgeOpacity === 1, 
         data: {
           jumpIndex,
           isBypass,
@@ -412,7 +398,6 @@ export default function DagVisualizer({ graphData }: DagVisualizerProps) {
           strokeWidth,
           onTagClick: (clickedEdgeId: string) => {
             if (selectedMode === 'edge' && selectedEdgeId === clickedEdgeId) {
-              // 同じタグを再度クリックで解除
               setSelectedMode('none')
               setSelectedEdgeId(null)
             } else {
@@ -428,10 +413,8 @@ export default function DagVisualizer({ graphData }: DagVisualizerProps) {
     })
   }, [rawEdges, rawNodes, depths, selectedMode, selectedNodeId, selectedEdgeId])
 
-  // ノードクリック時のイベントハンドラ
   const handleNodeClick = (_: React.MouseEvent, node: Node) => {
     if (selectedMode === 'node' && selectedNodeId === node.id) {
-      // 同じノードを再度クリックで解除
       setSelectedMode('none')
       setSelectedNodeId(null)
     } else {
@@ -441,7 +424,6 @@ export default function DagVisualizer({ graphData }: DagVisualizerProps) {
     }
   }
 
-  // キャンバス（背景）クリックで全選択解除
   const handlePaneClick = () => {
     setSelectedMode('none')
     setSelectedNodeId(null)
