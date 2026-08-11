@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useParams } from 'next/navigation' // 💡 useParams をインポート
 import { createClient } from '@supabase/supabase-js'
 import AnswerCard from '../../../components/AnswerCard'
 import DagVisualizer from '../../../components/DagVisualizer' // 新設したコンポーネント
@@ -15,6 +15,8 @@ type GraphData = {
 
 export default function AnalysisPage({ params }: { params: { id: string } }) {
   const router = useRouter()
+  const params = useParams()
+  const answerId = params?.id as string // 💡 useParams から安全に id を取得
   const [answerData, setAnswerData] = useState<any>(null)
   
   // 厳密な構造化DAGデータをステートで持つ
@@ -27,6 +29,10 @@ export default function AnalysisPage({ params }: { params: { id: string } }) {
   const [debugRawText, setDebugRawText] = useState<string | null>(null)
 
   useEffect(() => {
+    if (!answerId) return
+
+    let isMounted = true // 💡 クリーンアップ用フラグ（2回実行の防止）
+
     async function loadAnalysisData() {
       try {
         const supabase = createClient(
