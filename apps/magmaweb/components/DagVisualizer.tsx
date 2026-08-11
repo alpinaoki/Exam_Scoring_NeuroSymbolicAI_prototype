@@ -25,10 +25,10 @@ type GraphNode = { id: string; label: string; type: 'proposition' | 'inference' 
 type GraphEdge = { from: string; to: string }
 type DagVisualizerProps = { graphData: { nodes: GraphNode[]; edges: GraphEdge[] } }
 
-const summarizeText = (text: string, maxLength: number = 10) => {
+// 💡 省略(カット)を廃止し、全文をそのままクリーンに返すように変更
+const formatLabel = (text: string) => {
   if (!text) return '不明'
-  const cleanText = text.replace(/\n/g, ' ')
-  return cleanText.length > maxLength ? cleanText.substring(0, maxLength) + '...' : cleanText
+  return text.trim()
 }
 
 const CustomNode = ({ data }: any) => (
@@ -56,12 +56,7 @@ const CustomEdgeWithLabels = ({
   let labelX = 0
   let labelY = 0
 
-  if (isReference) {
-    // 定理への接続線はまっすぐな直線
-    const [path] = getStraightPath({ sourceX, sourceY, targetX, targetY })
-    edgePath = path
-  } else if (isBypass) {
-    // 迂回線
+  if (isBypass) {
     const isLeft = true 
     const baseOffset = 150 + jumpIndex * 80
     const xOffset = isLeft ? -baseOffset : baseOffset
@@ -74,18 +69,19 @@ const CustomEdgeWithLabels = ({
     labelX = routeX
     labelY = (sourceY + targetY) / 2
   } else {
-    // メインの線
     const [path, cX, cY] = getBezierPath({ sourceX, sourceY, sourcePosition, targetX, targetY, targetPosition })
     edgePath = path
     labelX = cX
     labelY = cY
   }
 
-  // 💡 【大改善】定理・定義への線（isReference）の場合は、線だけを描画してタグを出さない！
+  // 💡 定理への線はタグを表示しない（前回からの引継ぎ）
   if (isReference) {
-    return <BaseEdge id={id} path={edgePath} markerEnd={markerEnd} style={style} />
+    const [path] = getStraightPath({ sourceX, sourceY, targetX, targetY })
+    return <BaseEdge id={id} path={path} markerEnd={markerEnd} style={style} />
   }
 
+  // 💡 メインフローのタグ（全文表示＆自動改行）
   return (
     <>
       <BaseEdge id={id} path={edgePath} markerEnd={markerEnd} style={style} />
@@ -98,16 +94,24 @@ const CustomEdgeWithLabels = ({
             color: '#ffffff',
             fontWeight: 'bold',
             fontSize: '10px',
-            padding: '4px 8px',
-            borderRadius: '6px',
+            padding: '6px 10px',
+            borderRadius: '8px',
             boxShadow: '0 2px 6px rgba(0,0,0,0.15)',
             pointerEvents: 'none',
-            whiteSpace: 'nowrap',
+            // 💡 以下の設定で全文を綺麗に折り返します
+            whiteSpace: 'pre-wrap', 
+            maxWidth: '220px', 
+            textAlign: 'center',
+            wordBreak: 'break-word',
+            lineHeight: '1.4',
             zIndex: 100,
           }}
           className="nodrag nopan"
         >
-          {sourceLabel} ➔ {targetLabel}
+          {/* 💡 長い文章でも見やすいように「上下」に配置し、間に下矢印を挟む */}
+          <div>{sourceLabel}</div>
+          <div style={{ color: '#93c5fd', margin: '3px 0', fontSize: '11px' }}>▼</div>
+          <div>{targetLabel}</div>
         </div>
       </EdgeLabelRenderer>
     </>
@@ -246,8 +250,9 @@ export default function DagVisualizer({ graphData }: DagVisualizerProps) {
       const fromNode = rawNodes.find(n => n.id?.trim() === safeFrom)
       const toNode = rawNodes.find(n => n.id?.trim() === safeTo)
 
-      const sourceLabel = summarizeText(fromNode?.label || safeFrom, 10)
-      const targetLabel = summarizeText(toNode?.label || safeTo, 10)
+      // 💡 formatLabel に変更し、全文を取得
+      const sourceLabel = formatLabel(fromNode?.label || safeFrom)
+      const targetLabel = formatLabel(toNode?.label || safeTo)
 
       const fromDepth = depths.get(safeFrom) || 0
       const toDepth = depths.get(safeTo) || 0
