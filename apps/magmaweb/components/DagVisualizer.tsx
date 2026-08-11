@@ -45,7 +45,6 @@ const CustomNode = ({ data }: any) => (
 const CustomEdgeWithLabels = ({
   id, source, target, sourceX, sourceY, targetX, targetY, sourcePosition, targetPosition, style = {}, markerEnd, data,
 }: EdgeProps) => {
-  // 💡 TypeScriptのエラーを確実に回避するため (data as any) を使用
   const jumpIndex = Number((data as any)?.jumpIndex || 0)
   const isBypass = Boolean((data as any)?.isBypass)
   const isReference = Boolean((data as any)?.isReference)
@@ -80,6 +79,7 @@ const CustomEdgeWithLabels = ({
     labelY = cY
   }
 
+  // 💡 定理への接続線はタグなしで直線を描画
   if (isReference) {
     const [path] = getStraightPath({ sourceX, sourceY, targetX, targetY })
     return (
@@ -189,7 +189,6 @@ export default function DagVisualizer({ graphData }: DagVisualizerProps) {
     return map
   }, [rawEdges, rawNodes])
 
-  // 💡 ハイライトを判定するロジック
   const getHighlightInfo = (nodeId: string) => {
     if (selectedMode === 'none') return { isHighlighted: true }
     
@@ -340,7 +339,6 @@ export default function DagVisualizer({ graphData }: DagVisualizerProps) {
         jumpIndex = bypassCounter++
       }
 
-      // 💡 ノードクリック時の色分けロジック（赤/青）
       let edgeColor = isReference ? '#f97316' : '#475569'
       let badgeColor = '#3b82f6'
       let edgeOpacity = 0.6
@@ -351,13 +349,11 @@ export default function DagVisualizer({ graphData }: DagVisualizerProps) {
         strokeWidth = 2
       } else if (selectedMode === 'node' && selectedNodeId) {
         if (safeFrom === selectedNodeId) {
-          // 出るエッジ（青）
           edgeColor = '#2563eb'
           badgeColor = '#2563eb'
           edgeOpacity = 1
           strokeWidth = 4
         } else if (safeTo === selectedNodeId) {
-          // 入るエッジ（赤）
           edgeColor = '#ef4444'
           badgeColor = '#ef4444'
           edgeOpacity = 1
@@ -385,7 +381,8 @@ export default function DagVisualizer({ graphData }: DagVisualizerProps) {
         sourceHandle,
         targetHandle,
         type: 'customEdge',
-        animated: selectedMode !== 'none' && edgeOpacity === 1, 
+        // 💡 ここが修正ポイント！メインの線(!isReference)は「常に」アニメーション(点の動き)をONにします。
+        animated: !isReference, 
         data: {
           jumpIndex,
           isBypass,
