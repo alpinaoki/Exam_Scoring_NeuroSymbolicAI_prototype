@@ -16,11 +16,11 @@ import {
   EdgeProps,
   EdgeLabelRenderer,
   getBezierPath,
+  getStraightPath,
 } from '@xyflow/react'
 
 import '@xyflow/react/dist/style.css'
 
-// 💡 ここが消えていたので復元しました！
 type GraphNode = { id: string; label: string; type: 'proposition' | 'inference' | 'theorem' }
 type GraphEdge = { from: string; to: string }
 type DagVisualizerProps = { graphData: { nodes: GraphNode[]; edges: GraphEdge[] } }
@@ -46,16 +46,45 @@ const CustomNode = ({ data }: any) => (
 const CustomEdgeWithLabels = ({
   id, sourceX, sourceY, targetX, targetY, sourcePosition, targetPosition, style = {}, markerEnd, data,
 }: EdgeProps) => {
+  const jumpIndex = Number(data?.jumpIndex || 0)
+  const isBypass = Boolean(data?.isBypass)
   const isReference = Boolean(data?.isReference)
   const sourceLabel = String(data?.sourceLabel || '不明')
   const targetLabel = String(data?.targetLabel || '不明')
 
-  const [edgePath, labelX, labelY] = getBezierPath({
-    sourceX, sourceY, sourcePosition, targetX, targetY, targetPosition,
-  })
+  let edgePath = ''
+  let labelX = 0
+  let labelY = 0
 
-  const mainBadgeColor = isReference ? '#f97316' : '#3b82f6'
-  const centerIcon = isReference ? '🔗' : '➔'
+  if (isReference) {
+    // 定理への接続線はまっすぐな直線
+    const [path] = getStraightPath({ sourceX, sourceY, targetX, targetY })
+    edgePath = path
+  } else if (isBypass) {
+    // 迂回線
+    const isLeft = true 
+    const baseOffset = 150 + jumpIndex * 80
+    const xOffset = isLeft ? -baseOffset : baseOffset
+    const routeX = Math.min(sourceX, targetX) + xOffset
+    const r = 15
+    const dir = targetY > sourceY ? 1 : -1
+    const actualR = Math.min(r, Math.abs(targetY - sourceY) / 2)
+
+    edgePath = `M ${sourceX} ${sourceY} L ${routeX + actualR} ${sourceY} Q ${routeX} ${sourceY} ${routeX} ${sourceY + actualR * dir} L ${routeX} ${targetY - actualR * dir} Q ${routeX} ${targetY} ${routeX + actualR} ${targetY} L ${targetX} ${targetY}`
+    labelX = routeX
+    labelY = (sourceY + targetY) / 2
+  } else {
+    // メインの線
+    const [path, cX, cY] = getBezierPath({ sourceX, sourceY, sourcePosition, targetX, targetY, targetPosition })
+    edgePath = path
+    labelX = cX
+    labelY = cY
+  }
+
+  // 💡 【大改善】定理・定義への線（isReference）の場合は、線だけを描画してタグを出さない！
+  if (isReference) {
+    return <BaseEdge id={id} path={edgePath} markerEnd={markerEnd} style={style} />
+  }
 
   return (
     <>
@@ -65,7 +94,7 @@ const CustomEdgeWithLabels = ({
           style={{
             position: 'absolute',
             transform: `translate(-50%, -50%) translate(${labelX}px, ${labelY}px)`,
-            backgroundColor: mainBadgeColor,
+            backgroundColor: '#3b82f6',
             color: '#ffffff',
             fontWeight: 'bold',
             fontSize: '10px',
@@ -78,7 +107,7 @@ const CustomEdgeWithLabels = ({
           }}
           className="nodrag nopan"
         >
-          {sourceLabel} {centerIcon} {targetLabel}
+          {sourceLabel} ➔ {targetLabel}
         </div>
       </EdgeLabelRenderer>
     </>
@@ -154,24 +183,25 @@ export default function DagVisualizer({ graphData }: DagVisualizerProps) {
         
         const mainSiblings = depthGroups.get(targetDepth) || []
         const mainIndex = mainSiblings.findIndex(n => n.id === targetMainId)
-        const spacing = 650
+        
+        const spacing = 1000
         const startX = 450 - ((mainSiblings.length - 1) * spacing) / 2
         const mainX = startX + mainIndex * spacing
 
         const tCount = theoremCounts.get(targetMainId || '') || 0
         theoremCounts.set(targetMainId || '', tCount + 1)
 
-        x = mainX + 360 
-        y = targetDepth * 320 + (tCount * 120)
+        x = mainX + 600 
+        y = targetDepth * 350 + (tCount * 120) 
       } else {
         const d = depths.get(node.id) || 0
-        y = d * 320 
+        y = d * 350 
         
         const siblings = depthGroups.get(d) || []
         const siblingIndex = siblings.findIndex(n => n.id === node.id)
         const totalSiblings = siblings.length
         
-        const spacing = 650 
+        const spacing = 1000 
         const startX = 450 - ((totalSiblings - 1) * spacing) / 2
         x = startX + siblingIndex * spacing
       }
@@ -207,6 +237,8 @@ export default function DagVisualizer({ graphData }: DagVisualizerProps) {
   }, [rawNodes, depths, theoremTargets])
 
   const flowEdges = useMemo<Edge[]>(() => {
+    let bypassCounter = 0
+
     return rawEdges.map((edge, index) => {
       const safeFrom = edge?.from?.trim() || ''
       const safeTo = edge?.to?.trim() || ''
@@ -217,12 +249,18 @@ export default function DagVisualizer({ graphData }: DagVisualizerProps) {
       const sourceLabel = summarizeText(fromNode?.label || safeFrom, 10)
       const targetLabel = summarizeText(toNode?.label || safeTo, 10)
 
+      const fromDepth = depths.get(safeFrom) || 0
+      const toDepth = depths.get(safeTo) || 0
+      const isJump = Math.abs(toDepth - fromDepth) > 1
+
       const isToTheorem = toNode?.type === 'theorem'
       const isFromTheorem = fromNode?.type === 'theorem'
       const isReference = isToTheorem || isFromTheorem
 
       let sourceHandle = 'bottom'
       let targetHandle = 'top'
+      let isBypass = false
+      let jumpIndex = 0
 
       if (isToTheorem) {
         sourceHandle = 'right-source'
@@ -230,6 +268,11 @@ export default function DagVisualizer({ graphData }: DagVisualizerProps) {
       } else if (isFromTheorem) {
         sourceHandle = 'left-source'
         targetHandle = 'right-target'
+      } else if (isJump) {
+        sourceHandle = 'left-source'
+        targetHandle = 'left-target'
+        isBypass = true
+        jumpIndex = bypassCounter++
       }
 
       const strokeColor = isReference ? '#f97316' : '#475569'
@@ -239,12 +282,12 @@ export default function DagVisualizer({ graphData }: DagVisualizerProps) {
         source: safeFrom, target: safeTo,
         sourceHandle, targetHandle, type: 'customEdge',
         animated: !isReference,
-        data: { sourceLabel, targetLabel, isReference },
+        data: { jumpIndex, isBypass, sourceLabel, targetLabel, isReference },
         style: { stroke: strokeColor, strokeWidth: 2, opacity: 0.6, strokeDasharray: isReference ? '6 6' : undefined },
         markerEnd: isReference ? undefined : { type: MarkerType.ArrowClosed, color: strokeColor },
       }
     })
-  }, [rawEdges, rawNodes])
+  }, [rawEdges, rawNodes, depths])
 
   return (
     <div style={styles.container}>
