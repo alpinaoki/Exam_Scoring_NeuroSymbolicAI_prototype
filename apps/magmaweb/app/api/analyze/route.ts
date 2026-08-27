@@ -64,10 +64,12 @@ export async function GET(request: NextRequest) {
                 [役割]
                 あなたは数学教育の専門家であり、論理構造解析に特化したAIアシスタントです。
 
+                [背景]
+                入力された数学の答案画像を解析し、生徒の思考プロセスを有向グラフ（DAG）として抽出します。また、各ステップ間で論理の飛躍や計算ミスがないかを厳密に検証し、その結果（アラート）と、グラフを構築した思考プロセス全体をユーザーに提示する必要があります。
+
                 [目的]
                 入力された数学の答案画像を解析し、生徒の思考プロセスを「命題（数式や条件）」と「推論（変形ルールや適用した定理）」からなる有向グラフとして最小ステップで抽出します。さらに、使用された定理が既存のライブラリに存在するか判定し、指定されたJSONフォーマットのみで出力してください。
 
-                // （※route.ts の該当部分のみ抜粋）
                 [抽出ルール]
                 1. グラフの基本構造（厳密な交互配置と例外規定）:
                    - メインの論理フローは、原則として「命題」→「推論」→「命題」→「推論」と交互に配置してください。
@@ -84,13 +86,14 @@ export async function GET(request: NextRequest) {
                    - 複数の命題（数式）を組み合わせて新しい命題を導いている場合、それらの複数の「命題ノード」から、1つの「推論ノード」に向かってエッジを繋げてください。
                 5. グラフや表の除外:
                    - 関数グラフ、幾何的な図形、増減表などは解析の対象外とします。
-                6. 忠実性の原則:
+                6. 忠実性の原則と論理検証（重要）:
                    - 誤った数式はそのまま「命題」ノードとして抽出してください。
+                   - **もし論理飛躍や計算ミスを発見した場合、エッジ自体は接続しますが、対象となるノードに対して必ず「evaluation_bubbles（吹き出し）」のデータを作成し、具体的な問題点を指摘してください。問題がない場合も「問題なし」として作成してください。**
 
                 [出力フォーマット（厳守）]
                 - 以下のJSONスキーマに厳密に従って出力してください。
                 - 挨拶、説明、Markdownのコードブロックなどの余分なテキストは一切含めず、パース可能な生のJSON文字列のみを返してください。
-                  
+                 
                 {
                   "graph": {
                     "nodes": [
@@ -112,6 +115,13 @@ export async function GET(request: NextRequest) {
                       { "from": "p4", "to": "i2" },
                       { "from": "i2", "to": "t2" },
                       { "from": "i2", "to": "p5" }
+                    ],
+                    "evaluation_bubbles": [
+                      {
+                        "target_node_id": "i1",
+                        "status": "問題なし",
+                        "message": "論理の飛躍や計算ミスはありません。"
+                      }
                     ]
                   },
                   "new_theorems": [
@@ -123,6 +133,10 @@ export async function GET(request: NextRequest) {
                       "after": "n(n+1)/2",
                       "conditions": ["n is a positive integer"]
                     }
+                  ],
+                  "construction_process": [
+                    "Step 1: 命題「x = 1 - √5」を抽出しました。",
+                    "Step 2: 推論「代入する」を接続しました。論理検証：問題なし。"
                   ]
                 }
                 
@@ -153,7 +167,8 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ 
         imageUrl: answer.image_url, 
         graph: parsedData.graph, 
-        newTheorems: parsedData.new_theorems 
+        newTheorems: parsedData.new_theorems,
+        constructionProcess: parsedData.construction_process
       })
     } catch (parseErr) {
       try {
@@ -162,7 +177,8 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({ 
           imageUrl: answer.image_url, 
           graph: parsedData.graph, 
-          newTheorems: parsedData.new_theorems 
+          newTheorems: parsedData.new_theorems,
+          constructionProcess: parsedData.construction_process
         })
       } catch (innerErr) {
         return NextResponse.json({ error: 'Geminiの出力データがJSONとして不適正です', rawText: rawText })
