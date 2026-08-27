@@ -57,7 +57,7 @@ function LoginForm() {
         {/* ① スタート（5枚目とUIを完全に統合） */}
         <div style={{ ...styles.slide, ...styles.imageSlide, position: 'relative' }}>
           <div style={styles.fullContentContainer}>
-            <h1 style={styles.logoTextWhite}>Magmatheへようこそ！</h1>
+            <h1 style={styles.logoTextWhite}>Magmathe(旧)へようこそ！</h1>
             <p style={styles.catchphraseWhite}>解き方でつながる高校生のための数学SNS</p>
 
             <h2 style={styles.formTitleWhite}>{mode === 'login' ? 'ログイン' : '新規登録'}</h2>
