@@ -41,7 +41,7 @@ function LoginForm() {
       setLoading(false)
     }
   }
-
+ 
   const AgreementText = ({ whiteMode = false }: { whiteMode?: boolean }) => (
     <p style={whiteMode ? styles.agreementWhite : styles.agreement}>
       続行することで、
